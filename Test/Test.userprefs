@@ -1,11 +1,12 @@
 ﻿<Properties>
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\StoneBehaviour.cs">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="MonoDevelop.Default" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\Menu.cs">
     <Files>
-      <File FileName="Test.sln" Line="40" Column="1" />
-      <File FileName="Assets\Scripts\StoneBehaviour.cs" Line="22" Column="28" />
-      <File FileName="Assets\Scripts\PlayerBehaviour.cs" Line="34" Column="11" />
-      <File FileName="Assets\Scripts\GunBullet.cs" Line="34" Column="39" />
+      <File FileName="Test.sln" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\StoneBehaviour.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\PlayerBehaviour.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\GunBullet.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\Menu.cs" Line="21" Column="2" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
