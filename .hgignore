@@ -1,0 +1,3 @@
+syntax: glob
+Test/testBuild_Data/*
+Test/testBuild.exe

@@ -11,7 +11,7 @@ public class NetworkManager : MonoBehaviour {
 
 	void Awake() {
 		game = gameObj.GetComponent<Game> ();
-		Network.sendRate = 25f;
+		Network.sendRate = 100f;
 		ClearServerList ();
 	}
 
@@ -49,8 +49,8 @@ public class NetworkManager : MonoBehaviour {
 		Debug.Log ("Server Initialized!");
 
 		game.ClearGame ();
-		
-		game.spawnNetworkPlayer (networkView.viewID);
+		GameObject serverPlayer = game.MakeNetworkPlayer ();
+		serverPlayer.GetComponent<PlayerBehaviour>().SetOwner();
 	}
 
 	public NetworkConnectionError Connect(HostData hostData)
@@ -60,7 +60,7 @@ public class NetworkManager : MonoBehaviour {
 
 	public void ClearServerList()
 	{
-		hostList = new HostData[0]{};
+		hostList = new HostData[]{};
 	}
 
 	void OnConnectedToServer()
@@ -75,12 +75,6 @@ public class NetworkManager : MonoBehaviour {
 	[RPC]
 	void EnterNewPlayer(NetworkMessageInfo nmInfo)
 	{
-		game.spawnNetworkPlayer (nmInfo..viewID);
-	}
-
-	[RPC]
-	void EnterNewPlayerResponse(NetworkViewID viewID)
-	{
-		game.spawnPlayer (viewID);
+		game.spawnNetworkPlayer (nmInfo.sender);
 	}
 }

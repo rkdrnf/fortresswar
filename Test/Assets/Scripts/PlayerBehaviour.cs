@@ -13,21 +13,56 @@ public class PlayerBehaviour : MonoBehaviour {
 
 	bool facingRight = true;
 
-
-
-	NetworkViewID viewID;
+	bool isOwner = false;
 
 	float timer;
 
-	Vector3 pos;
-	Quaternion rot;
-	int m;
+	float moving;
 
+	NetworkView transformView;
+	NetworkView controllerView;
+
+
+	[RPC]
+	public void SetOwner()
+	{
+		NetworkViewID controllerID = Network.AllocateViewID ();
+
+		controllerView.RPC ("SetControllerNetworkView", RPCMode.Server, controllerID);
+
+		controllerView.viewID = controllerID;
+
+		isOwner = true;
+
+		Debug.Log (controllerID);
+	}
+
+	[RPC]
+	public void SetControllerNetworkView(NetworkViewID viewID)
+	{
+		controllerView.viewID = viewID;
+
+		Debug.Log (viewID);
+	}
 
 	void Awake()
 	{
 		timer = 0f;
 		netManager = GameObject.Find ("NetworkManager");
+
+		Component[] views = gameObject.GetComponents(typeof(NetworkView));
+		foreach (Component view in views) {
+			NetworkView nView = (NetworkView)view;
+			if (nView.observed is PlayerBehaviour)
+			{
+				controllerView = nView;
+			}
+
+			if (nView.observed is Transform)
+			{
+				transformView = nView;
+			}
+		}
 	}
 
 	// Use this for initialization
@@ -35,44 +70,62 @@ public class PlayerBehaviour : MonoBehaviour {
 
 	}
 
-	public void SetPlayerViewID(NetworkViewID networkViewID)
+	void OnSerializeNetworkView(BitStream stream, NetworkMessageInfo mnInfo)
 	{
-		viewID = networkViewID;
+		if (stream.isWriting) {
+			Debug.Log ("writing");
+			if (isOwner) {
+				float moveVal = moving;
+				stream.Serialize (ref moveVal);
+			}
+		} else {
+			Debug.Log ("reading");
+			float moveVal = 0;
+			stream.Serialize(ref moveVal);
+			moving = moveVal;
+		}
 	}
-	
+
 	// Update is called once per frame
 	void FixedUpdate () {
-		if (viewID != netManager.networkView.viewID)
-					return;
+		if (isOwner) {
+						float move = Input.GetAxis ("Horizontal") * MOVE_SPEED;
 
-		float move = Input.GetAxis ("Horizontal") * MOVE_SPEED;
 
-		if (move != 0) {
-			rigidbody2D.velocity = new Vector2 (move, rigidbody2D.velocity.y);
-		}
+						moving = move;
 
-		if (move < 0 && facingRight) {
-			Flip();
 
+
+						if (Input.GetButton ("Fire1")) {
+			
+								timer += Time.deltaTime;
+								if (timer > FIRE_RATE) {
+										timer = 0f;
+										GameObject bullet = Instantiate (projectile, transform.position, transform.rotation) as GameObject;
+				
+										Vector3 worldMousePosition = Camera.main.ScreenToWorldPoint (new Vector3 (Input.mousePosition.x, Input.mousePosition.y, transform.position.z));
+										Vector3 direction = worldMousePosition - transform.position;
+				
+										bullet.GetComponent<GunBullet> ().Fire (direction, 20);
+								}
+						}
 				}
-		if (move > 0 && !facingRight) {
-			Flip();
-				}
+		// Server Rendering.
+		if (Network.isServer) {
+			if (moving != 0) {
+				rigidbody2D.velocity = new Vector2 (moving, rigidbody2D.velocity.y);
+			}
 
-		if (Input.GetButton ("Fire1")) {
-
-			timer += Time.deltaTime;
-			if (timer > FIRE_RATE)
-			{
-				timer = 0f;
-				GameObject bullet = Instantiate(projectile, transform.position, transform.rotation) as GameObject;
-
-				Vector3 worldMousePosition = Camera.main.ScreenToWorldPoint (new Vector3 (Input.mousePosition.x, Input.mousePosition.y, transform.position.z));
-				Vector3 direction = worldMousePosition - transform.position;
-		
-				bullet.GetComponent<GunBullet>().Fire(direction, 20);
+			if (moving < 0 && facingRight) {
+				Flip();
+				
+			}
+			if (moving > 0 && !facingRight) {
+				Flip();
 			}
 		}
+
+
 	}
 
 	void Flip() {

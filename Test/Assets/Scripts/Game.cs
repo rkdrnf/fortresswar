@@ -29,26 +29,34 @@ public class Game : MonoBehaviour
 		netManager = netManagerObject.GetComponent<NetworkManager> ();
 	}
 
-	public void spawnNetworkPlayer(NetworkViewID networkViewID)
+	public GameObject MakeNetworkPlayer()
 	{
-		//Network.Instantiate (playerPrefab, spawnPosition, Quaternion.identity, 0);
+		return (GameObject)Network.Instantiate (playerPrefab, spawnPosition, Quaternion.identity, 0);
 
-		netManager.networkView.RPC ("EnterNewPlayerResponse", RPCMode.AllBuffered, networkViewID);
+	}
+
+	public void spawnNetworkPlayer(NetworkPlayer client)
+	{
+		GameObject newPlayer = MakeNetworkPlayer ();
+
+		newPlayer.networkView.RPC ("SetOwner", client);
 
 		//netManager.networkView.RPC ("SetPlayerViewID", RPCMode.AllBuffered); 
 	}
 
+	/*
 	public void spawnPlayer(NetworkViewID networkViewID)
 	{
 		GameObject newPlayer = (GameObject)Instantiate (playerPrefab, spawnPosition, Quaternion.identity);
 		newPlayer.GetComponent<PlayerBehaviour> ().SetPlayerViewID (networkViewID);
 	}
+	*/
 
 
 	public void ClearGame()
 	{
 		foreach (PlayerBehaviour player in players) {
-			Destroy (player.gameObject);
+			Network.Destroy (player.gameObject);
 				}
 	}
 
