@@ -3,8 +3,8 @@ using System.Collections;
 
 public class PlayerBehaviour : MonoBehaviour {
 
-
 	public GameObject projectile;
+	public GameObject netManager;
 
 	const int MOVE_SPEED = 4;
 
@@ -13,18 +13,43 @@ public class PlayerBehaviour : MonoBehaviour {
 
 	bool facingRight = true;
 
+
+
+	NetworkViewID viewID;
+
 	float timer;
+
+	Vector3 pos;
+	Quaternion rot;
+	int m;
+
+
+	void Awake()
+	{
+		timer = 0f;
+		netManager = GameObject.Find ("NetworkManager");
+	}
 
 	// Use this for initialization
 	void Start () {
-		timer = 0f;
+
+	}
+
+	public void SetPlayerViewID(NetworkViewID networkViewID)
+	{
+		viewID = networkViewID;
 	}
 	
 	// Update is called once per frame
 	void FixedUpdate () {
+		if (viewID != netManager.networkView.viewID)
+					return;
+
 		float move = Input.GetAxis ("Horizontal") * MOVE_SPEED;
 
-		rigidbody2D.velocity = new Vector2 (move, rigidbody2D.velocity.y);
+		if (move != 0) {
+			rigidbody2D.velocity = new Vector2 (move, rigidbody2D.velocity.y);
+		}
 
 		if (move < 0 && facingRight) {
 			Flip();

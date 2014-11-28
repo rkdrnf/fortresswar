@@ -3,32 +3,46 @@ using System.Collections;
 
 public class Menu : MonoBehaviour {
 
+	public GameObject netManagerObj;
+
+
+	NetworkManager netManager;
+
+	void Awake()
+	{
+		netManager = netManagerObj.GetComponent<NetworkManager> ();
+	}
+
+	void Start()
+	{
+	}
+
+	public void RefreshServerList()
+	{
+		netManager.RefreshHostList ();
+	}
+
 	public void StartServer()
 	{
-		Network.InitializeServer (16, 25000, !Network.HavePublicAddress());
-
+		netManager.StartServer ();
 	}
-
-	void OnServerInitialized()
-	{
-		Debug.Log ("Server Initialized!");
-	}
-
-	public void Refresh()
-	{
-		Debug.Log ("Refreshed!");
-	}
-
 
 	void OnGUI()
 	{
-		/*
-		if (GUI.Button(new Rect(transform.position.x - 10, transform.position.y - 10, 150, 100), "Host Server"))
-			print("Host");
+		HostData[] hostList = netManager.GetServerList ();
 
-		if (GUI.Button(new Rect(transform.position.x - 10, transform.position.y - 20, 150, 100), "Refresh"))
-			print("Refresh");
-			*/
+		if (hostList.Length > 0)
+		{
+			for (int i = 0; i < hostList.Length; i++) 
+			{
+				if (GUI.Button(new Rect(-1, 1, 100, 50), hostList[i].gameName))
+				{
+					var cError = netManager.Connect(hostList[i]);
+
+					Debug.Log(cError);
+				}
+			}
+		}
 	}
 
 	void Update()
@@ -38,7 +52,7 @@ public class Menu : MonoBehaviour {
 			Camera menuCamera = GameObject.Find("MenuCamera").camera;
 			menuCamera.enabled = !menuCamera.enabled;
 
-
+			netManager.ClearServerList();
 		}
 	}
 }
