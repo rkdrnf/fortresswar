@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System;
 
 public class NetworkManager : MonoBehaviour {
 
@@ -69,7 +70,16 @@ public class NetworkManager : MonoBehaviour {
 
 		game.ClearGame ();
 
-		networkView.RPC ("EnterNewPlayer", RPCMode.Server);
+		//networkView.RPC ("EnterNewPlayer", RPCMode.Server);
+	}
+
+	void OnPlayerConnected(NetworkPlayer player)
+	{
+		Debug.Log(String.Format("Player Connected {0}", player));
+
+		game.spawnNetworkPlayer (player);
+		game.map.drawMapNetwork (player);
+
 	}
 
 	[RPC]

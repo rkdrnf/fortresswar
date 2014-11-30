@@ -5,47 +5,73 @@ public class GunBullet : MonoBehaviour {
 
 	const int DAMAGE = 20;
 
-	const int RANGE = 4;
+	const int RANGE = 10;
 
 	Vector3 startPosition;
 	Vector3 currentPosition;
 
 	// Use this for initialization
-	void Start () {
+	void Awake () {
 		startPosition = transform.position;
 	}
 	
 	// Update is called once per frame
-	void FixedUpdate () {
+	void Update () {
+		// Draw in Client, Collide in Server
+		//Client
+
 		currentPosition = transform.position;
 
-		if ((currentPosition - startPosition).sqrMagnitude > RANGE * RANGE) {
-			Destroy(gameObject);
-				}
+		Quaternion rot = Quaternion.FromToRotation (Vector3.right, new Vector3 (rigidbody2D.velocity.x, rigidbody2D.velocity.y));
+		transform.rotation = rot;
+
+		//Server
+		if (Network.isServer) 
+		{
+			if ((currentPosition - startPosition).sqrMagnitude > RANGE * RANGE) {
+				Destroy();
+			}
+		}
 	
 	}
 
 	public void Fire(Vector3 direction, int power)
 	{
-		float hypotenuse = Mathf.Sqrt ((direction.x * direction.x) + (direction.y * direction.y));
-		float powerRateX = direction.x / hypotenuse;
-		float powerRateY = direction.y / hypotenuse;
+		networkView.RPC ("BroadcastFire", RPCMode.AllBuffered, transform.position, direction, power);
+	}
+
+	[RPC]
+	public void BroadcastFire(Vector3 pos, Vector3 direction, int power)
+	{
+		transform.position = pos;
+
+		direction.Normalize ();
+		
+		float powerRateX = direction.x;
+		float powerRateY = direction.y;
 
 		rigidbody2D.AddForce(new Vector2(powerRateX * power, powerRateY * power), ForceMode2D.Impulse);
 	}
 
 	void OnTriggerEnter2D(Collider2D targetCollider)
 	{
-		if (targetCollider.gameObject.CompareTag ("Tile")) {
+		if (Network.isServer) {
+			if (targetCollider.gameObject.CompareTag ("Tile")) {
+				GameObject tile = targetCollider.gameObject;
+				tile.GetComponent<StoneBehaviour> ().Damage (DAMAGE);
 
-			GameObject tile = targetCollider.gameObject;
-			tile.GetComponent<StoneBehaviour>().Damage(DAMAGE);
-
-			Destroy(gameObject);
+				Destroy();
+			} else {
+				return;
+			}
 		}
-		else
-		{
-			return;
+	}
+
+	void Destroy()
+	{
+		if (Network.isServer) {
+			Network.RemoveRPCs(networkView.viewID);
+			Network.Destroy (gameObject);
 		}
 	}
 

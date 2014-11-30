@@ -17,7 +17,14 @@ public class PlayerBehaviour : MonoBehaviour {
 
 	float timer;
 
-	float moving;
+	float horMov;
+	float verMov;
+	bool jumpMov;
+
+	bool grounded = false;
+	public Transform groundCheck;
+	float groundRadius = 0.1f;
+	public LayerMask whatIsGround;
 
 	NetworkView transformView;
 	NetworkView controllerView;
@@ -75,57 +82,79 @@ public class PlayerBehaviour : MonoBehaviour {
 		if (stream.isWriting) {
 			Debug.Log ("writing");
 			if (isOwner) {
-				float moveVal = moving;
-				stream.Serialize (ref moveVal);
+				float horMoveVal = horMov;
+				float verMoveVal = verMov;
+				bool jumpVal = jumpMov;
+				stream.Serialize (ref horMoveVal);
+				stream.Serialize (ref verMoveVal);
+				stream.Serialize (ref jumpVal);
 			}
 		} else {
 			Debug.Log ("reading");
-			float moveVal = 0;
-			stream.Serialize(ref moveVal);
-			moving = moveVal;
+			float horMoveVal = 0;
+			float verMoveVal = 0;
+			bool jumpVal = false;
+			stream.Serialize(ref horMoveVal);
+			stream.Serialize(ref verMoveVal);
+			stream.Serialize (ref jumpVal);
+			horMov = horMoveVal;
+			verMov = verMoveVal;
+			jumpMov = jumpVal;
 		}
 	}
 
 	// Update is called once per frame
-	void FixedUpdate () {
+	void Update () {
 		if (isOwner) {
-						float move = Input.GetAxis ("Horizontal") * MOVE_SPEED;
-
-
-						moving = move;
-
-
-
-						if (Input.GetButton ("Fire1")) {
-			
-								timer += Time.deltaTime;
-								if (timer > FIRE_RATE) {
-										timer = 0f;
-										GameObject bullet = Instantiate (projectile, transform.position, transform.rotation) as GameObject;
-				
-										Vector3 worldMousePosition = Camera.main.ScreenToWorldPoint (new Vector3 (Input.mousePosition.x, Input.mousePosition.y, transform.position.z));
-										Vector3 direction = worldMousePosition - transform.position;
-				
-										bullet.GetComponent<GunBullet> ().Fire (direction, 20);
-								}
-						}
+			horMov = Input.GetAxis ("Horizontal");
+			verMov = Input.GetAxis("Vertical");
+			jumpMov = Input.GetButtonDown("Vertical");
+			if (Input.GetButton ("Fire1")) {
+				timer += Time.deltaTime;
+				if (timer > FIRE_RATE) {
+					timer = timer - FIRE_RATE;
+					Fire();
 				}
+			}
+		}
+	}
+
+	void FixedUpdate () {
 		// Server Rendering.
 		if (Network.isServer) {
-			if (moving != 0) {
-				rigidbody2D.velocity = new Vector2 (moving, rigidbody2D.velocity.y);
+
+			grounded = Physics2D.OverlapCircle(groundCheck.position, groundRadius, whatIsGround);
+
+			if (horMov != 0) {
+				rigidbody2D.velocity = new Vector2 (horMov * MOVE_SPEED, rigidbody2D.velocity.y);
 			}
 
-			if (moving < 0 && facingRight) {
-				Flip();
-				
+			if (jumpMov) 
+			{
+				if (grounded)
+				{
+					rigidbody2D.AddForce(new Vector2(0, 5), ForceMode2D.Impulse);
+				}
 			}
-			if (moving > 0 && !facingRight) {
+
+
+			if (horMov < 0 && facingRight) {
+				Flip();
+
+			}
+			if (horMov > 0 && !facingRight) {
 				Flip();
 			}
 		}
+	}
 
-
+	void Fire()
+	{
+			GameObject bullet = Network.Instantiate (projectile, transform.position, transform.rotation, 1) as GameObject;
+			Vector3 worldMousePosition = Camera.main.ScreenToWorldPoint (new Vector3 (Input.mousePosition.x, Input.mousePosition.y, transform.position.z));
+			Vector3 direction = worldMousePosition - transform.position;
+			
+			bullet.GetComponent<GunBullet> ().Fire (direction, 20);
 	}
 
 	void Flip() {

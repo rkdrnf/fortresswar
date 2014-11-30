@@ -12,15 +12,16 @@ using System;
 
 public class Game : MonoBehaviour
 {
-	//public Map map;
+	public GameObject mapObject;
 	public GameObject netManagerObject;
 	public Vector3 spawnPosition;
 	public GameObject playerPrefab;
-
+	public Map map;
 
 	PlayerBehaviour[] players;
 
 	NetworkManager netManager;
+
 
 
 	void Awake()
@@ -40,18 +41,12 @@ public class Game : MonoBehaviour
 		GameObject newPlayer = MakeNetworkPlayer ();
 
 		newPlayer.networkView.RPC ("SetOwner", client);
-
-		//netManager.networkView.RPC ("SetPlayerViewID", RPCMode.AllBuffered); 
 	}
 
-	/*
-	public void spawnPlayer(NetworkViewID networkViewID)
+	public void drawMap(NetworkPlayer player)
 	{
-		GameObject newPlayer = (GameObject)Instantiate (playerPrefab, spawnPosition, Quaternion.identity);
-		newPlayer.GetComponent<PlayerBehaviour> ().SetPlayerViewID (networkViewID);
+		map.drawMapNetwork (player);
 	}
-	*/
-
 
 	public void ClearGame()
 	{

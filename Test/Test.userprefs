@@ -1,19 +1,19 @@
 ﻿<Properties>
-  <MonoDevelop.Ide.Workspace />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\PlayerBehaviour.cs">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Editor\MapMakerEditor.cs">
     <Files>
-      <File FileName="Assets\Scripts\NetworkManager.cs" Line="72" Column="53" />
-      <File FileName="Assets\Scripts\Game.cs" Line="38" Column="1" />
-      <File FileName="Assets\Scripts\PlayerBehaviour.cs" Line="31" Column="1" />
-      <File FileName="Assets\Scripts\Menu.cs" Line="47" Column="2" />
+      <File FileName="Assets\Scripts\StoneBehaviour.cs" Line="8" Column="41" />
+      <File FileName="Assets\Scripts\NetworkManager.cs" Line="11" Column="4" />
+      <File FileName="Assets\Scripts\Game.cs" Line="29" Column="37" />
+      <File FileName="Assets\Scripts\Map.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\Tile.cs" Line="26" Column="9" />
+      <File FileName="Assets\Scripts\GunBullet.cs" Line="21" Column="11" />
+      <File FileName="Assets\Editor\MapMakerEditor.cs" Line="59" Column="35" />
+      <File FileName="Assets\Scripts\MapMaker.cs" Line="9" Column="3" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
-    <BreakpointStore>
-      <Breakpoint file="C:\Users\rkdrnf\Documents\fortresswar\Test\Assets\Scripts\PlayerBehaviour.cs" line="43" />
-    </BreakpointStore>
+    <BreakpointStore />
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
-  <MonoDevelop.Ide.DebuggingService.PinnedWatches>
-    <Watch file="Assets\Scripts\PlayerBehaviour.cs" line="76" offsetX="485" offsetY="1275" expression="moving" liveUpdate="False" />
-  </MonoDevelop.Ide.DebuggingService.PinnedWatches>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
 </Properties>
