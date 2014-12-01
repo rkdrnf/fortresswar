@@ -10,7 +10,40 @@ public class MapMakerEditor : Editor {
 	void OnEnable()
 	{
 		maker = (MapMaker)target;
-		SceneView.onSceneGUIDelegate = AddTile;
+	}
+
+	void OnSceneGUI()
+	{
+		Event e = Event.current;
+
+		Vector3 worldMousePos = Camera.current.ScreenToWorldPoint (new Vector3(e.mousePosition.x, -e.mousePosition.y + Camera.current.pixelHeight, 0f));
+
+		Vector2 mousePos = new Vector2(worldMousePos.x, worldMousePos.y);
+		RaycastHit2D hit = Physics2D.Raycast(mousePos, Vector2.zero);
+
+		
+		if (e.isKey && e.character == 'a') {
+			Debug.Log (e.mousePosition);
+			Debug.Log (worldMousePos);
+			
+			if(hit.collider != null)
+			{
+				string[] invalidLocations = {"Tile", "Player"};
+				if(ArrayUtility.Contains(invalidLocations, hit.transform.gameObject.tag))
+				{
+					Debug.Log("Unable to locate tile");
+					return;
+				}
+			}
+			
+			PrefabType prefab = PrefabUtility.GetPrefabType(maker.tile);
+			
+			if (prefab == PrefabType.Prefab)
+			{
+				GameObject tile = (GameObject)PrefabUtility.InstantiatePrefab(maker.tile);
+				tile.transform.position = new Vector3(Mathf.Floor((mousePos.x + 0.5f) / maker.width) * maker.width, Mathf.Floor((mousePos.y + 0.5f) / maker.height) * maker.height, 0f);
+			}
+		}
 	}
 
 
@@ -34,25 +67,6 @@ public class MapMakerEditor : Editor {
 		SceneView.RepaintAll ();
 	}
 
-	void AddTile(SceneView sceneView)
-	{
-		Event e = Event.current;
-
-		Ray r = Camera.current.ScreenPointToRay(new Vector3(e.mousePosition.x, -e.mousePosition.y + Camera.current.pixelHeight));
-		Vector3 mousePos = r.origin;
-		
-		if (e.isKey && e.character == 'a') {
-			Debug.Log(mousePos);
-				PrefabType prefab = PrefabUtility.GetPrefabType(maker.tile);
-
-				if (prefab == PrefabType.Prefab)
-				{
-					GameObject tile = (GameObject)PrefabUtility.InstantiatePrefab(maker.tile);
-					tile.transform.position = new Vector3(Mathf.Floor((mousePos.x + 0.5f) / maker.width) * maker.width, Mathf.Floor((mousePos.y + 0.5f) / maker.height) * maker.height, 0f);
-				}
-		}
-	}
-	
 	/*
 	void OnSceneGUI()
 	{
