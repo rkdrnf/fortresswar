@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEditor;
 using System.Collections;
+using System.IO;
 
 [CustomEditor(typeof(MapMaker))]
 public class MapMakerEditor : Editor {
@@ -9,7 +10,7 @@ public class MapMakerEditor : Editor {
 
 	void OnEnable()
 	{
-		maker = (MapMaker)target;
+		maker = target as MapMaker;
 	}
 
 	void OnSceneGUI()
@@ -67,25 +68,31 @@ public class MapMakerEditor : Editor {
 		SceneView.RepaintAll ();
 	}
 
-	/*
-	void OnSceneGUI()
+
+	[MenuItem("Assets/Create/TileSet")]
+	static void CreateTileSet()
 	{
-		int controlID = GUIUtility.GetControlID (FocusType.Passive);
-		if (Event.current.type == EventType.mouseDown)
+		TileSet tileSet = CreateInstance<TileSet> ();
+		var path = AssetDatabase.GetAssetPath (Selection.activeObject);
+
+		if (string.IsNullOrEmpty (path)) {
+			path = "Assets";
+		} else if (Path.GetExtension (path) != "")
 		{
-			RaycastHit hit;
-			if (Physics.Raycast(Event.current.mouseRay, out hit, Mathf.Infinity, LayerMask.GetMask("Tile")))
-			{
-				Debug.Log("Hit a part of the terrain");
-			}
-
-			hit.transform.position.y += 5;
-
-			if(Event.current.type == EventType.layout)
-			{
-				HandleUtility.AddDefaultControl(controlID);
-			}
+			path.Replace (Path.GetFileName (path), "");
 		}
+		else
+		{
+			path += Path.DirectorySeparatorChar;
+		}
+
+		var assetPathAndName = AssetDatabase.GenerateUniqueAssetPath (path + "TileSet.asset");
+		AssetDatabase.CreateAsset (tileSet, assetPathAndName);
+		AssetDatabase.SaveAssets ();
+		EditorUtility.FocusProjectWindow ();
+		Selection.activeObject = tileSet;
+		tileSet.hideFlags = HideFlags.DontSave;
 	}
-	*/
+
+
 }

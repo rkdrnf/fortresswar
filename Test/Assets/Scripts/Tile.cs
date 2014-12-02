@@ -1,11 +1,12 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+[RequireComponent(typeof(Animator), typeof(SpriteRenderer))]
 public class Tile : MonoBehaviour {
 
-	protected bool destroyable;
-	protected int health;
-	protected Animator anim;
+	public bool destroyable;
+	public int health;
+	public Animator anim;
 
 	// Use this for initialization
 	void Start () {
