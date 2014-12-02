@@ -1,12 +1,16 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEditor;
 using System.Collections;
 using System.IO;
+using System.Collections.Generic;
+using System.Linq;
 
 [CustomEditor(typeof(MapMaker))]
 public class MapMakerEditor : Editor {
 
 	MapMaker maker;
+
+	int tileIndex = 0;
 
 	void OnEnable()
 	{
@@ -61,9 +65,34 @@ public class MapMakerEditor : Editor {
 		GUILayout.EndHorizontal();
 
 		GUILayout.BeginHorizontal();
-		GUILayout.Label("Tile");
-		maker.tile = (GameObject)EditorGUILayout.ObjectField (maker.tile, typeof(GameObject), false);
+		GUILayout.Label(" TileSet ");
+		maker.tileSet = (TileSet)EditorGUILayout.ObjectField (maker.tileSet, typeof(TileSet), false);
 		GUILayout.EndHorizontal();
+
+		if (maker.tileSet != null) {
+			GUILayout.BeginHorizontal();
+			GUILayout.Label(" Tile ");
+
+			var index = EditorGUILayout.IntPopup ("Select Tile", tileIndex
+                 , maker.tileSet.tiles.Select (t => t != null ? t.name : "").ToArray ()
+                 , maker.tileSet.tiles.Select (t => ArrayUtility.IndexOf (maker.tileSet.tiles, t)).ToArray ()
+			);
+			if (index != tileIndex && maker.tileSet.tiles.Length > 0) {
+					tileIndex = index;
+
+					maker.tile = maker.tileSet.tiles [tileIndex];
+
+					maker.width = maker.tile.renderer.bounds.size.x;
+					maker.height = maker.tile.renderer.bounds.size.y;
+
+
+					//move focus to first sceneview
+					if (SceneView.sceneViews.Count > 0) { SceneView sceneView = (SceneView)SceneView.sceneViews[0]; sceneView.Focus(); }
+			}
+				
+			GUILayout.EndHorizontal();
+		}
+
 
 		SceneView.RepaintAll ();
 	}

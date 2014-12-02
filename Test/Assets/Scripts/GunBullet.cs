@@ -58,7 +58,7 @@ public class GunBullet : MonoBehaviour {
 		if (Network.isServer) {
 			if (targetCollider.gameObject.CompareTag ("Tile")) {
 				GameObject tile = targetCollider.gameObject;
-				tile.GetComponent<StoneBehaviour> ().Damage (DAMAGE);
+				tile.GetComponent<Tile> ().Damage (DAMAGE);
 
 				Destroy();
 			} else {

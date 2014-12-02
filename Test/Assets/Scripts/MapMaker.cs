@@ -7,6 +7,7 @@ public class MapMaker : MonoBehaviour {
 	public float height = 1.0f;
 
 	public GameObject tile;
+	public TileSet tileSet;
 
 
 	// Use this for initialization

@@ -10,7 +10,7 @@ public class Tile : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-	
+		anim.SetInteger ("Health", health);
 	}
 	
 	// Update is called once per frame
