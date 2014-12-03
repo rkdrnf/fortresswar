@@ -111,6 +111,7 @@ public class PlayerBehaviour : MonoBehaviour {
 			horMov = Input.GetAxis ("Horizontal");
 			verMov = Input.GetAxis("Vertical");
 			jumpMov = Input.GetButtonDown("Vertical");
+
 			if (jumpMov)
 			{
 				Debug.Log("jump");
@@ -127,12 +128,14 @@ public class PlayerBehaviour : MonoBehaviour {
 			}
 		}
 
-
 		// Server Rendering. Rendering from input must be in Update()
 		// Fixed Update refreshes in fixed period. 
 		// When Update() Period is shorter than fixed period, Update() can be called multiple times between FixedUpdate().
 		// Because Input Data is reset in Update(), FixedUpdate() Can't get input data properly.
 		if (Network.isServer) {
+
+			Animator anim = GetComponent<Animator>();
+			anim.SetBool("HorMoving", horMov != 0);
 			
 			grounded = Physics2D.OverlapCircle(groundCheck.position, groundRadius, whatIsGround);
 			
