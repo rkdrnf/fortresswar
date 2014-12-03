@@ -15,7 +15,7 @@ public class PlayerBehaviour : MonoBehaviour {
 
 	bool isOwner = false;
 
-	float timer;
+	float fireTimer;
 
 	float horMov;
 	float verMov;
@@ -54,7 +54,7 @@ public class PlayerBehaviour : MonoBehaviour {
 
 	void Awake()
 	{
-		timer = 0f;
+		fireTimer = 0f;
 		netManager = GameObject.Find ("NetworkManager");
 
 		Component[] views = gameObject.GetComponents(typeof(NetworkView));
@@ -106,13 +106,16 @@ public class PlayerBehaviour : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 		if (isOwner) {
+			fireTimer += Time.deltaTime;
 			horMov = Input.GetAxis ("Horizontal");
 			verMov = Input.GetAxis("Vertical");
 			jumpMov = Input.GetButtonDown("Vertical");
 			if (Input.GetButton ("Fire1")) {
-				timer += Time.deltaTime;
-				if (timer > FIRE_RATE) {
-					timer = timer - FIRE_RATE;
+				Debug.Log("fire button pressed");
+
+				if (fireTimer > FIRE_RATE) {
+					fireTimer = 0;
+					Debug.Log ("Fire!");
 					Fire();
 				}
 			}
