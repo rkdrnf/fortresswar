@@ -104,15 +104,21 @@ public class PlayerBehaviour : MonoBehaviour {
 	}
 
 	// Update is called once per frame
+	// Reset input data per frame.
 	void Update () {
 		if (isOwner) {
 			fireTimer += Time.deltaTime;
 			horMov = Input.GetAxis ("Horizontal");
 			verMov = Input.GetAxis("Vertical");
 			jumpMov = Input.GetButtonDown("Vertical");
+			if (jumpMov)
+			{
+				Debug.Log("jump");
+			}
 			if (Input.GetButton ("Fire1")) {
 				Debug.Log("fire button pressed");
 
+				//Client manages Bullet Spawn. 
 				if (fireTimer > FIRE_RATE) {
 					fireTimer = 0;
 					Debug.Log ("Fire!");
@@ -120,36 +126,44 @@ public class PlayerBehaviour : MonoBehaviour {
 				}
 			}
 		}
-	}
 
-	void FixedUpdate () {
-		// Server Rendering.
+
+		// Server Rendering. Rendering from input must be in Update()
+		// Fixed Update refreshes in fixed period. 
+		// When Update() Period is shorter than fixed period, Update() can be called multiple times between FixedUpdate().
+		// Because Input Data is reset in Update(), FixedUpdate() Can't get input data properly.
 		if (Network.isServer) {
-
+			
 			grounded = Physics2D.OverlapCircle(groundCheck.position, groundRadius, whatIsGround);
-
+			
 			if (horMov != 0) {
 				rigidbody2D.velocity = new Vector2 (horMov * MOVE_SPEED, rigidbody2D.velocity.y);
 			}
-
+			
 			if (jumpMov) 
 			{
 				if (grounded)
 				{
-					rigidbody2D.AddForce(new Vector2(0, 5), ForceMode2D.Impulse);
+					Debug.Log("jump!!!");
+					rigidbody2D.velocity = new Vector2(0, 12);
+				}
+				else
+				{
+					Debug.Log("not in ground");
 				}
 			}
-
-
+			
+			
 			if (horMov < 0 && facingRight) {
 				Flip();
-
+				
 			}
 			if (horMov > 0 && !facingRight) {
 				Flip();
 			}
 		}
 	}
+
 
 	void Fire()
 	{
