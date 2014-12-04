@@ -1,10 +1,10 @@
 ﻿using UnityEngine;
 using System.Collections;
+using Const;
 
 public class PlayerBehaviour : MonoBehaviour {
 
 	public GameObject projectile;
-	public GameObject netManager;
 
 	const int MOVE_SPEED = 4;
 
@@ -21,14 +21,39 @@ public class PlayerBehaviour : MonoBehaviour {
 	float verMov;
 	bool jumpMov;
 
-	bool grounded = false;
-	public Transform groundCheck;
-	float groundRadius = 0.1f;
-	public LayerMask whatIsGround;
 
 	NetworkView transformView;
 	NetworkView controllerView;
 
+	int stateFlag;
+
+
+
+	public bool IsInState(CharacterState state, params CharacterState[] stateList)
+	{
+		bool result = (stateFlag & (1 << (int)state)) != 0;
+	
+
+		foreach(CharacterState stateVal in stateList)
+		{
+			if(result == false)
+				break;
+
+			result = result && ((stateFlag & (1 << (int)state)) != 0);
+		}
+
+		return result;
+	}
+
+	public void SetState(CharacterState state, bool value)
+	{
+		if (value) {
+			stateFlag = stateFlag | (1 << (int)state);
+		} 
+		else {
+			stateFlag = stateFlag & (0 << (int)state);
+		}
+	}
 
 	[RPC]
 	public void SetOwner()
@@ -55,7 +80,6 @@ public class PlayerBehaviour : MonoBehaviour {
 	void Awake()
 	{
 		fireTimer = 0f;
-		netManager = GameObject.Find ("NetworkManager");
 
 		Component[] views = gameObject.GetComponents(typeof(NetworkView));
 		foreach (Component view in views) {
@@ -70,6 +94,7 @@ public class PlayerBehaviour : MonoBehaviour {
 				transformView = nView;
 			}
 		}
+
 	}
 
 	// Use this for initialization
@@ -116,6 +141,7 @@ public class PlayerBehaviour : MonoBehaviour {
 			{
 				Debug.Log("jump");
 			}
+
 			if (Input.GetButton ("Fire1")) {
 				Debug.Log("fire button pressed");
 
@@ -128,24 +154,24 @@ public class PlayerBehaviour : MonoBehaviour {
 			}
 		}
 
+		//Animation Rendering.
+		//Every client must do his own Animation Rendering.
+		Animator anim = GetComponent<Animator>();
+		anim.SetBool("HorMoving", horMov != 0);
+
 		// Server Rendering. Rendering from input must be in Update()
 		// Fixed Update refreshes in fixed period. 
 		// When Update() Period is shorter than fixed period, Update() can be called multiple times between FixedUpdate().
 		// Because Input Data is reset in Update(), FixedUpdate() Can't get input data properly.
 		if (Network.isServer) {
 
-			Animator anim = GetComponent<Animator>();
-			anim.SetBool("HorMoving", horMov != 0);
-			
-			grounded = Physics2D.OverlapCircle(groundCheck.position, groundRadius, whatIsGround);
-			
 			if (horMov != 0) {
 				rigidbody2D.velocity = new Vector2 (horMov * MOVE_SPEED, rigidbody2D.velocity.y);
 			}
 			
-			if (jumpMov) 
+			if (jumpMov)
 			{
-				if (grounded)
+				if (IsInState(CharacterState.GROUNDED))
 				{
 					Debug.Log("jump!!!");
 					rigidbody2D.velocity = new Vector2(0, 12);
@@ -156,17 +182,14 @@ public class PlayerBehaviour : MonoBehaviour {
 				}
 			}
 			
-			
 			if (horMov < 0 && facingRight) {
 				Flip();
-				
 			}
 			if (horMov > 0 && !facingRight) {
 				Flip();
 			}
 		}
 	}
-
 
 	void Fire()
 	{
@@ -182,5 +205,8 @@ public class PlayerBehaviour : MonoBehaviour {
 		Vector3 scale = transform.localScale;
 		scale.x = -scale.x;
 		transform.localScale = scale;
+	}
+
+	void OnFootCollide(Collision2D coll){
 	}
 }
