@@ -9,8 +9,8 @@ public class PlayerBehaviour : MonoBehaviour {
 	const int MOVE_SPEED = 6;
 	const float WALL_WALK_SPEED = 5;
 
-	const float WALL_JUMP_SPEED_X = 8;
-	const float WALL_JUMP_SPEED_Y = 4;
+	const float WALL_JUMP_SPEED_X = 10;
+	const float WALL_JUMP_SPEED_Y = 6;
 
 	const float FIRE_RATE = 0.2f;
 	const int FIRE_POWER = 20;
@@ -33,33 +33,49 @@ public class PlayerBehaviour : MonoBehaviour {
 	NetworkView transformView;
 	NetworkView controllerView;
 
-	int stateFlag;
+    public CharacterState state;
+
+    int envFlag;
+
+    public bool IsInState(CharacterState state, params CharacterState[] stateList)
+    {
+        bool result = this.state == state;
+
+        foreach (CharacterState stateVal in stateList)
+        {
+            if (result == true)
+                break;
+
+            result = this.state == stateVal;
+        }
+
+        return result;
+    }
 
 
-
-	public bool IsInState(CharacterState state, params CharacterState[] stateList)
+    public bool IsInEnv(CharacterEnv env, params CharacterEnv[] envList)
 	{
-		bool result = (stateFlag & (1 << (int)state)) != 0;
-	
+        bool result = (envFlag & (1 << (int)env)) != 0;
 
-		foreach(CharacterState stateVal in stateList)
+
+        foreach (CharacterEnv envVal in envList)
 		{
 			if(result == false)
 				break;
 
-			result = result && ((stateFlag & (1 << (int)state)) != 0);
+			result = result && ((envFlag & (1 << (int)env)) != 0);
 		}
 
 		return result;
 	}
 
-	public void SetState(CharacterState state, bool value)
+	public void SetEnv(CharacterEnv env, bool value)
 	{
 		if (value) {
-			stateFlag = stateFlag | (1 << (int)state);
+            envFlag = envFlag | (1 << (int)env);
 		} 
 		else {
-			stateFlag = stateFlag & (~(1 << (int)state));
+            envFlag = envFlag & (~(1 << (int)env));
 		}
 	}
 
@@ -75,6 +91,9 @@ public class PlayerBehaviour : MonoBehaviour {
 		isOwner = true;
 
 		Debug.Log (controllerID);
+
+        CameraBehaviour camera = GameObject.Find("Main Camera").GetComponent<CameraBehaviour>();
+        camera.target = transform;
 	}
 
 	[RPC]
@@ -142,17 +161,8 @@ public class PlayerBehaviour : MonoBehaviour {
 	void Update () {
 		if (isOwner) {
 			fireTimer += Time.deltaTime;
-			horMov = Input.GetAxis ("Horizontal");
-			verMov = Input.GetAxis("Vertical");
-
-			/*
-			jumpMov = Input.GetButtonDown("Vertical");
-
-			if (jumpMov)
-			{
-				Debug.Log("jump");
-			}
-			*/
+			horMov = Input.GetAxisRaw ("Horizontal");
+			verMov = Input.GetAxisRaw("Vertical");
 
 			if (Input.GetButton ("Fire1")) {
 				Debug.Log("fire button pressed");
@@ -176,64 +186,37 @@ public class PlayerBehaviour : MonoBehaviour {
 		// When Update() Period is shorter than fixed period, Update() can be called multiple times between FixedUpdate().
 		// Because Input Data is reset in Update(), FixedUpdate() Can't get input data properly.
 		if (Network.isServer) {
-
-			if (horMov != 0) {
-				rigidbody2D.velocity = new Vector2 (horMov * MOVE_SPEED, rigidbody2D.velocity.y);
-			}
-
 			do
 			{
-				if (IsInState(CharacterState.GROUNDED))
-				{
-					//Set Other States
-					EndWallWalk();
-					SetState(CharacterState.WALL_WALKED_LEFT, false);
-					SetState(CharacterState.WALL_WALKED_RIGHT, false);
-
-					//
-					if (verMov > 0)
-					{
-						Debug.Log("jump!!!");
-						rigidbody2D.velocity = new Vector2(rigidbody2D.velocity.x, 12);
-					}
+                if (state == CharacterState.GROUNDED)
+                {
+                    WhenGrounded();
 					break;
 				}
 
-				if (IsInState(CharacterState.WALLED_FRONT) || IsInState(CharacterState.WALLED_BACK))
-			    {
-					if (verMov > 0)
-					{
-						if (IsMoving(Direction.RIGHT) && IsWalled(Direction.RIGHT))
-						{
-							WallWalk(Direction.RIGHT);
-							break;
-						}
+                if (state == CharacterState.FALLING)
+                {
+                    WhenFalling();
+                    break;
+                }
 
-						if (IsMoving(Direction.LEFT) && IsWalled(Direction.LEFT))
-						{
-							WallWalk(Direction.LEFT);
-						    break;
-						}
+                if (state == CharacterState.JUMPING_UP)
+                {
+                    WhenJumping();
+                    break;
+                }
 
-						if (IsMoving(Direction.RIGHT) && IsWalled(Direction.LEFT))
-						{
-							WallJump(Direction.RIGHT);
-							break;
-						}
+                if (state == CharacterState.WALL_JUMPING)
+                {
+                    WhenWallJumping();
+                    break;
+                }
 
-						if (IsMoving(Direction.LEFT) && IsWalled(Direction.RIGHT))
-						{
-							WallJump(Direction.LEFT);
-							break;
-						}
-					}
-
-					break;
-				}
-				else
-				{
-					EndWallWalk();
-				}
+                if (state == CharacterState.WALL_WALKING)
+                {
+                    WhenWallWalking();
+                    break;
+                }
 			}
 			while(false);
 
@@ -247,6 +230,124 @@ public class PlayerBehaviour : MonoBehaviour {
 		}
 	}
 
+    void WhenGrounded()
+    {
+        //Set Other States
+        EndWallWalk();
+        SetEnv(CharacterEnv.WALL_WALKED_LEFT, false);
+        SetEnv(CharacterEnv.WALL_WALKED_RIGHT, false);
+
+        if (horMov != 0)
+        {
+            rigidbody2D.velocity = new Vector2(horMov * MOVE_SPEED, rigidbody2D.velocity.y);
+        }
+
+        //
+        if (verMov > 0)
+        {
+            Debug.Log("jump!!!");
+            state = CharacterState.JUMPING_UP;
+            rigidbody2D.velocity = new Vector2(rigidbody2D.velocity.x, 12);
+        }
+    }
+
+    void WhenFalling()
+    {
+        // Fall to ground;
+        if (horMov == 0)
+        {
+            return;
+        }
+
+        if (horMov != 0)
+        {
+            //WallJump Or Climb more.
+            if (verMov > 0)
+            {
+                //Debug.Log("CheckWallJump");
+                CheckWallJump();
+
+                return;
+            }
+
+            //Fall to ground.
+            if (verMov <= 0f)
+            {
+                rigidbody2D.velocity = new Vector2(horMov * MOVE_SPEED, rigidbody2D.velocity.y);
+                
+                return;
+            }
+        }
+    }
+
+    void WhenJumping()
+    {
+        if (horMov != 0)
+        {
+            rigidbody2D.velocity = new Vector2(horMov * MOVE_SPEED, rigidbody2D.velocity.y);
+        }
+
+        if (rigidbody2D.velocity.y <= 0f)
+        {
+            state = CharacterState.FALLING;
+        }
+    }
+
+    void WhenWallJumping()
+    {
+        if (horMov != 0)
+        {
+            rigidbody2D.AddForce(new Vector2(horMov * MOVE_SPEED, 2f));
+
+            //WallJump Or Climb more.
+            if (verMov > 0)
+            {
+                //Debug.Log("CheckWallJump");
+                CheckWallJump();
+
+                return;
+            }
+
+            //Fall to ground.
+            if (verMov <= 0f)
+            {
+                rigidbody2D.velocity = new Vector2(horMov * MOVE_SPEED, rigidbody2D.velocity.y);
+
+                return;
+            }
+        }
+    }
+
+    void WhenWallWalking()
+    {
+        //Fall to ground.
+        if (horMov == 0)
+        {
+            state = CharacterState.FALLING;
+            return;
+        }
+
+        if (horMov != 0)
+        {
+            //WallJump Or Climb more.
+            if (verMov > 0)
+            {
+                CheckWallJump();
+                return;
+            }
+
+            //Fall to ground.
+            if (verMov <= 0f)
+            {
+                rigidbody2D.velocity = new Vector2(horMov * MOVE_SPEED, rigidbody2D.velocity.y);
+
+                state = CharacterState.FALLING;
+                return;
+            }
+        }
+    }
+
+
 	bool IsMoving(Direction direction)
 	{
 		return direction == Direction.RIGHT ? horMov > 0 : horMov < 0;
@@ -255,26 +356,27 @@ public class PlayerBehaviour : MonoBehaviour {
 	bool IsWalled(Direction direction)
 	{
 		if (direction == Direction.LEFT) {
-			return facingRight ? IsInState (CharacterState.WALLED_BACK) : IsInState(CharacterState.WALLED_FRONT);
+            return facingRight ? IsInEnv(CharacterEnv.WALLED_BACK) : IsInEnv(CharacterEnv.WALLED_FRONT);
 		} else {
-			return facingRight ? IsInState (CharacterState.WALLED_FRONT) : IsInState(CharacterState.WALLED_BACK);
+            return facingRight ? IsInEnv(CharacterEnv.WALLED_FRONT) : IsInEnv(CharacterEnv.WALLED_BACK);
 		}
 	}
 
 	void WallWalk(Direction direction)
 	{
 		//Already wall walked same wall
-		if ((!IsInState(CharacterState.WALL_WALKING)) && WallWalked (direction))
+		if ((!(state == CharacterState.WALL_WALKING)) && WallWalked (direction))
 			return;
 
-		SetState (CharacterState.WALL_WALKING, true);
+        state = CharacterState.WALL_WALKING;
 
-		SetState (GetWallWalkStateByDirection (direction), true);
-		SetState (direction == Direction.RIGHT ? CharacterState.WALL_WALKED_LEFT : CharacterState.WALL_WALKED_RIGHT, false);
+		SetEnv(GetWallWalkStateByDirection (direction), true);
+        SetEnv(direction == Direction.RIGHT ? CharacterEnv.WALL_WALKED_LEFT : CharacterEnv.WALL_WALKED_RIGHT, false);
 		wallWalkTimer += Time.deltaTime;
 
 		if (wallWalkTimer > WALL_WALK_TIME) {
 			EndWallWalk();
+            state = CharacterState.FALLING;
 			return;
 		}
 
@@ -284,25 +386,60 @@ public class PlayerBehaviour : MonoBehaviour {
 	void EndWallWalk()
 	{
 		wallWalkTimer = 0f;
-		SetState(CharacterState.WALL_WALKING, false);
 	}
 
-	CharacterState GetWallWalkStateByDirection(Direction direction)
+	CharacterEnv GetWallWalkStateByDirection(Direction direction)
 	{
-		return direction == Direction.RIGHT ? CharacterState.WALL_WALKED_RIGHT : CharacterState.WALL_WALKED_LEFT;
+        return direction == Direction.RIGHT ? CharacterEnv.WALL_WALKED_RIGHT : CharacterEnv.WALL_WALKED_LEFT;
 	}
 
 	bool WallWalked(Direction direction)
 	{
-		return IsInState (GetWallWalkStateByDirection(direction));
+		return IsInEnv (GetWallWalkStateByDirection(direction));
 	}
+
+    void CheckWallJump()
+    {
+        do
+        {
+            //Check Wall and moving direction
+
+            //Climb more;
+            if (IsWalled(Direction.LEFT) && IsMoving(Direction.LEFT))
+            {
+                WallWalk(Direction.LEFT);
+                break;
+            }
+
+            if (IsWalled(Direction.RIGHT) && IsMoving(Direction.RIGHT))
+            {
+                WallWalk(Direction.RIGHT);
+                break;
+            }
+
+            //Wall Jump;
+            if (IsWalled(Direction.LEFT) && IsMoving(Direction.RIGHT))
+            {
+                WallJump(Direction.RIGHT);
+                break;
+            }
+
+            if (IsWalled(Direction.RIGHT) && IsMoving(Direction.LEFT))
+            {
+                WallJump(Direction.LEFT);
+                break;
+            }
+
+        } while (false);
+    }
 
 	void WallJump(Direction direction)
 	{
 		Debug.Log ("Wall Jump!!");
-		rigidbody2D.velocity = new Vector2 (direction == Direction.RIGHT ? WALL_JUMP_SPEED_X : -WALL_JUMP_SPEED_X, WALL_JUMP_SPEED_Y);
+        EndWallWalk();
 
-		EndWallWalk();
+        state = CharacterState.WALL_JUMPING;
+		rigidbody2D.velocity = new Vector2 (direction == Direction.RIGHT ? WALL_JUMP_SPEED_X : -WALL_JUMP_SPEED_X, WALL_JUMP_SPEED_Y);
 	}
 
 	void Fire()

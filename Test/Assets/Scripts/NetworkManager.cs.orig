@@ -63,7 +63,13 @@ public class NetworkManager : MonoBehaviour {
 	{
 		Debug.Log("Connected To Server");
 
+<<<<<<< working copy
+		game.ClearGame ();
+=======
 		Game.ClearGame ();
+
+		//networkView.RPC ("EnterNewPlayer", RPCMode.Server);
+>>>>>>> destination
 	}
 
 	void OnPlayerConnected(NetworkPlayer player)

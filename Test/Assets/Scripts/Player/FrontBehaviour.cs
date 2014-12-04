@@ -14,11 +14,14 @@ public class FrontBehaviour : MonoBehaviour {
 	
 	HashSet<GameObject> contactingWalls;
 
+    CharacterEnv walledEnv;
+
 	// Use this for initialization
 	void Start () {
 		player = transform.parent.gameObject.GetComponent<PlayerBehaviour> ();
 		
 		contactingWalls = new HashSet<GameObject> ();
+        walledEnv = facing == Facing.FRONT ? CharacterEnv.WALLED_FRONT : CharacterEnv.WALLED_BACK;
 	}
 	
 	void OnTriggerEnter2D(Collider2D collider)
@@ -28,11 +31,11 @@ public class FrontBehaviour : MonoBehaviour {
 			
 			//Debug.Log(string.Format("contacting walls: {0}", contactingWalls.Count));
 			
-			//No Operation when already grounded.
-			if (player.IsInState (CharacterState.WALLED_FRONT))
+			//No Operation when already walled front.
+            if (player.IsInEnv(walledEnv))
 				return;
-			
-			player.SetState(CharacterState.WALLED_FRONT, true);
+
+            player.SetEnv(walledEnv, true);
 		}
 	}
 	
@@ -43,9 +46,9 @@ public class FrontBehaviour : MonoBehaviour {
 			
 			//Debug.Log(string.Format("contacting walls: {0}", contactingWalls.Count));
 			
-			//Set Grounded false when no more contacting ground exists.
+			//Set WALLED_FRONT false when no more contacting wallexists
 			if (contactingWalls.Count == 0) {
-				player.SetState (CharacterState.WALLED_FRONT, false);
+                player.SetEnv(walledEnv, false);
 			}
 		}
 	}

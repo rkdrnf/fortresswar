@@ -27,10 +27,23 @@ public class FootBehaviour : MonoBehaviour {
 			Debug.Log(string.Format("contacting grounds: {0}", contactingGrounds.Count));
 
 			//No Operation when already grounded.
-			if (player.IsInState (CharacterState.GROUNDED))
-				return;
 
-			player.SetState(CharacterState.GROUNDED, true);
+            do
+            {
+                if (player.state == CharacterState.GROUNDED)
+                {
+                    //Maintain State;
+                    break;
+                }
+
+                if (player.IsInState(CharacterState.FALLING, CharacterState.JUMPING_UP, CharacterState.WALL_JUMPING, CharacterState.WALL_WALKING))
+                {
+                    Debug.Log("grounded!");
+                    player.state = CharacterState.GROUNDED;
+                    break;
+                }
+            } while (false);
+            return;
 		}
 	}
 
@@ -39,11 +52,25 @@ public class FootBehaviour : MonoBehaviour {
 		if (LayerUtil.HasLayer (collider.gameObject.layer, groundLayer)) {
 			contactingGrounds.Remove (collider.gameObject);
 
-			Debug.Log(string.Format("contacting grounds: {0}", contactingGrounds.Count));
+			//Debug.Log(string.Format("contacting grounds: {0}", contactingGrounds.Count));
 
 			//Set Grounded false when no more contacting ground exists.
 			if (contactingGrounds.Count == 0) {
-				player.SetState (CharacterState.GROUNDED, false);
+                do
+                {
+                    if (player.IsInState(CharacterState.GROUNDED))
+                    {
+                        player.state = CharacterState.FALLING;
+                        break;
+                    }
+
+                    if (player.IsInState(CharacterState.JUMPING_UP, CharacterState.WALL_WALKING, CharacterState.WALL_JUMPING, CharacterState.FALLING))
+                    {
+                        //Maintain state;
+                        break;
+                    }
+                } while (false);
+                return;
 			}
 		}
 	}
