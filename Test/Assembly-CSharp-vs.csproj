@@ -55,6 +55,7 @@
      <Compile Include="Assets\Scripts\Menu.cs" />
      <Compile Include="Assets\Scripts\NetworkManager.cs" />
      <Compile Include="Assets\Scripts\Player\FootBehaviour.cs" />
+     <Compile Include="Assets\Scripts\Player\FrontBehaviour.cs" />
      <Compile Include="Assets\Scripts\Player\PlayerBehaviour.cs" />
      <Compile Include="Assets\Scripts\StoneBehaviour.cs" />
      <Compile Include="Assets\Scripts\Tile.cs" />

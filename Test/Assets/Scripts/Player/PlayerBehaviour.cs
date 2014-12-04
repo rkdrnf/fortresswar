@@ -6,7 +6,11 @@ public class PlayerBehaviour : MonoBehaviour {
 
 	public GameObject projectile;
 
-	const int MOVE_SPEED = 4;
+	const int MOVE_SPEED = 6;
+	const float WALL_WALK_SPEED = 5;
+
+	const float WALL_JUMP_SPEED_X = 8;
+	const float WALL_JUMP_SPEED_Y = 4;
 
 	const float FIRE_RATE = 0.2f;
 	const int FIRE_POWER = 20;
@@ -19,7 +23,11 @@ public class PlayerBehaviour : MonoBehaviour {
 
 	float horMov;
 	float verMov;
-	bool jumpMov;
+	//bool jumpMov;
+
+	float wallWalkTimer;
+
+	const float WALL_WALK_TIME = 0.7f;
 
 
 	NetworkView transformView;
@@ -51,7 +59,7 @@ public class PlayerBehaviour : MonoBehaviour {
 			stateFlag = stateFlag | (1 << (int)state);
 		} 
 		else {
-			stateFlag = stateFlag & (0 << (int)state);
+			stateFlag = stateFlag & (~(1 << (int)state));
 		}
 	}
 
@@ -80,6 +88,7 @@ public class PlayerBehaviour : MonoBehaviour {
 	void Awake()
 	{
 		fireTimer = 0f;
+		wallWalkTimer = 0f;
 
 		Component[] views = gameObject.GetComponents(typeof(NetworkView));
 		foreach (Component view in views) {
@@ -109,22 +118,22 @@ public class PlayerBehaviour : MonoBehaviour {
 			if (isOwner) {
 				float horMoveVal = horMov;
 				float verMoveVal = verMov;
-				bool jumpVal = jumpMov;
+				//bool jumpVal = jumpMov;
 				stream.Serialize (ref horMoveVal);
 				stream.Serialize (ref verMoveVal);
-				stream.Serialize (ref jumpVal);
+				//stream.Serialize (ref jumpVal);
 			}
 		} else {
 			Debug.Log ("reading");
 			float horMoveVal = 0;
 			float verMoveVal = 0;
-			bool jumpVal = false;
+			//bool jumpVal = false;
 			stream.Serialize(ref horMoveVal);
 			stream.Serialize(ref verMoveVal);
-			stream.Serialize (ref jumpVal);
+			//stream.Serialize (ref jumpVal);
 			horMov = horMoveVal;
 			verMov = verMoveVal;
-			jumpMov = jumpVal;
+			//jumpMov = jumpVal;
 		}
 	}
 
@@ -135,12 +144,15 @@ public class PlayerBehaviour : MonoBehaviour {
 			fireTimer += Time.deltaTime;
 			horMov = Input.GetAxis ("Horizontal");
 			verMov = Input.GetAxis("Vertical");
+
+			/*
 			jumpMov = Input.GetButtonDown("Vertical");
 
 			if (jumpMov)
 			{
 				Debug.Log("jump");
 			}
+			*/
 
 			if (Input.GetButton ("Fire1")) {
 				Debug.Log("fire button pressed");
@@ -168,19 +180,63 @@ public class PlayerBehaviour : MonoBehaviour {
 			if (horMov != 0) {
 				rigidbody2D.velocity = new Vector2 (horMov * MOVE_SPEED, rigidbody2D.velocity.y);
 			}
-			
-			if (jumpMov)
+
+			do
 			{
 				if (IsInState(CharacterState.GROUNDED))
 				{
-					Debug.Log("jump!!!");
-					rigidbody2D.velocity = new Vector2(0, 12);
+					//Set Other States
+					EndWallWalk();
+					SetState(CharacterState.WALL_WALKED_LEFT, false);
+					SetState(CharacterState.WALL_WALKED_RIGHT, false);
+
+					//
+					if (verMov > 0)
+					{
+						Debug.Log("jump!!!");
+						rigidbody2D.velocity = new Vector2(rigidbody2D.velocity.x, 12);
+					}
+					break;
+				}
+
+				if (IsInState(CharacterState.WALLED_FRONT) || IsInState(CharacterState.WALLED_BACK))
+			    {
+					if (verMov > 0)
+					{
+						if (IsMoving(Direction.RIGHT) && IsWalled(Direction.RIGHT))
+						{
+							WallWalk(Direction.RIGHT);
+							break;
+						}
+
+						if (IsMoving(Direction.LEFT) && IsWalled(Direction.LEFT))
+						{
+							WallWalk(Direction.LEFT);
+						    break;
+						}
+
+						if (IsMoving(Direction.RIGHT) && IsWalled(Direction.LEFT))
+						{
+							WallJump(Direction.RIGHT);
+							break;
+						}
+
+						if (IsMoving(Direction.LEFT) && IsWalled(Direction.RIGHT))
+						{
+							WallJump(Direction.LEFT);
+							break;
+						}
+					}
+
+					break;
 				}
 				else
 				{
-					Debug.Log("not in ground");
+					EndWallWalk();
 				}
 			}
+			while(false);
+
 			
 			if (horMov < 0 && facingRight) {
 				Flip();
@@ -189,6 +245,64 @@ public class PlayerBehaviour : MonoBehaviour {
 				Flip();
 			}
 		}
+	}
+
+	bool IsMoving(Direction direction)
+	{
+		return direction == Direction.RIGHT ? horMov > 0 : horMov < 0;
+	}
+
+	bool IsWalled(Direction direction)
+	{
+		if (direction == Direction.LEFT) {
+			return facingRight ? IsInState (CharacterState.WALLED_BACK) : IsInState(CharacterState.WALLED_FRONT);
+		} else {
+			return facingRight ? IsInState (CharacterState.WALLED_FRONT) : IsInState(CharacterState.WALLED_BACK);
+		}
+	}
+
+	void WallWalk(Direction direction)
+	{
+		//Already wall walked same wall
+		if ((!IsInState(CharacterState.WALL_WALKING)) && WallWalked (direction))
+			return;
+
+		SetState (CharacterState.WALL_WALKING, true);
+
+		SetState (GetWallWalkStateByDirection (direction), true);
+		SetState (direction == Direction.RIGHT ? CharacterState.WALL_WALKED_LEFT : CharacterState.WALL_WALKED_RIGHT, false);
+		wallWalkTimer += Time.deltaTime;
+
+		if (wallWalkTimer > WALL_WALK_TIME) {
+			EndWallWalk();
+			return;
+		}
+
+		rigidbody2D.velocity = new Vector2 (rigidbody2D.velocity.x, WALL_WALK_SPEED);
+	}
+
+	void EndWallWalk()
+	{
+		wallWalkTimer = 0f;
+		SetState(CharacterState.WALL_WALKING, false);
+	}
+
+	CharacterState GetWallWalkStateByDirection(Direction direction)
+	{
+		return direction == Direction.RIGHT ? CharacterState.WALL_WALKED_RIGHT : CharacterState.WALL_WALKED_LEFT;
+	}
+
+	bool WallWalked(Direction direction)
+	{
+		return IsInState (GetWallWalkStateByDirection(direction));
+	}
+
+	void WallJump(Direction direction)
+	{
+		Debug.Log ("Wall Jump!!");
+		rigidbody2D.velocity = new Vector2 (direction == Direction.RIGHT ? WALL_JUMP_SPEED_X : -WALL_JUMP_SPEED_X, WALL_JUMP_SPEED_Y);
+
+		EndWallWalk();
 	}
 
 	void Fire()

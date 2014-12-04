@@ -13,7 +13,26 @@ namespace Const
 	public enum CharacterState 
 	{
 		GROUNDED = 0,
-		WALLED
+		WALLED_FRONT,
+		WALLED_BACK,
+		JUMPING_UP,
+		FALLING,
+		WALL_JUMPING,
+		WALL_WALKED_LEFT,
+		WALL_WALKED_RIGHT,
+		WALL_WALKING
+	};
+
+	public enum Direction
+	{
+		RIGHT = 1,
+		LEFT = -1
+	};
+
+	public enum Facing
+	{
+		FRONT = 0,
+		BACK = 1
 	};
 }
 
