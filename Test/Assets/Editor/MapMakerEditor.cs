@@ -141,6 +141,13 @@ public class MapMakerEditor : Editor {
         }
         GUILayout.EndHorizontal();
 
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Fix Map", GUILayout.MinWidth(100)))
+        {
+            Game.map.Fix();
+        }
+        GUILayout.EndHorizontal();
+
 		SceneView.RepaintAll ();
 	}
 

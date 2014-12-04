@@ -39,6 +39,7 @@ public class Map : MonoBehaviour {
 
     public override string ToString()
     {
+        Fix();
         string output = tileList.Count.ToString() + "\n";
         for (int i = 0; i < tileList.Count; ++i)
         {
@@ -50,6 +51,7 @@ public class Map : MonoBehaviour {
 
     public void Clear()
     {
+        Fix();
         for (int i = 0; i < tileList.Count; ++i)
         {
             if(tileList[i] != null)
@@ -79,6 +81,16 @@ public class Map : MonoBehaviour {
             tile.health = health;
 
             AddTile(tile, new Vector3(x, y, 0));
+        }
+    }
+
+    public void Fix()
+    {
+        Tile[] tiles = transform.GetComponentsInChildren<Tile>();
+        tileList.Clear();
+        for (int i = 0; i < tiles.Length; ++i)
+        {
+            tileList.Add(tiles[i]);
         }
     }
 }
