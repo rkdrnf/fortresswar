@@ -4,3 +4,17 @@ Test/testBuild.exe
 Test/Library/metadata/*
 Test/Temp/*
 Test/Library/*
+Test/obj/Debug/build.force
+Test/Assets/UnityVS.meta
+Test/Assets/UnityVS/Editor.meta
+Test/Assets/UnityVS/Editor/SyntaxTree.VisualStudio.Unity.Bridge.dll
+Test/Assets/UnityVS/Editor/SyntaxTree.VisualStudio.Unity.Bridge.dll.meta
+Test/Assets/UnityVS/Editor/SyntaxTree.VisualStudio.Unity.Messaging.dll
+Test/Assets/UnityVS/Editor/SyntaxTree.VisualStudio.Unity.Messaging.dll.meta
+Test/Assets/UnityVS/Editor/UnityVS.VersionSpecific.dll
+Test/Assets/UnityVS/Editor/UnityVS.VersionSpecific.dll.meta
+Test/UnityVS.Test.CSharp.Editor.csproj
+Test/UnityVS.Test.CSharp.csproj
+Test/UnityVS.Test.sln
+Test/UnityVS.Test.v12.suo
+Test/obj/Debug/DesignTimeResolveAssemblyReferencesInput.cache
