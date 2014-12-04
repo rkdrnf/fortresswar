@@ -4,14 +4,9 @@ using System;
 
 public class NetworkManager : MonoBehaviour {
 
-	public GameObject gameObj;
-
 	HostData[] hostList;
 
-	Game game;
-
 	void Awake() {
-		game = gameObj.GetComponent<Game> ();
 		Network.sendRate = 100f;
 		ClearServerList ();
 	}
@@ -49,8 +44,8 @@ public class NetworkManager : MonoBehaviour {
 	{
 		Debug.Log ("Server Initialized!");
 
-		game.ClearGame ();
-		GameObject serverPlayer = game.MakeNetworkPlayer ();
+		Game.ClearGame ();
+		GameObject serverPlayer = Game.MakeNetworkPlayer ();
 		serverPlayer.GetComponent<PlayerBehaviour>().SetOwner();
 	}
 
@@ -68,7 +63,7 @@ public class NetworkManager : MonoBehaviour {
 	{
 		Debug.Log("Connected To Server");
 
-		game.ClearGame ();
+		Game.ClearGame ();
 
 		//networkView.RPC ("EnterNewPlayer", RPCMode.Server);
 	}
@@ -77,14 +72,14 @@ public class NetworkManager : MonoBehaviour {
 	{
 		Debug.Log(String.Format("Player Connected {0}", player));
 
-		game.spawnNetworkPlayer (player);
-		game.map.drawMapNetwork (player);
+		Game.spawnNetworkPlayer (player);
+		Game.map.drawMapNetwork (player);
 
 	}
 
 	[RPC]
 	void EnterNewPlayer(NetworkMessageInfo nmInfo)
 	{
-		game.spawnNetworkPlayer (nmInfo.sender);
+		Game.spawnNetworkPlayer (nmInfo.sender);
 	}
 }

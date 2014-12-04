@@ -12,31 +12,35 @@ using System;
 
 public class Game : MonoBehaviour
 {
+    private static Game instance;
+
 	public GameObject mapObject;
 	public GameObject netManagerObject;
 	public Vector3 spawnPosition;
 	public GameObject playerPrefab;
-	public Map map;
+	public Map m_map;
+
+    public static Map map { get { return instance.m_map; } }
 
 	PlayerBehaviour[] players;
 
 	NetworkManager netManager;
 
 
-
 	void Awake()
 	{
+        instance = this;
 		players = new PlayerBehaviour[]{};
 		netManager = netManagerObject.GetComponent<NetworkManager> ();
 	}
 
-	public GameObject MakeNetworkPlayer()
+	public GameObject MakeNetworkPlayer_instance()
 	{
 		return (GameObject)Network.Instantiate (playerPrefab, spawnPosition, Quaternion.identity, 0);
 
 	}
 
-	public void spawnNetworkPlayer(NetworkPlayer client)
+	public void spawnNetworkPlayer_instance(NetworkPlayer client)
 	{
 		GameObject newPlayer = MakeNetworkPlayer ();
 
@@ -48,12 +52,27 @@ public class Game : MonoBehaviour
 		map.drawMapNetwork (player);
 	}
 
-	public void ClearGame()
-	{
-		foreach (PlayerBehaviour player in players) {
-			Network.Destroy (player.gameObject);
-				}
-	}
+    public void ClearGame_instance()
+    {
+        foreach (PlayerBehaviour player in players)
+        {
+            Network.Destroy(player.gameObject);
+        }
+    }
 
+    public static GameObject MakeNetworkPlayer()
+    {
+        return instance.MakeNetworkPlayer_instance();
+    }
+
+    public static void spawnNetworkPlayer(NetworkPlayer client)
+    {
+        instance.spawnNetworkPlayer_instance(client);
+    }
+
+    public static void ClearGame()
+    {
+        instance.ClearGame_instance();
+    }
 }
 

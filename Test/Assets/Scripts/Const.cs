@@ -35,7 +35,7 @@ namespace Const
 		BACK = 1
 	};
 
-    public enum eTileType
+    public enum TileType
     {
         DIRT,
         STONE,

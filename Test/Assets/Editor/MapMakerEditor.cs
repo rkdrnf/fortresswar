@@ -47,6 +47,7 @@ public class MapMakerEditor : Editor {
 			{
 				GameObject tile = (GameObject)PrefabUtility.InstantiatePrefab(maker.tile);
 				tile.transform.position = new Vector3(Mathf.Floor((mousePos.x + 0.5f) / maker.width) * maker.width, Mathf.Floor((mousePos.y + 0.5f) / maker.height) * maker.height, 0f);
+                tile.transform.parent = Game.map.transform;
 			}
 		}
 	}

@@ -12,7 +12,7 @@ public struct spriteInfo
 [RequireComponent(typeof(SpriteRenderer))]
 public class Tile : MonoBehaviour {
 
-    public Const.eTileType tileType;
+    public Const.TileType tileType;
 	public bool destroyable;
 	public int health;
 
