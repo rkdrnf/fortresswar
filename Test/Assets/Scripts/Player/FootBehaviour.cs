@@ -19,10 +19,10 @@ public class FootBehaviour : MonoBehaviour {
 		contactingGrounds = new HashSet<GameObject> ();
 	}
 
-	void OnCollisionEnter2D(Collision2D collision)
+	void OnTriggerEnter2D(Collider2D collider)
 	{
-		if (LayerUtil.HasLayer(collision.gameObject.layer, groundLayer)){
-			contactingGrounds.Add (collision.gameObject);
+		if (LayerUtil.HasLayer(collider.gameObject.layer, groundLayer)){
+			contactingGrounds.Add (collider.gameObject);
 
 			Debug.Log(string.Format("contacting grounds: {0}", contactingGrounds.Count));
 
@@ -34,17 +34,10 @@ public class FootBehaviour : MonoBehaviour {
 		}
 	}
 
-	void OnCollisionStay2D(Collision2D collision)
+	void OnTriggerExit2D(Collider2D collider)
 	{
-		if (LayerUtil.HasLayer(collision.gameObject.layer, groundLayer)) {
-			player.SetState(CharacterState.GROUNDED, true);
-		}
-	}
-
-	void OnCollisionExit2D(Collision2D collision)
-	{
-		if (LayerUtil.HasLayer (collision.gameObject.layer, groundLayer)) {
-			contactingGrounds.Remove (collision.gameObject);
+		if (LayerUtil.HasLayer (collider.gameObject.layer, groundLayer)) {
+			contactingGrounds.Remove (collider.gameObject);
 
 			Debug.Log(string.Format("contacting grounds: {0}", contactingGrounds.Count));
 
