@@ -8,9 +8,12 @@ using System.Linq;
 [CustomEditor(typeof(MapMaker))]
 public class MapMakerEditor : Editor {
 
+    Game game;
 	MapMaker maker;
 
 	int tileIndex = 0;
+    string mapFileName;
+    TextAsset mapFileAsset;
 
 	void OnEnable()
 	{
@@ -28,8 +31,6 @@ public class MapMakerEditor : Editor {
 
 		
 		if (e.isKey && e.character == 'a') {
-			Debug.Log (e.mousePosition);
-			Debug.Log (worldMousePos);
 			
 			if(hit.collider != null)
 			{
@@ -46,8 +47,10 @@ public class MapMakerEditor : Editor {
 			if (prefab == PrefabType.Prefab)
 			{
 				GameObject tile = (GameObject)PrefabUtility.InstantiatePrefab(maker.tile);
-				tile.transform.position = new Vector3(Mathf.Floor((mousePos.x + 0.5f) / maker.width) * maker.width, Mathf.Floor((mousePos.y + 0.5f) / maker.height) * maker.height, 0f);
-                tile.transform.parent = Game.map.transform;
+                if (tile.GetComponent<Tile>() != null)
+                {
+                    Game.map.AddTile(tile.GetComponent<Tile>(), new Vector3(Mathf.Floor((mousePos.x + 0.5f) / maker.width) * maker.width, Mathf.Floor((mousePos.y + 0.5f) / maker.height) * maker.height, 0f));
+                }
 			}
 		}
 	}
@@ -55,6 +58,19 @@ public class MapMakerEditor : Editor {
 
 	public override void OnInspectorGUI()
 	{
+        if (game == null)
+        {
+            GUILayout.BeginHorizontal();
+            game = (Game)EditorGUILayout.ObjectField(game, typeof(Game), GUILayout.MinWidth(100));
+            GUILayout.EndHorizontal();
+            return;
+        }
+
+        if (!game.is_initialized)
+        {
+            game.Init();
+        }
+
 		GUILayout.BeginHorizontal();
 		GUILayout.Label(" Grid Width ");
 		maker.width = EditorGUILayout.FloatField(maker.width, GUILayout.Width(50));
@@ -94,6 +110,36 @@ public class MapMakerEditor : Editor {
 			GUILayout.EndHorizontal();
 		}
 
+        GUILayout.BeginHorizontal();
+        GUILayout.BeginVertical();
+        mapFileAsset = (TextAsset)EditorGUILayout.ObjectField(mapFileAsset, typeof(TextAsset), GUILayout.Width(100));
+        GUILayout.EndVertical();
+        GUILayout.BeginVertical();
+        if (GUILayout.Button("Load Map", GUILayout.MinWidth(100)))
+        {
+            LoadMap();
+        }
+        GUILayout.EndVertical();
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+        GUILayout.BeginVertical();
+        mapFileName = EditorGUILayout.TextField(mapFileName, GUILayout.Width(100));
+        GUILayout.EndVertical();
+        GUILayout.BeginVertical();
+        if (GUILayout.Button("Save Map", GUILayout.MinWidth(100)))
+        {
+            SaveMap();
+        }
+        GUILayout.EndVertical();
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Clear Map", GUILayout.MinWidth(100)))
+        {
+            Game.map.Clear();
+        }
+        GUILayout.EndHorizontal();
 
 		SceneView.RepaintAll ();
 	}
@@ -124,5 +170,25 @@ public class MapMakerEditor : Editor {
 		tileSet.hideFlags = HideFlags.DontSave;
 	}
 
+    public void LoadMap()
+    {
+        Game.map.Load(mapFileAsset.text);
+    }
 
+    public void SaveMap()
+    {
+        string path = Application.dataPath + "/Maps/"+mapFileName+".txt";
+        int dupCount = 0;
+        while (File.Exists(path))
+        {
+            path = Application.dataPath + "/Maps/" + mapFileName + " (" + dupCount.ToString() + ").txt";
+            dupCount++;
+        }
+
+        using (StreamWriter sw = File.CreateText(path))
+        {
+            sw.Write(Game.map.ToString());
+        }
+        Debug.Log("Map File Saved");
+    }
 }

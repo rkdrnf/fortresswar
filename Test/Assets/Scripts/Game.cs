@@ -14,26 +14,32 @@ public class Game : MonoBehaviour
 {
     private static Game instance;
 
+    public bool is_initialized { get { return instance != null; } }
+
 	public GameObject mapObject;
 	public GameObject netManagerObject;
 	public Vector3 spawnPosition;
 	public GameObject playerPrefab;
 	public Map m_map;
 
-    public static Map map { get { return instance.m_map; } }
+    public static Map map { get { return instance.m_map; } set { instance.m_map = value; } }
 
 	PlayerBehaviour[] players;
 
 	NetworkManager netManager;
 
+    public void Init()
+    {
+        instance = this;
+    }
 
 	void Awake()
 	{
-        instance = this;
+        Init();
 		players = new PlayerBehaviour[]{};
 		netManager = netManagerObject.GetComponent<NetworkManager> ();
 	}
-
+    
 	public GameObject MakeNetworkPlayer_instance()
 	{
 		return (GameObject)Network.Instantiate (playerPrefab, spawnPosition, Quaternion.identity, 0);
@@ -75,4 +81,3 @@ public class Game : MonoBehaviour
         instance.ClearGame_instance();
     }
 }
-

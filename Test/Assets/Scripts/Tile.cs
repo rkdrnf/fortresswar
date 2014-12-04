@@ -51,4 +51,9 @@ public class Tile : MonoBehaviour {
             }
         }
     }
+
+    public override string ToString()
+    {
+        return transform.position.x.ToString() + "\t" + transform.position.y.ToString() + "\t" + ((int)tileType).ToString() + "\t" + health.ToString();
+    }
 }
