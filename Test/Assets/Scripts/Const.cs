@@ -34,5 +34,13 @@ namespace Const
 		FRONT = 0,
 		BACK = 1
 	};
+
+    public enum eTileType
+    {
+        DIRT,
+        STONE,
+
+        MAX
+    }
 }
 
