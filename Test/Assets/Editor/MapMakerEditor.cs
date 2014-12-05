@@ -8,7 +8,7 @@ using System.Linq;
 [CustomEditor(typeof(MapMaker))]
 public class MapMakerEditor : Editor {
 
-    Game game;
+    Map map;
 	MapMaker maker;
 
 	int tileIndex = 0;
@@ -18,6 +18,7 @@ public class MapMakerEditor : Editor {
 	void OnEnable()
 	{
 		maker = target as MapMaker;
+        map = maker.transform.GetComponentInChildren<Map>();
 	}
 
 	void OnSceneGUI()
@@ -49,7 +50,7 @@ public class MapMakerEditor : Editor {
 				GameObject tile = (GameObject)PrefabUtility.InstantiatePrefab(maker.tile);
                 if (tile.GetComponent<Tile>() != null)
                 {
-                    Game.map.AddTile(tile.GetComponent<Tile>(), new Vector3(Mathf.Floor((mousePos.x + 0.5f) / maker.width) * maker.width, Mathf.Floor((mousePos.y + 0.5f) / maker.height) * maker.height, 0f));
+                    map.AddTile(tile.GetComponent<Tile>(), new Vector3(Mathf.Floor((mousePos.x + 0.5f) / maker.width) * maker.width, Mathf.Floor((mousePos.y + 0.5f) / maker.height) * maker.height, 0f));
                 }
 			}
 		}
@@ -58,17 +59,13 @@ public class MapMakerEditor : Editor {
 
 	public override void OnInspectorGUI()
 	{
-        if (game == null)
+        if (map == null)
         {
             GUILayout.BeginHorizontal();
-            game = (Game)EditorGUILayout.ObjectField(game, typeof(Game), GUILayout.MinWidth(100));
+            GUILayout.Label("Map Object");
+            map = (Map)EditorGUILayout.ObjectField(map, typeof(Map), GUILayout.MinWidth(50));
             GUILayout.EndHorizontal();
             return;
-        }
-
-        if (!game.is_initialized)
-        {
-            game.Init();
         }
 
 		GUILayout.BeginHorizontal();
@@ -84,6 +81,7 @@ public class MapMakerEditor : Editor {
 		GUILayout.BeginHorizontal();
 		GUILayout.Label(" TileSet ");
 		maker.tileSet = (TileSet)EditorGUILayout.ObjectField (maker.tileSet, typeof(TileSet), false);
+        map.tileSet = maker.tileSet;
 		GUILayout.EndHorizontal();
 
 		if (maker.tileSet != null) {
@@ -137,14 +135,14 @@ public class MapMakerEditor : Editor {
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("Clear Map", GUILayout.MinWidth(100)))
         {
-            Game.map.Clear();
+            map.Clear();
         }
         GUILayout.EndHorizontal();
 
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("Fix Map", GUILayout.MinWidth(100)))
         {
-            Game.map.Fix();
+            map.Fix();
         }
         GUILayout.EndHorizontal();
 
@@ -179,7 +177,7 @@ public class MapMakerEditor : Editor {
 
     public void LoadMap()
     {
-        Game.map.Load(mapFileAsset.text);
+        map.Load(mapFileAsset.text);
     }
 
     public void SaveMap()
@@ -194,8 +192,10 @@ public class MapMakerEditor : Editor {
 
         using (StreamWriter sw = File.CreateText(path))
         {
-            sw.Write(Game.map.ToString());
+            sw.Write(map.ToString());
         }
         Debug.Log("Map File Saved");
+
+        AssetDatabase.Refresh();
     }
 }

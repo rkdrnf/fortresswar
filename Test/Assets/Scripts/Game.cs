@@ -14,15 +14,16 @@ public class Game : MonoBehaviour
 {
     private static Game instance;
 
-    public bool is_initialized { get { return instance != null; } }
+    public static bool is_initialized { get { return instance != null; } }
 
-	public GameObject mapObject;
 	public GameObject netManagerObject;
 	public Vector3 spawnPosition;
 	public GameObject playerPrefab;
-	public Map m_map;
+	
+    private Map m_map;
 
     public static Map map { get { return instance.m_map; } set { instance.m_map = value; } }
+    public static bool is_map_loaded { get { return map != null; } }
 
 	PlayerBehaviour[] players;
 
