@@ -14,20 +14,29 @@ public class Game : MonoBehaviour
 {
     private static Game instance;
 
-    public static bool is_initialized { get { return instance != null; } }
+	public static Game Instance
+	{
+		get
+		{
+			if (instance == null) {
+				instance = new Game ();
+			}
+			return instance;
+		}
+	}
+
+    public static bool IsInitialized() { return instance != null; }
+
+	public bool IsMapLoaded() { return map != null; }
 
 	public GameObject netManagerObject;
 	public Vector3 spawnPosition;
 	public GameObject playerPrefab;
 	
-    private Map m_map;
-
-    public static Map map { get { return instance.m_map; } set { instance.m_map = value; } }
-    public static bool is_map_loaded { get { return map != null; } }
-
+    Map map;
 	PlayerBehaviour[] players;
-
 	NetworkManager netManager;
+	MapLoader mapLoader;
 
     public void Init()
     {
@@ -39,46 +48,73 @@ public class Game : MonoBehaviour
         Init();
 		players = new PlayerBehaviour[]{};
 		netManager = netManagerObject.GetComponent<NetworkManager> ();
+		mapLoader = GetComponent<MapLoader> ();
+
 	}
-    
-	public GameObject MakeNetworkPlayer_instance()
+
+	public void LoadMap(Map loadingMap)
+	{
+		this.map = loadingMap;
+	}
+
+	public void StartServerGame()
+	{
+		ClearGame ();
+
+		if (!IsMapLoaded())
+		{
+			LoadMap(mapLoader.GetMap());
+		}
+
+		GameObject serverPlayer = MakeNetworkPlayer ();
+		serverPlayer.GetComponent<PlayerBehaviour>().SetOwner();
+	}
+
+	public void OnPlayerConnected(NetworkPlayer player)
+	{
+		Debug.Log(String.Format("Player Connected {0}", player));
+		
+		GameObject newPlayer = Game.Instance.MakeNetworkPlayer ();
+		newPlayer.networkView.RPC ("SetOwner", player);
+
+		MakeNetworkMap (player, map.mapName);
+	}
+
+	public GameObject MakeNetworkPlayer()
 	{
 		return (GameObject)Network.Instantiate (playerPrefab, spawnPosition, Quaternion.identity, 0);
-
 	}
 
-	public void spawnNetworkPlayer_instance(NetworkPlayer client)
+    public void spawnNetworkPlayer(NetworkPlayer client)
+    {
+
+    }
+
+	public void MakeNetworkMap(NetworkPlayer player, string mapName)
 	{
-		GameObject newPlayer = MakeNetworkPlayer ();
-
-		newPlayer.networkView.RPC ("SetOwner", client);
+		networkView.RPC ("ClientMakeMap", player, mapName);
 	}
 
-	public void drawMap(NetworkPlayer player)
+    public void ClearGame()
+    {
+		foreach (PlayerBehaviour player in players)
+		{
+			Network.Destroy(player.gameObject);
+		}
+
+		map = null;
+		networkView.RPC ("ClientClearGame", RPCMode.Others);
+    }
+
+	[RPC]
+	public void ClientMakeMap(string mapName)
 	{
-		map.drawMapNetwork (player);
+		this.map = mapLoader.GetMap(mapName);
 	}
 
-    public void ClearGame_instance()
-    {
-        foreach (PlayerBehaviour player in players)
-        {
-            Network.Destroy(player.gameObject);
-        }
-    }
-
-    public static GameObject MakeNetworkPlayer()
-    {
-        return instance.MakeNetworkPlayer_instance();
-    }
-
-    public static void spawnNetworkPlayer(NetworkPlayer client)
-    {
-        instance.spawnNetworkPlayer_instance(client);
-    }
-
-    public static void ClearGame()
-    {
-        instance.ClearGame_instance();
-    }
+	[RPC]
+	public void ClientClearGame()
+	{
+		map = null;
+	}
 }
