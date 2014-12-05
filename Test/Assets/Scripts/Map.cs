@@ -13,21 +13,10 @@ public class Map : MonoBehaviour {
 
     public TileSet tileSet;
 
+	public string mapName;
+
 	// Use this for initialization
 	void Start () {
-	}
-
-
-	public void drawMapNetwork(NetworkPlayer player)
-	{
-		networkView.RPC ("drawMap", player, "defaultMap");
-	}
-
-	[RPC]
-	public void drawMap(string mapName)
-	{
-		//clear map;
-		//draw map;
 	}
 
     public void AddTile(Tile tile, Vector3 pos)
@@ -83,6 +72,13 @@ public class Map : MonoBehaviour {
             AddTile(tile, new Vector3(x, y, 0));
         }
     }
+
+	public void LoadByName()
+	{
+		TextAsset asset = Resources.Load (Application.dataPath + "/Maps/" + mapName, typeof(TextAsset)) as TextAsset;
+
+		Load (asset.text);
+	}
 
     public void Fix()
     {
