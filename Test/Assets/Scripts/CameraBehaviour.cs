@@ -20,22 +20,25 @@ public class CameraBehaviour : MonoBehaviour {
 
     void LateUpdate()
     {
-        float wantedHeight = target.position.y + height;
+        if (target != null)
+        {
+            float wantedHeight = target.position.y + height;
 
-        float currentHeight = transform.position.y;
+            float currentHeight = transform.position.y;
 
-        // Damp the height
-        currentHeight = Mathf.Lerp(currentHeight, wantedHeight, heightDamping * Time.deltaTime);
+            // Damp the height
+            currentHeight = Mathf.Lerp(currentHeight, wantedHeight, heightDamping * Time.deltaTime);
 
-        // Set the position of the camera on the x-z plane to:
-        // distance meters behind the target
-        transform.position = new Vector3(target.position.x, target.position.y, -20);
+            // Set the position of the camera on the x-z plane to:
+            // distance meters behind the target
+            transform.position = new Vector3(target.position.x, target.position.y, -20);
 
-        // Set the height of the camera
-        transform.position = new Vector3(transform.position.x, currentHeight, -20);
+            // Set the height of the camera
+            transform.position = new Vector3(transform.position.x, currentHeight, -20);
 
 
-        // Always look at the target
-        //transform.LookAt(target);
+            // Always look at the target
+            //transform.LookAt(target);
+        }
     }
 }
