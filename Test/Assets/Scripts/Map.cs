@@ -11,7 +11,7 @@ public class Map : MonoBehaviour {
 	int mapHeight;
 	const int tileSize = 8;
 
-    public List<GameObject> tileObject;
+    public TileSet tileSet;
 
 	// Use this for initialization
 	void Start () {
@@ -76,7 +76,7 @@ public class Map : MonoBehaviour {
             int tileType = int.Parse(val[2]);
             int health = int.Parse(val[3]);
 
-            GameObject obj = Instantiate(tileObject[tileType]) as GameObject;
+            GameObject obj = Instantiate(tileSet.tiles[tileType]) as GameObject;
             Tile tile = obj.GetComponent<Tile>();
             tile.health = health;
 
