@@ -6,11 +6,12 @@ public class PlayerBehaviour : MonoBehaviour {
 
 	public GameObject projectile;
 
-	const int MOVE_SPEED = 6;
-	const float WALL_WALK_SPEED = 5;
+	const int MOVE_SPEED = 8;
+	const float WALL_WALK_SPEED = 8;
 
-	const float WALL_JUMP_SPEED_X = 10;
-	const float WALL_JUMP_SPEED_Y = 6;
+	const float JUMP_SPEED = 12;
+	const float WALL_JUMP_SPEED_X = 15;
+	const float WALL_JUMP_SPEED_Y = 10;
 
 	const float FIRE_RATE = 0.2f;
 	const int FIRE_POWER = 20;
@@ -246,8 +247,8 @@ public class PlayerBehaviour : MonoBehaviour {
         if (verMov > 0)
         {
             Debug.Log("jump!!!");
-            state = CharacterState.JUMPING_UP;
-            rigidbody2D.velocity = new Vector2(rigidbody2D.velocity.x, 12);
+			Jump();
+            
         }
     }
 
@@ -332,8 +333,15 @@ public class PlayerBehaviour : MonoBehaviour {
             //WallJump Or Climb more.
             if (verMov > 0)
             {
-                CheckWallJump();
-                return;
+				//월 워킹 중에 위 방향키를 누르고 있는데도 월 관련 함수가 실패하면 벽이 사라진거. 가던 방향으로 점프함.
+                if (CheckWallJump())
+				{
+                	return;
+				}
+				else
+				{
+					Jump();
+				}
             }
 
             //Fall to ground.
@@ -344,6 +352,8 @@ public class PlayerBehaviour : MonoBehaviour {
                 state = CharacterState.FALLING;
                 return;
             }
+
+			rigidbody2D.velocity = new Vector2(horMov * MOVE_SPEED, rigidbody2D.velocity.y);
         }
     }
 
@@ -360,6 +370,12 @@ public class PlayerBehaviour : MonoBehaviour {
 		} else {
             return facingRight ? IsInEnv(CharacterEnv.WALLED_FRONT) : IsInEnv(CharacterEnv.WALLED_BACK);
 		}
+	}
+
+	void Jump()
+	{
+		state = CharacterState.JUMPING_UP;
+		rigidbody2D.velocity = new Vector2 (rigidbody2D.velocity.x, JUMP_SPEED);
 	}
 
 	void WallWalk(Direction direction)
@@ -398,39 +414,43 @@ public class PlayerBehaviour : MonoBehaviour {
 		return IsInEnv (GetWallWalkStateByDirection(direction));
 	}
 
-    void CheckWallJump()
+    bool CheckWallJump()
     {
         do
         {
+			if (rigidbody2D.velocity.y < -6f)
+				return false;
             //Check Wall and moving direction
 
             //Climb more;
             if (IsWalled(Direction.LEFT) && IsMoving(Direction.LEFT))
             {
                 WallWalk(Direction.LEFT);
-                break;
+				return true;
             }
 
             if (IsWalled(Direction.RIGHT) && IsMoving(Direction.RIGHT))
             {
                 WallWalk(Direction.RIGHT);
-                break;
+				return true;
             }
 
             //Wall Jump;
             if (IsWalled(Direction.LEFT) && IsMoving(Direction.RIGHT))
             {
                 WallJump(Direction.RIGHT);
-                break;
+				return true;
             }
 
             if (IsWalled(Direction.RIGHT) && IsMoving(Direction.LEFT))
             {
                 WallJump(Direction.LEFT);
-                break;
+				return true;
             }
 
         } while (false);
+
+		return false;
     }
 
 	void WallJump(Direction direction)

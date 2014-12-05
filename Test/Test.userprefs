@@ -1,12 +1,13 @@
 ﻿<Properties>
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="MonoDevelop.Default" />
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
   <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\Player\FrontBehaviour.cs">
     <Files>
-      <File FileName="Assets\Scripts\Player\PlayerBehaviour.cs" Line="184" Column="6" />
-      <File FileName="Assets\Scripts\Player\FootBehaviour.cs" Line="30" Column="19" />
+      <File FileName="Assets\Scripts\CameraBehaviour.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\Player\PlayerBehaviour.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\Player\FootBehaviour.cs" Line="1" Column="1" />
       <File FileName="Assets\Scripts\Util.cs" Line="1" Column="1" />
       <File FileName="Assets\Scripts\Player\FrontBehaviour.cs" Line="29" Column="37" />
-      <File FileName="Assets\Scripts\Const.cs" Line="28" Column="13" />
+      <File FileName="Assets\Scripts\Const.cs" Line="1" Column="1" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
