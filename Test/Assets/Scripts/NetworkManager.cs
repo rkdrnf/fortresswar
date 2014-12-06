@@ -17,8 +17,8 @@ public class NetworkManager : MonoBehaviour {
 
 	public void StartServer()
 	{
-		Network.InitializeServer (16, 25000, !Network.HavePublicAddress());
-		MasterServer.RegisterHost ("War", "WarGame", "Fun");
+		Network.InitializeServer (16, 25001, !Network.HavePublicAddress());
+		MasterServer.RegisterHost ("War", "WarGame123", "Fun");
 	}
 
 	public void RefreshHostList()
