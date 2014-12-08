@@ -3,6 +3,8 @@ using System.Collections;
 
 public class GunBullet : Projectile {
 
+
+
 	const int DAMAGE = 20;
 
 	const int RANGE = 10;
@@ -27,14 +29,10 @@ public class GunBullet : Projectile {
 		Quaternion rot = Quaternion.FromToRotation (Vector3.right, new Vector3 (rigidbody2D.velocity.x, rigidbody2D.velocity.y));
 		transform.rotation = rot;
 
-		//Server
-		if (Network.isServer) 
-		{
-			if ((currentPosition - startPosition).sqrMagnitude > RANGE * RANGE) {
-                DestroyObject(this.gameObject);
-			}
-		}
-	
+        if ((currentPosition - startPosition).sqrMagnitude > RANGE * RANGE)
+        {
+            Destroy();
+        }
 	}
 
 	void OnTriggerEnter2D(Collider2D targetCollider)
@@ -44,7 +42,7 @@ public class GunBullet : Projectile {
 				GameObject tile = targetCollider.gameObject;
 				tile.GetComponent<Tile> ().Damage (DAMAGE);
 
-                DestroyObject(this.gameObject);
+                Destroy();
 			} else {
 				return;
 			}

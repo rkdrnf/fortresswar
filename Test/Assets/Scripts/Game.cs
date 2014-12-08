@@ -11,6 +11,12 @@ using UnityEngine;
 using System;
 using System.Collections;
 using System.Threading;
+using System.Collections.Generic;
+using Newtonsoft.Json;
+
+using S2C = Packet.S2C;
+using C2S = Packet.C2S;
+
 
 public class Game : MonoBehaviour
 {
@@ -48,8 +54,8 @@ public class Game : MonoBehaviour
     {
         instance = this;
 
-        projectileObjectTable = new Hashtable();
-        playerObjectTable = new Hashtable();
+        projectileObjectTable = new Dictionary<long, Projectile>();
+        playerObjectTable = new Dictionary<NetworkPlayer, PlayerBehaviour>();
     }
 
 	void Awake()
@@ -80,6 +86,8 @@ public class Game : MonoBehaviour
 		character.SetOwner();
 
         RegisterCharacter(Network.player, character);
+
+        Debug.Log(JsonConvert.SerializeObject(Network.player));
 	}
 
 	public void OnPlayerConnected(NetworkPlayer player)
@@ -92,17 +100,14 @@ public class Game : MonoBehaviour
         RegisterCharacter(player, character);
 
 		MakeNetworkMap (player, map.mapName);
+
+        Debug.Log(JsonConvert.SerializeObject(player));
 	}
 
 	public GameObject MakeNetworkPlayer()
 	{
 		return (GameObject)Network.Instantiate (playerPrefab, spawnPosition, Quaternion.identity, 0);
 	}
-
-    public void spawnNetworkPlayer(NetworkPlayer client)
-    {
-
-    }
 
 	public void MakeNetworkMap(NetworkPlayer player, string mapName)
 	{
@@ -133,10 +138,10 @@ public class Game : MonoBehaviour
 	}
 
 
-    Hashtable projectileObjectTable;
+    Dictionary<long, Projectile> projectileObjectTable;
     long totalProjectileCount = 0;
 
-    private long GetUniqueKeyForNewProjectile()
+    public long GetUniqueKeyForNewProjectile()
     {
         return Interlocked.Increment(ref totalProjectileCount);
     }
@@ -146,18 +151,32 @@ public class Game : MonoBehaviour
         return (Projectile)projectileObjectTable[projectileID];
     }
 
-    public void ClientRegisterProjectile(long projectileID, Projectile projectile)
+    public void RegisterProjectile(long projectileID, Projectile projectile)
     {
         projectileObjectTable.Add(projectileID, projectile);
     }
 
-    public void ServerRegisterProjectile(Projectile projectile)
+    // Projectile management
+
+    [RPC]
+    public void DestroyProjectile(string destroyProjectileJson)
     {
-        long id = GetUniqueKeyForNewProjectile();
-        projectileObjectTable.Add(id, projectile);
+        S2C.DestroyProjectile pck = S2C.DestroyProjectile.Deserialize(destroyProjectileJson);
+
+        if (Network.isServer)
+        {
+            Debug.Log(string.Format("[SERVER] projectile {0} Destroyed", pck.projectileID));
+            Destroy((UnityEngine.Object)projectileObjectTable[pck.projectileID].gameObject);
+            networkView.RPC("DestroyProjectile", RPCMode.Others, destroyProjectileJson);
+        }
+        else if (Network.isClient)
+        {
+            Debug.Log(string.Format("[CLIENT] projectile {0} Destroyed", pck.projectileID));
+            Destroy((UnityEngine.Object)projectileObjectTable[pck.projectileID].gameObject);
+        }
     }
 
-    Hashtable playerObjectTable;
+    Dictionary<NetworkPlayer, PlayerBehaviour> playerObjectTable;
 
     public PlayerBehaviour GetCharacter(NetworkPlayer player)
     {
@@ -166,6 +185,7 @@ public class Game : MonoBehaviour
 
     public void RegisterCharacter(NetworkPlayer player, PlayerBehaviour character)
     {
+        Debug.Log(string.Format("NetworkPlayer {0}, Character {1} registered", player, character));
         playerObjectTable.Add(player, character);
     }
 }

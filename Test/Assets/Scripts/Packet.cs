@@ -43,26 +43,34 @@ namespace Packet
 
             public Vector3 position;
         }
+
+        public class DestroyProjectile : Packet<DestroyProjectile>
+        {
+            public DestroyProjectile(long projectileID)
+            {
+                this.projectileID = projectileID;
+            }
+
+            public long projectileID;
+        }
     }
 
     namespace C2S
     {
         public class Fire : Packet<Fire>
         {
-            public Fire(BulletType bulletType, Vector3 fireOrigin, Vector3 direction, int power)
+            public Fire(long projectileID, BulletType bulletType, Vector3 origin, Vector3 direction)
             {
                 this.bulletType = bulletType;
-                this.fireOrigin = fireOrigin;
+                this.origin = origin;
                 this.direction = direction;
-                this.power = power;
-     //           this.player = Network.player;
+                this.ID = projectileID;
             }
 
+            public long ID;
             public BulletType bulletType;
-            public Vector3 fireOrigin;
+            public Vector3 origin;
             public Vector3 direction;
-            public int power;
-       //     public NetworkPlayer player;
         }
     }
 }
