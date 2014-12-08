@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 
 public class Map : MonoBehaviour {
 
@@ -75,7 +76,7 @@ public class Map : MonoBehaviour {
 
 	public void LoadByName()
 	{
-		TextAsset asset = Resources.Load (Application.dataPath + "/Maps/" + mapName, typeof(TextAsset)) as TextAsset;
+		TextAsset asset = Resources.Load ("Maps/" + mapName, typeof(TextAsset)) as TextAsset;
 
 		Load (asset.text);
 	}

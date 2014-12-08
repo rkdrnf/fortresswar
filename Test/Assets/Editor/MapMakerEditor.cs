@@ -182,20 +182,25 @@ public class MapMakerEditor : Editor {
 
     public void SaveMap()
     {
-        string path = Application.dataPath + "/Maps/"+mapFileName+".txt";
-        int dupCount = 0;
-        while (File.Exists(path))
-        {
-            path = Application.dataPath + "/Maps/" + mapFileName + " (" + dupCount.ToString() + ").txt";
-            dupCount++;
-        }
+        string filePath = AssetDatabase.GenerateUniqueAssetPath(string.Format("Assets{0}Resources{0}Maps{0}{1}.txt", Path.DirectorySeparatorChar, mapFileName));
 
-        using (StreamWriter sw = File.CreateText(path))
+        using (StreamWriter sw = File.CreateText(filePath))
         {
             sw.Write(map.ToString());
         }
         Debug.Log("Map File Saved");
 
         AssetDatabase.Refresh();
+
+        TextAsset mapFile = (TextAsset)AssetDatabase.LoadAssetAtPath(filePath, typeof(TextAsset));
+        if (mapFile == null)
+        {
+            Debug.Log("MapFile not loaded properly");
+            return;
+        }
+
+        AssetDatabase.SaveAssets();
+
+        EditorGUIUtility.PingObject(mapFile);
     }
 }
