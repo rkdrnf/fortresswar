@@ -48,5 +48,13 @@ namespace Const
 
         MAX
     }
+
+    public enum BulletType
+    {
+        GUN,
+
+        MAX
+
+    }
 }
 

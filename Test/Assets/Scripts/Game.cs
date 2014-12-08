@@ -9,6 +9,8 @@
 //------------------------------------------------------------------------------
 using UnityEngine;
 using System;
+using System.Collections;
+using System.Threading;
 
 public class Game : MonoBehaviour
 {
@@ -32,15 +34,22 @@ public class Game : MonoBehaviour
 	public GameObject netManagerObject;
 	public Vector3 spawnPosition;
 	public GameObject playerPrefab;
+    public ProjectileSet projectileSet;
+
 	
     Map map;
 	PlayerBehaviour[] players;
 	NetworkManager netManager;
 	MapLoader mapLoader;
 
+    
+
     public void Init()
     {
         instance = this;
+
+        projectileObjectTable = new Hashtable();
+        playerObjectTable = new Hashtable();
     }
 
 	void Awake()
@@ -67,7 +76,10 @@ public class Game : MonoBehaviour
 		}
 
 		GameObject serverPlayer = MakeNetworkPlayer ();
-		serverPlayer.GetComponent<PlayerBehaviour>().SetOwner();
+        PlayerBehaviour character = serverPlayer.GetComponent<PlayerBehaviour>();
+		character.SetOwner();
+
+        RegisterCharacter(Network.player, character);
 	}
 
 	public void OnPlayerConnected(NetworkPlayer player)
@@ -75,7 +87,9 @@ public class Game : MonoBehaviour
 		Debug.Log(String.Format("Player Connected {0}", player));
 		
 		GameObject newPlayer = Game.Instance.MakeNetworkPlayer ();
+        PlayerBehaviour character = newPlayer.GetComponent<PlayerBehaviour>();
 		newPlayer.networkView.RPC ("SetOwner", player);
+        RegisterCharacter(player, character);
 
 		MakeNetworkMap (player, map.mapName);
 	}
@@ -117,4 +131,41 @@ public class Game : MonoBehaviour
 	{
 		map = null;
 	}
+
+
+    Hashtable projectileObjectTable;
+    long totalProjectileCount = 0;
+
+    private long GetUniqueKeyForNewProjectile()
+    {
+        return Interlocked.Increment(ref totalProjectileCount);
+    }
+
+    public Projectile GetProjectile(long projectileID)
+    {
+        return (Projectile)projectileObjectTable[projectileID];
+    }
+
+    public void ClientRegisterProjectile(long projectileID, Projectile projectile)
+    {
+        projectileObjectTable.Add(projectileID, projectile);
+    }
+
+    public void ServerRegisterProjectile(Projectile projectile)
+    {
+        long id = GetUniqueKeyForNewProjectile();
+        projectileObjectTable.Add(id, projectile);
+    }
+
+    Hashtable playerObjectTable;
+
+    public PlayerBehaviour GetCharacter(NetworkPlayer player)
+    {
+        return (PlayerBehaviour)playerObjectTable[player];
+    }
+
+    public void RegisterCharacter(NetworkPlayer player, PlayerBehaviour character)
+    {
+        playerObjectTable.Add(player, character);
+    }
 }
