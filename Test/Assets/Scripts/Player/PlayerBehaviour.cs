@@ -479,7 +479,9 @@ public class PlayerBehaviour : MonoBehaviour {
         Vector3 worldMousePosition = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, transform.position.z));
         Vector3 direction = (worldMousePosition - transform.position).normalized;
 
-        C2S.Fire fire = new C2S.Fire(BulletType.GUN, transform.position, direction, 20);
+        C2S.Fire fire = new C2S.Fire(-1, BulletType.GUN, Vector3.zero, direction);
+
+        Debug.Log(string.Format("Player {0} pressed Fire", Network.player));
 
         if (Network.isServer)
         {
@@ -495,11 +497,23 @@ public class PlayerBehaviour : MonoBehaviour {
     [RPC]
     public void ServerFire(string fireJson, NetworkPlayer player)
     {
-        if (Game.Instance.GetCharacter(player).CanFire())
+        C2S.Fire fire = C2S.Fire.Deserialize(fireJson);
+
+        PlayerBehaviour character = Game.Instance.GetCharacter(player);
+
+        if (character.CanFire() == false)
         {
-            Debug.Log(string.Format("{0}:{1} Fired!", owner.ipAddress, owner.port));
-            networkView.RPC("BroadcastFire", RPCMode.All, fireJson, player);
+            return;
         }
+
+        long projID = Game.Instance.GetUniqueKeyForNewProjectile();
+
+        Debug.Log(string.Format("Fire of player {0}, fireID:{1}", player, projID));
+
+        fire.ID = projID;
+        fire.origin = character.gameObject.transform.position;
+
+        networkView.RPC("BroadcastFire", RPCMode.All, fire.Serialize(), player);
 
         return;
     }
@@ -520,11 +534,15 @@ public class PlayerBehaviour : MonoBehaviour {
     {
         C2S.Fire fire = C2S.Fire.Deserialize(fireJson);
 
-        GameObject projObj = (GameObject)Instantiate(Game.Instance.projectileSet.projectiles[(int)fire.bulletType], fire.fireOrigin, Quaternion.identity);
+        GameObject projObj = (GameObject)Instantiate(Game.Instance.projectileSet.projectiles[(int)fire.bulletType], fire.origin, Quaternion.identity);
 
-        projObj.rigidbody2D.AddForce(new Vector2(fire.direction.x * fire.power, fire.direction.y * fire.power), ForceMode2D.Impulse);
+        projObj.rigidbody2D.AddForce(new Vector2(fire.direction.x * FIRE_POWER, fire.direction.y * FIRE_POWER), ForceMode2D.Impulse);
 
         Projectile proj = projObj.GetComponent<Projectile>();
+        proj.ID = fire.ID;
+        Game.Instance.RegisterProjectile(fire.ID, proj);
+
+        Debug.Log(string.Format("Fire ID :{0} registered", fire.ID));
         proj.owner = player;
     }
 }
