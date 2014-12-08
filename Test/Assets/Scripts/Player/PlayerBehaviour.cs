@@ -1,8 +1,14 @@
 ﻿using UnityEngine;
 using System.Collections;
 using Const;
+using Newtonsoft.Json;
+
+using S2C = Packet.S2C;
+using C2S = Packet.C2S;
 
 public class PlayerBehaviour : MonoBehaviour {
+
+    private NetworkPlayer owner;
 
 	public GameObject projectile;
 
@@ -160,20 +166,16 @@ public class PlayerBehaviour : MonoBehaviour {
 	// Update is called once per frame
 	// Reset input data per frame.
 	void Update () {
+        fireTimer += Time.deltaTime;
+
 		if (isOwner) {
-			fireTimer += Time.deltaTime;
 			horMov = Input.GetAxisRaw ("Horizontal");
 			verMov = Input.GetAxisRaw("Vertical");
 
 			if (Input.GetButton ("Fire1")) {
 				Debug.Log("fire button pressed");
-
-				//Client manages Bullet Spawn. 
-				if (fireTimer > FIRE_RATE) {
-					fireTimer = 0;
-					Debug.Log ("Fire!");
-					Fire();
-				}
+                Fire();
+				
 			}
 		}
 
@@ -462,22 +464,67 @@ public class PlayerBehaviour : MonoBehaviour {
 		rigidbody2D.velocity = new Vector2 (direction == Direction.RIGHT ? WALL_JUMP_SPEED_X : -WALL_JUMP_SPEED_X, WALL_JUMP_SPEED_Y);
 	}
 
+    void Flip()
+    {
+        facingRight = !facingRight;
+        Vector3 scale = transform.localScale;
+        scale.x = -scale.x;
+        transform.localScale = scale;
+    }
+
+
+
 	void Fire()
 	{
-			GameObject bullet = Network.Instantiate (projectile, transform.position, transform.rotation, 1) as GameObject;
-			Vector3 worldMousePosition = Camera.main.ScreenToWorldPoint (new Vector3 (Input.mousePosition.x, Input.mousePosition.y, transform.position.z));
-			Vector3 direction = worldMousePosition - transform.position;
-			
-			bullet.GetComponent<GunBullet> ().Fire (direction, 20);
+        Vector3 worldMousePosition = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, transform.position.z));
+        Vector3 direction = (worldMousePosition - transform.position).normalized;
+
+        C2S.Fire fire = new C2S.Fire(BulletType.GUN, transform.position, direction, 20);
+
+        if (Network.isServer)
+        {
+            ServerFire(fire.Serialize(), Network.player);
+        }
+        else
+        { 
+            networkView.RPC("ServerFire", RPCMode.Server, fire.Serialize(), Network.player);
+        }
+        
 	}
 
-	void Flip() {
-		facingRight = !facingRight;
-		Vector3 scale = transform.localScale;
-		scale.x = -scale.x;
-		transform.localScale = scale;
-	}
+    [RPC]
+    public void ServerFire(string fireJson, NetworkPlayer player)
+    {
+        if (Game.Instance.GetCharacter(player).CanFire())
+        {
+            Debug.Log(string.Format("{0}:{1} Fired!", owner.ipAddress, owner.port));
+            networkView.RPC("BroadcastFire", RPCMode.All, fireJson, player);
+        }
 
-	void OnFootCollide(Collision2D coll){
-	}
+        return;
+    }
+
+    public bool CanFire()
+    {
+        if (fireTimer > FIRE_RATE)
+        {
+            fireTimer = 0;
+            
+            return true;
+        }
+        return false;
+    }
+
+    [RPC]
+    public void BroadcastFire(string fireJson, NetworkPlayer player)
+    {
+        C2S.Fire fire = C2S.Fire.Deserialize(fireJson);
+
+        GameObject projObj = (GameObject)Instantiate(Game.Instance.projectileSet.projectiles[(int)fire.bulletType], fire.fireOrigin, Quaternion.identity);
+
+        projObj.rigidbody2D.AddForce(new Vector2(fire.direction.x * fire.power, fire.direction.y * fire.power), ForceMode2D.Impulse);
+
+        Projectile proj = projObj.GetComponent<Projectile>();
+        proj.owner = player;
+    }
 }
