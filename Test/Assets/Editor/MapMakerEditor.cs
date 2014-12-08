@@ -175,6 +175,33 @@ public class MapMakerEditor : Editor {
 		tileSet.hideFlags = HideFlags.DontSave;
 	}
 
+    [MenuItem("Assets/Create/WeaponSet")]
+    static void CreateWeaponSet()
+    {
+        ProjectileSet projSet = CreateInstance<ProjectileSet>();
+        var path = AssetDatabase.GetAssetPath(Selection.activeObject);
+
+        if (string.IsNullOrEmpty(path))
+        {
+            path = "Assets";
+        }
+        else if (Path.GetExtension(path) != "")
+        {
+            path.Replace(Path.GetFileName(path), "");
+        }
+        else
+        {
+            path += Path.DirectorySeparatorChar;
+        }
+
+        var assetPathAndName = AssetDatabase.GenerateUniqueAssetPath(path + "WeaponSet.asset");
+        AssetDatabase.CreateAsset(projSet, assetPathAndName);
+        AssetDatabase.SaveAssets();
+        Selection.activeObject = projSet;
+        projSet.hideFlags = HideFlags.DontSave;
+        EditorGUIUtility.PingObject(projSet);
+    }
+
     public void LoadMap()
     {
         map.Load(mapFileAsset.text);
