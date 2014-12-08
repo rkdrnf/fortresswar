@@ -9,29 +9,47 @@
 //------------------------------------------------------------------------------
 using UnityEngine;
 using System;
+using System.Collections;
+using System.Threading;
 
 public class Game : MonoBehaviour
 {
     private static Game instance;
 
-    public static bool is_initialized { get { return instance != null; } }
+	public static Game Instance
+	{
+		get
+		{
+			if (instance == null) {
+				instance = new Game ();
+			}
+			return instance;
+		}
+	}
+
+    public static bool IsInitialized() { return instance != null; }
+
+	public bool IsMapLoaded() { return map != null; }
 
 	public GameObject netManagerObject;
 	public Vector3 spawnPosition;
 	public GameObject playerPrefab;
+    public ProjectileSet projectileSet;
+
 	
-    private Map m_map;
-
-    public static Map map { get { return instance.m_map; } set { instance.m_map = value; } }
-    public static bool is_map_loaded { get { return map != null; } }
-
+    Map map;
 	PlayerBehaviour[] players;
-
 	NetworkManager netManager;
+	MapLoader mapLoader;
+
+    
 
     public void Init()
     {
         instance = this;
+
+        projectileObjectTable = new Hashtable();
+        playerObjectTable = new Hashtable();
     }
 
 	void Awake()
@@ -39,46 +57,115 @@ public class Game : MonoBehaviour
         Init();
 		players = new PlayerBehaviour[]{};
 		netManager = netManagerObject.GetComponent<NetworkManager> ();
+		mapLoader = GetComponent<MapLoader> ();
+
 	}
-    
-	public GameObject MakeNetworkPlayer_instance()
+
+	public void LoadMap(Map loadingMap)
+	{
+		this.map = loadingMap;
+	}
+
+	public void StartServerGame()
+	{
+		ClearGame ();
+
+		if (!IsMapLoaded())
+		{
+			LoadMap(mapLoader.GetMap());
+		}
+
+		GameObject serverPlayer = MakeNetworkPlayer ();
+        PlayerBehaviour character = serverPlayer.GetComponent<PlayerBehaviour>();
+		character.SetOwner();
+
+        RegisterCharacter(Network.player, character);
+	}
+
+	public void OnPlayerConnected(NetworkPlayer player)
+	{
+		Debug.Log(String.Format("Player Connected {0}", player));
+		
+		GameObject newPlayer = Game.Instance.MakeNetworkPlayer ();
+        PlayerBehaviour character = newPlayer.GetComponent<PlayerBehaviour>();
+		newPlayer.networkView.RPC ("SetOwner", player);
+        RegisterCharacter(player, character);
+
+		MakeNetworkMap (player, map.mapName);
+	}
+
+	public GameObject MakeNetworkPlayer()
 	{
 		return (GameObject)Network.Instantiate (playerPrefab, spawnPosition, Quaternion.identity, 0);
-
 	}
 
-	public void spawnNetworkPlayer_instance(NetworkPlayer client)
+    public void spawnNetworkPlayer(NetworkPlayer client)
+    {
+
+    }
+
+	public void MakeNetworkMap(NetworkPlayer player, string mapName)
 	{
-		GameObject newPlayer = MakeNetworkPlayer ();
-
-		newPlayer.networkView.RPC ("SetOwner", client);
+		networkView.RPC ("ClientMakeMap", player, mapName);
 	}
 
-	public void drawMap(NetworkPlayer player)
+    public void ClearGame()
+    {
+		foreach (PlayerBehaviour player in players)
+		{
+			Network.Destroy(player.gameObject);
+		}
+
+		map = null;
+		networkView.RPC ("ClientClearGame", RPCMode.Others);
+    }
+
+	[RPC]
+	public void ClientMakeMap(string mapName)
 	{
-		map.drawMapNetwork (player);
+		this.map = mapLoader.GetMap(mapName);
 	}
 
-    public void ClearGame_instance()
+	[RPC]
+	public void ClientClearGame()
+	{
+		map = null;
+	}
+
+
+    Hashtable projectileObjectTable;
+    long totalProjectileCount = 0;
+
+    private long GetUniqueKeyForNewProjectile()
     {
-        foreach (PlayerBehaviour player in players)
-        {
-            Network.Destroy(player.gameObject);
-        }
+        return Interlocked.Increment(ref totalProjectileCount);
     }
 
-    public static GameObject MakeNetworkPlayer()
+    public Projectile GetProjectile(long projectileID)
     {
-        return instance.MakeNetworkPlayer_instance();
+        return (Projectile)projectileObjectTable[projectileID];
     }
 
-    public static void spawnNetworkPlayer(NetworkPlayer client)
+    public void ClientRegisterProjectile(long projectileID, Projectile projectile)
     {
-        instance.spawnNetworkPlayer_instance(client);
+        projectileObjectTable.Add(projectileID, projectile);
     }
 
-    public static void ClearGame()
+    public void ServerRegisterProjectile(Projectile projectile)
     {
-        instance.ClearGame_instance();
+        long id = GetUniqueKeyForNewProjectile();
+        projectileObjectTable.Add(id, projectile);
+    }
+
+    Hashtable playerObjectTable;
+
+    public PlayerBehaviour GetCharacter(NetworkPlayer player)
+    {
+        return (PlayerBehaviour)playerObjectTable[player];
+    }
+
+    public void RegisterCharacter(NetworkPlayer player, PlayerBehaviour character)
+    {
+        playerObjectTable.Add(player, character);
     }
 }

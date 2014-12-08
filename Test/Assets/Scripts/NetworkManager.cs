@@ -17,8 +17,8 @@ public class NetworkManager : MonoBehaviour {
 
 	public void StartServer()
 	{
-		Network.InitializeServer (16, 25000, !Network.HavePublicAddress());
-		MasterServer.RegisterHost ("War", "WarGame", "Fun");
+		Network.InitializeServer (16, 25001, !Network.HavePublicAddress());
+		MasterServer.RegisterHost ("War", "WarGame123", "Fun");
 	}
 
 	public void RefreshHostList()
@@ -44,9 +44,7 @@ public class NetworkManager : MonoBehaviour {
 	{
 		Debug.Log ("Server Initialized!");
 
-		Game.ClearGame ();
-		GameObject serverPlayer = Game.MakeNetworkPlayer ();
-		serverPlayer.GetComponent<PlayerBehaviour>().SetOwner();
+		Game.Instance.StartServerGame();
 	}
 
 	public NetworkConnectionError Connect(HostData hostData)
@@ -62,22 +60,5 @@ public class NetworkManager : MonoBehaviour {
 	void OnConnectedToServer()
 	{
 		Debug.Log("Connected To Server");
-
-		Game.ClearGame ();
-	}
-
-	void OnPlayerConnected(NetworkPlayer player)
-	{
-		Debug.Log(String.Format("Player Connected {0}", player));
-
-		Game.spawnNetworkPlayer (player);
-		Game.map.drawMapNetwork (player);
-
-	}
-
-	[RPC]
-	void EnterNewPlayer(NetworkMessageInfo nmInfo)
-	{
-		Game.spawnNetworkPlayer (nmInfo.sender);
 	}
 }
