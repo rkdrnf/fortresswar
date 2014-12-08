@@ -63,24 +63,24 @@ public class MapMakerEditor : Editor {
         {
             GUILayout.BeginHorizontal();
             GUILayout.Label("Map Object");
-            map = (Map)EditorGUILayout.ObjectField(map, typeof(Map), GUILayout.MinWidth(50));
+            map = (Map)EditorGUILayout.ObjectField(map, typeof(Map), false);
             GUILayout.EndHorizontal();
             return;
         }
 
 		GUILayout.BeginHorizontal();
 		GUILayout.Label(" Grid Width ");
-		maker.width = EditorGUILayout.FloatField(maker.width, GUILayout.Width(50));
+		maker.width = EditorGUILayout.FloatField(maker.width, GUILayout.Width(100f));
 		GUILayout.EndHorizontal();
 
 		GUILayout.BeginHorizontal();
 		GUILayout.Label(" Grid Height ");
-		maker.height = EditorGUILayout.FloatField(maker.height, GUILayout.Width(50));
+        maker.height = EditorGUILayout.FloatField(maker.height, GUILayout.Width(100f));
 		GUILayout.EndHorizontal();
 
 		GUILayout.BeginHorizontal();
 		GUILayout.Label(" TileSet ");
-		maker.tileSet = (TileSet)EditorGUILayout.ObjectField (maker.tileSet, typeof(TileSet), false);
+		maker.tileSet = (TileSet)EditorGUILayout.ObjectField (maker.tileSet, typeof(TileSet), false, GUILayout.Width(150f));
         map.tileSet = maker.tileSet;
 		GUILayout.EndHorizontal();
 
@@ -110,7 +110,7 @@ public class MapMakerEditor : Editor {
 
         GUILayout.BeginHorizontal();
         GUILayout.BeginVertical();
-        mapFileAsset = (TextAsset)EditorGUILayout.ObjectField(mapFileAsset, typeof(TextAsset), GUILayout.Width(100));
+        mapFileAsset = (TextAsset)EditorGUILayout.ObjectField(mapFileAsset, typeof(TextAsset), false, GUILayout.Width(100));
         GUILayout.EndVertical();
         GUILayout.BeginVertical();
         if (GUILayout.Button("Load Map", GUILayout.MinWidth(100)))
@@ -172,7 +172,6 @@ public class MapMakerEditor : Editor {
 		AssetDatabase.SaveAssets ();
 		EditorUtility.FocusProjectWindow ();
 		Selection.activeObject = tileSet;
-		tileSet.hideFlags = HideFlags.DontSave;
 	}
 
     [MenuItem("Assets/Create/WeaponSet")]
@@ -198,7 +197,6 @@ public class MapMakerEditor : Editor {
         AssetDatabase.CreateAsset(projSet, assetPathAndName);
         AssetDatabase.SaveAssets();
         Selection.activeObject = projSet;
-        projSet.hideFlags = HideFlags.DontSave;
         EditorGUIUtility.PingObject(projSet);
     }
 

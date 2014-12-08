@@ -2,5 +2,6 @@
 using System.Collections;
 
 public class ProjectileSet : ScriptableObject {
-    public GameObject[] projectiles = new GameObject[] { };
+
+    public GameObject[] projectiles = new GameObject[0];
 }
