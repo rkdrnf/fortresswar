@@ -47,10 +47,14 @@ public class MapMakerEditor : Editor {
 			
 			if (prefab == PrefabType.Prefab)
 			{
-				GameObject tile = (GameObject)PrefabUtility.InstantiatePrefab(maker.tile);
-                if (tile.GetComponent<Tile>() != null)
+				GameObject tileObj = (GameObject)PrefabUtility.InstantiatePrefab(maker.tile);
+                Tile tile = tileObj.GetComponent<Tile>();
+                tile.transform.position = new Vector3(Mathf.Floor((mousePos.x + 0.5f) / maker.tileSize) * maker.tileSize, Mathf.Floor((mousePos.y + 0.5f) / maker.tileSize) * maker.tileSize, 0f);
+
+                tile.ID = GetTileIndex(tile);
+                if (tile != null)
                 {
-                    map.AddTile(tile.GetComponent<Tile>(), new Vector3(Mathf.Floor((mousePos.x + 0.5f) / maker.width) * maker.width, Mathf.Floor((mousePos.y + 0.5f) / maker.height) * maker.height, 0f));
+                    map.AddTile(tile);
                 }
 			}
 		}
@@ -69,14 +73,19 @@ public class MapMakerEditor : Editor {
         }
 
 		GUILayout.BeginHorizontal();
-		GUILayout.Label(" Grid Width ");
-		maker.width = EditorGUILayout.FloatField(maker.width, GUILayout.Width(100f));
+		GUILayout.Label(" Tile Size ");
+        maker.tileSize = EditorGUILayout.FloatField(maker.tileSize, GUILayout.Width(100f));
 		GUILayout.EndHorizontal();
 
-		GUILayout.BeginHorizontal();
-		GUILayout.Label(" Grid Height ");
-        maker.height = EditorGUILayout.FloatField(maker.height, GUILayout.Width(100f));
-		GUILayout.EndHorizontal();
+        GUILayout.BeginHorizontal();
+        GUILayout.Label(" Map Width ");
+        maker.mapWidth = EditorGUILayout.IntField(maker.mapWidth, GUILayout.Width(100f));
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label(" Map Height ");
+        maker.mapHeight = EditorGUILayout.IntField(maker.mapHeight, GUILayout.Width(100f));
+        GUILayout.EndHorizontal();
 
 		GUILayout.BeginHorizontal();
 		GUILayout.Label(" TileSet ");
@@ -96,9 +105,7 @@ public class MapMakerEditor : Editor {
 
 					maker.tile = maker.tileSet.tiles [tileIndex];
 
-					maker.width = maker.tile.renderer.bounds.size.x;
-					maker.height = maker.tile.renderer.bounds.size.y;
-
+					maker.tileSize = maker.tile.renderer.bounds.size.x;
 
 					//move focus to first sceneview
 					if (SceneView.sceneViews.Count > 0) { SceneView sceneView = (SceneView)SceneView.sceneViews[0]; sceneView.Focus(); }
@@ -134,14 +141,14 @@ public class MapMakerEditor : Editor {
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("Clear Map", GUILayout.MinWidth(100)))
         {
-            map.Clear();
+            Clear();
         }
         GUILayout.EndHorizontal();
 
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("Fix Map", GUILayout.MinWidth(100)))
         {
-            map.Fix();
+            Fix();
         }
         GUILayout.EndHorizontal();
 
@@ -209,7 +216,7 @@ public class MapMakerEditor : Editor {
         string filePath = AssetDatabase.GenerateUniqueAssetPath(string.Format("Assets/Resources/Maps/{0}.asset", mapFileName));
 
         MapData mapAsset = CreateInstance<MapData>();
-        mapAsset.init(mapFileName, maker.tileSet, map.GetTileList());
+        mapAsset.init(mapFileName, maker.mapWidth, maker.mapHeight, maker.tileSize, maker.tileSet, map.GetTileList());
 
         mapAsset.hideFlags = HideFlags.NotEditable;
 
@@ -220,5 +227,31 @@ public class MapMakerEditor : Editor {
         EditorGUIUtility.PingObject(mapAsset);
 
         Debug.Log("Map File Saved");
+    }
+
+    public void Clear()
+    {
+        Fix();
+        foreach (var tile in map.GetTileList())
+        {
+            if (tile.Value != null)
+                DestroyImmediate(tile.Value.gameObject);
+        }
+        map.Clear();
+    }
+
+    public void Fix()
+    {
+        Tile[] tiles = map.GetComponentsInChildren<Tile>();
+        map.Clear();
+        for (int i = 0; i < tiles.Length; ++i)
+        {
+            map.GetTileList().Add(GetTileIndex(tiles[i]), tiles[i]);
+        }
+    }
+
+    public int GetTileIndex(Tile tile)
+    {
+        return Mathf.FloorToInt(tile.transform.localPosition.x) + Mathf.FloorToInt(tile.transform.localPosition.y) * maker.mapWidth;
     }
 }

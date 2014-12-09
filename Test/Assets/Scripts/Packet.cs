@@ -24,13 +24,13 @@ namespace Packet
     {
         public class DamageTile : Packet<DamageTile>
         {
-            public DamageTile(Vector3 position, int damage)
+            public DamageTile(int tileID, int damage)
             {
-                this.position = position;
+                this.tileID = tileID;
                 this.damage = damage;
             }
 
-            public Vector3 position;
+            public int tileID;
             public int damage;
         }
 
