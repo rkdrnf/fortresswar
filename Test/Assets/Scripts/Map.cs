@@ -8,13 +8,27 @@ public class Map : MonoBehaviour {
 
     private List<Tile> tileList = new List<Tile>();
 
-	int mapWidth;
-	int mapHeight;
-	const int tileSize = 8;
+    MapData mapData;
 
-    public TileSet tileSet;
+    void OnNetworkInstantiate(NetworkMessageInfo info)
+    {
+        if (Network.isServer)
+        {
+            Debug.Log("[Server] map instantiated by " + info.sender);
+            //Send Clients MapInfo;
 
-	public string mapName;
+            networkView.RPC("SetMapInfo", RPCMode.AllBuffered, Game.Instance.mapData.name);
+        }
+
+        Game.Instance.SetMap(this);
+    }
+
+    [RPC]
+    void SetMapInfo(string mapName)
+    {
+        this.mapData = Resources.Load("Maps/" + mapName, typeof(MapData)) as MapData;
+        this.Load(mapData);
+    }
 
 	// Use this for initialization
 	void Start () {
@@ -27,16 +41,9 @@ public class Map : MonoBehaviour {
         tileList.Add(tile);
     }
 
-    public override string ToString()
+    public List<Tile> GetTileList()
     {
-        Fix();
-        string output = tileList.Count.ToString() + "\n";
-        for (int i = 0; i < tileList.Count; ++i)
-        {
-            if(tileList[i] != null)
-                output += tileList[i].ToString() + "\n";
-        }
-        return output;
+        return tileList;
     }
 
     public void Clear()
@@ -50,36 +57,19 @@ public class Map : MonoBehaviour {
         tileList.Clear();
     }
 
-    public void Load(string mapData)
+    public void Load(MapData mapData)
     {
-        Clear();
-        string[] lines = mapData.Split(new char[] { '\n' });
+        this.mapData = mapData;
 
-        int tileCount = int.Parse(lines[0]);
-
-        for (int i = 0; i < tileCount; ++i)
+        foreach (TileData tileData in mapData.tiles)
         {
-            string[] val = lines[i + 1].Split(new char[] { '\t' });
-
-            float x = float.Parse(val[0]);
-            float y = float.Parse(val[1]);
-            int tileType = int.Parse(val[2]);
-            int health = int.Parse(val[3]);
-
-            GameObject obj = Instantiate(tileSet.tiles[tileType]) as GameObject;
+            GameObject obj = Instantiate(mapData.tileSet.tiles[(int)tileData.tileType]) as GameObject;
             Tile tile = obj.GetComponent<Tile>();
-            tile.health = health;
+            tile.health = tileData.health;
 
-            AddTile(tile, new Vector3(x, y, 0));
+            AddTile(tile, new Vector3(tileData.x, tileData.y, 0));
         }
     }
-
-	public void LoadByName()
-	{
-		TextAsset asset = Resources.Load ("Maps/" + mapName, typeof(TextAsset)) as TextAsset;
-
-		Load (asset.text);
-	}
 
     public void Fix()
     {

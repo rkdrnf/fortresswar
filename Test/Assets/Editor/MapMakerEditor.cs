@@ -13,7 +13,7 @@ public class MapMakerEditor : Editor {
 
 	int tileIndex = 0;
     string mapFileName;
-    TextAsset mapFileAsset;
+    MapData mapFileAsset;
 
 	void OnEnable()
 	{
@@ -81,7 +81,6 @@ public class MapMakerEditor : Editor {
 		GUILayout.BeginHorizontal();
 		GUILayout.Label(" TileSet ");
 		maker.tileSet = (TileSet)EditorGUILayout.ObjectField (maker.tileSet, typeof(TileSet), false, GUILayout.Width(150f));
-        map.tileSet = maker.tileSet;
 		GUILayout.EndHorizontal();
 
 		if (maker.tileSet != null) {
@@ -110,7 +109,7 @@ public class MapMakerEditor : Editor {
 
         GUILayout.BeginHorizontal();
         GUILayout.BeginVertical();
-        mapFileAsset = (TextAsset)EditorGUILayout.ObjectField(mapFileAsset, typeof(TextAsset), false, GUILayout.Width(100));
+        mapFileAsset = (MapData)EditorGUILayout.ObjectField(mapFileAsset, typeof(MapData), false, GUILayout.Width(100));
         GUILayout.EndVertical();
         GUILayout.BeginVertical();
         if (GUILayout.Button("Load Map", GUILayout.MinWidth(100)))
@@ -202,30 +201,24 @@ public class MapMakerEditor : Editor {
 
     public void LoadMap()
     {
-        map.Load(mapFileAsset.text);
+        map.Load(mapFileAsset);
     }
 
     public void SaveMap()
     {
-        string filePath = AssetDatabase.GenerateUniqueAssetPath(string.Format("Assets{0}Resources{0}Maps{0}{1}.txt", Path.DirectorySeparatorChar, mapFileName));
+        string filePath = AssetDatabase.GenerateUniqueAssetPath(string.Format("Assets/Resources/Maps/{0}.asset", mapFileName));
 
-        using (StreamWriter sw = File.CreateText(filePath))
-        {
-            sw.Write(map.ToString());
-        }
-        Debug.Log("Map File Saved");
+        MapData mapAsset = CreateInstance<MapData>();
+        mapAsset.init(mapFileName, maker.tileSet, map.GetTileList());
 
-        AssetDatabase.Refresh();
+        mapAsset.hideFlags = HideFlags.NotEditable;
 
-        TextAsset mapFile = (TextAsset)AssetDatabase.LoadAssetAtPath(filePath, typeof(TextAsset));
-        if (mapFile == null)
-        {
-            Debug.Log("MapFile not loaded properly");
-            return;
-        }
-
+        AssetDatabase.CreateAsset(mapAsset, filePath);
         AssetDatabase.SaveAssets();
 
-        EditorGUIUtility.PingObject(mapFile);
+        Selection.activeObject = mapAsset;
+        EditorGUIUtility.PingObject(mapAsset);
+
+        Debug.Log("Map File Saved");
     }
 }

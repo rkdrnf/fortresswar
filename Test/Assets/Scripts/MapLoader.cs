@@ -8,24 +8,8 @@ public class MapLoader : MonoBehaviour {
     public TextAsset mapData;
     public TileSet tileSet;
 
-	public Map GetMap()
+	public GameObject GetMap()
 	{
-		Map map = (Instantiate(mapPrefab) as GameObject).GetComponent<Map>();
-		map.mapName = mapData.name;
-		map.tileSet = tileSet;
-		map.Load(mapData.text);
-
-		return map;
+        return mapPrefab;
 	}
-
-	public Map GetMap(string mapName)
-	{
-		Map map = (Instantiate(mapPrefab) as GameObject).GetComponent<Map>();
-		map.mapName = mapName;
-		map.tileSet = tileSet;
-		map.LoadByName ();
-
-		return map;
-	}
-
 }
