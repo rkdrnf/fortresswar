@@ -41,14 +41,12 @@ public class Game : MonoBehaviour
 	public Vector3 spawnPosition;
 	public GameObject playerPrefab;
     public ProjectileSet projectileSet;
+    public MapData mapData;
 
-	
     Map map;
 	PlayerBehaviour[] players;
 	NetworkManager netManager;
 	MapLoader mapLoader;
-
-    
 
     public void Init()
     {
@@ -67,10 +65,17 @@ public class Game : MonoBehaviour
 
 	}
 
-	public void LoadMap(Map loadingMap)
+	public void LoadMap()
 	{
-		this.map = loadingMap;
+        GameObject mapPrefab = mapLoader.GetMap();
+
+        GameObject mapObj = (GameObject)Network.Instantiate(mapPrefab, Vector3.zero, Quaternion.identity, 0);
 	}
+
+    public void SetMap(Map map)
+    {
+        this.map = map;
+    }
 
 	public void StartServerGame()
 	{
@@ -78,7 +83,7 @@ public class Game : MonoBehaviour
 
 		if (!IsMapLoaded())
 		{
-			LoadMap(mapLoader.GetMap());
+			LoadMap();
 		}
 
 		GameObject serverPlayer = MakeNetworkPlayer ();
@@ -99,7 +104,7 @@ public class Game : MonoBehaviour
 		newPlayer.networkView.RPC ("SetOwner", player);
         RegisterCharacter(player, character);
 
-		MakeNetworkMap (player, map.mapName);
+		//MakeNetworkMap (player, map.mapName); StartServerGame 에서 Network.Instantiate
 
         Debug.Log(JsonConvert.SerializeObject(player));
 	}
@@ -109,11 +114,12 @@ public class Game : MonoBehaviour
 		return (GameObject)Network.Instantiate (playerPrefab, spawnPosition, Quaternion.identity, 0);
 	}
 
+    /*
 	public void MakeNetworkMap(NetworkPlayer player, string mapName)
 	{
 		networkView.RPC ("ClientMakeMap", player, mapName);
 	}
-
+    */
     public void ClearGame()
     {
 		foreach (PlayerBehaviour player in players)
@@ -125,12 +131,13 @@ public class Game : MonoBehaviour
 		networkView.RPC ("ClientClearGame", RPCMode.Others);
     }
 
+    /*
 	[RPC]
 	public void ClientMakeMap(string mapName)
 	{
 		this.map = mapLoader.GetMap(mapName);
 	}
-
+    */
 	[RPC]
 	public void ClientClearGame()
 	{
