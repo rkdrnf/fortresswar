@@ -2,6 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 
+using S2C = Packet.S2C;
+using C2S = Packet.C2S;
+
 [System.Serializable]
 public struct spriteInfo
 {
@@ -12,9 +15,12 @@ public struct spriteInfo
 [RequireComponent(typeof(SpriteRenderer))]
 public class Tile : MonoBehaviour {
 
+    public int ID;
     public Const.TileType tileType;
 	public bool destroyable;
 	public int health;
+
+    public Map map;
 
     public spriteInfo[] sprites;
     private int curSpriteIdx;
@@ -38,6 +44,14 @@ public class Tile : MonoBehaviour {
 	}
 
     public void Damage(int damage)
+    {
+        DamageInternal(damage);
+        S2C.DamageTile pck = new S2C.DamageTile(this.ID, damage);
+
+        map.networkView.RPC("BroadCastDamageTile", RPCMode.OthersBuffered, pck.Serialize());
+    }
+
+    public void DamageInternal(int damage)
     {
         if (destroyable)
         {

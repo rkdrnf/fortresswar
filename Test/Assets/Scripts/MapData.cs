@@ -6,22 +6,28 @@ using System.Collections.Generic;
 public class MapData : ScriptableObject
 {
     public string mapName;
+    public int mapWidth;
+    public int mapHeight;
+    public float tileSize = 1;
     public TileSet tileSet;
     public TileData[] tiles = new TileData[0];
 
-    public void init(string mapName, TileSet tileSet, List<Tile> tileList)
+    public void init(string mapName, int mapWidth, int mapHeight, float tileSize, TileSet tileSet, Dictionary<int, Tile> tileList)
     {
         this.mapName = mapName;
+        this.mapWidth = mapWidth;
+        this.mapHeight = mapHeight;
+        this.tileSize = tileSize;
         this.tileSet = tileSet;
         this.tiles = ImportTiles(tileList);
     }
 
-    private TileData[] ImportTiles(List<Tile> tileList)
+    private TileData[] ImportTiles(Dictionary<int, Tile> tileList)
     {
         List<TileData> tileDataList = new List<TileData>();
-        foreach(Tile tile in tileList)
+        foreach(var tile in tileList)
         {
-            tileDataList.Add(new TileData(tile.tileType, tile.transform.position.x, tile.transform.position.y, tile.health));
+            tileDataList.Add(new TileData(tile.Value.ID, tile.Value.tileType, tile.Value.transform.localPosition.x, tile.Value.transform.localPosition.y, tile.Value.health));
         }
 
         return tileDataList.ToArray();

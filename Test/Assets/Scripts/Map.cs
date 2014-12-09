@@ -3,11 +3,14 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 
+using S2C = Packet.S2C;
+using C2S = Packet.C2S;
+
 public class Map : MonoBehaviour {
 
 
-    private List<Tile> tileList = new List<Tile>();
-
+    private Dictionary<int, Tile> tileList = new Dictionary<int,Tile>();
+    
     MapData mapData;
 
     void OnNetworkInstantiate(NetworkMessageInfo info)
@@ -34,27 +37,26 @@ public class Map : MonoBehaviour {
 	void Start () {
 	}
 
-    public void AddTile(Tile tile, Vector3 pos)
+    public Tile GetTile(int ID)
     {
-        tile.transform.parent = this.transform;
-        tile.transform.position = pos;
-        tileList.Add(tile);
+        return tileList[ID];
     }
 
-    public List<Tile> GetTileList()
+    public void AddTile(Tile tile)
+    {
+        tile.transform.parent = this.transform;
+        tileList.Add(tile.ID, tile);
+    }
+
+    public Dictionary<int, Tile> GetTileList()
     {
         return tileList;
     }
 
     public void Clear()
     {
-        Fix();
-        for (int i = 0; i < tileList.Count; ++i)
-        {
-            if(tileList[i] != null)
-                DestroyImmediate(tileList[i].gameObject);
-        }
         tileList.Clear();
+        mapData = null;
     }
 
     public void Load(MapData mapData)
@@ -65,19 +67,25 @@ public class Map : MonoBehaviour {
         {
             GameObject obj = Instantiate(mapData.tileSet.tiles[(int)tileData.tileType]) as GameObject;
             Tile tile = obj.GetComponent<Tile>();
+            tile.ID = tileData.ID;
             tile.health = tileData.health;
+            tile.transform.localPosition = new Vector3(tileData.x, tileData.y, 0);
+            tile.map = this;
 
-            AddTile(tile, new Vector3(tileData.x, tileData.y, 0));
+            AddTile(tile);
         }
     }
 
-    public void Fix()
+    [RPC]
+    public void BroadCastDamageTile(string damageTileJson)
     {
-        Tile[] tiles = transform.GetComponentsInChildren<Tile>();
-        tileList.Clear();
-        for (int i = 0; i < tiles.Length; ++i)
+        if (Network.isClient)
         {
-            tileList.Add(tiles[i]);
+            S2C.DamageTile pck = S2C.DamageTile.Deserialize(damageTileJson);
+            Tile tile = GetTile(pck.tileID);
+            tile.DamageInternal(pck.damage);
         }
     }
+
+    
 }
