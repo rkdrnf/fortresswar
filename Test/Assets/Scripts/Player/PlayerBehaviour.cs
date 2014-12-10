@@ -8,6 +8,8 @@ using C2S = Packet.C2S;
 
 public class PlayerBehaviour : MonoBehaviour {
 
+    
+
     NetworkPlayer owner;
     bool isOwner = false;
 
@@ -23,7 +25,7 @@ public class PlayerBehaviour : MonoBehaviour {
 	const float FIRE_RATE = 0.2f;
 	const int FIRE_POWER = 20;
 
-	bool facingRight = true;
+	public bool facingRight = true;
 
 	float fireTimer;
 
@@ -42,6 +44,8 @@ public class PlayerBehaviour : MonoBehaviour {
     public CharacterState state;
 
     int envFlag;
+
+    S2C.GameSetting setting = new S2C.GameSetting();
 
     public bool IsInState(CharacterState state, params CharacterState[] stateList)
     {
@@ -86,7 +90,7 @@ public class PlayerBehaviour : MonoBehaviour {
 	}
 
 	[RPC]
-	public void SetOwner(NetworkPlayer player)
+	public void SetOwner(NetworkPlayer player, string settingJson)
 	{
         Game.Instance.RegisterCharacter(player, this);
         owner = player;
@@ -104,11 +108,18 @@ public class PlayerBehaviour : MonoBehaviour {
             CameraBehaviour camera = GameObject.Find("Main Camera").GetComponent<CameraBehaviour>();
             camera.target = transform;
         }
+
+        setting = S2C.GameSetting.Deserialize(settingJson);
 	}
 
     public void SetOwnerPlayer(NetworkPlayer player)
     {
         owner = player;
+    }
+
+    public S2C.GameSetting GetSetting()
+    {
+        return setting;
     }
 
 	[RPC]

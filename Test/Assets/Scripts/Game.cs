@@ -42,11 +42,13 @@ public class Game : MonoBehaviour
 	public GameObject playerPrefab;
     public ProjectileSet projectileSet;
     public MapData mapData;
+    public GameMenu gameMenu;
 
     Map map;
 	PlayerBehaviour[] players;
 	NetworkManager netManager;
 	MapLoader mapLoader;
+    
 
     public void Init()
     {
@@ -87,6 +89,8 @@ public class Game : MonoBehaviour
 		}
 
         OnPlayerConnected(Network.player);
+
+        OpenGameMenu();
 	}
 
 	void OnPlayerConnected(NetworkPlayer player)
@@ -95,15 +99,29 @@ public class Game : MonoBehaviour
         {
             Debug.Log(String.Format("Already Connected Player {0} tried to connect.", player));
         }
-
-		Debug.Log(String.Format("Player Connected {0}", player));
-		
-		GameObject newPlayer = Game.Instance.MakeNetworkPlayer ();
-        PlayerBehaviour character = newPlayer.GetComponent<PlayerBehaviour>();
-		newPlayer.networkView.RPC ("SetOwner", RPCMode.AllBuffered, player);
-
-        Debug.Log(JsonConvert.SerializeObject(player));
 	}
+
+    void OnConnectedToServer()
+    {
+        Debug.Log(String.Format("Connected to server."));
+
+        OpenGameMenu();
+    }
+
+    void OpenGameMenu()
+    {
+        gameMenu.gameObject.SetActive(true);
+    }
+
+    [RPC]
+    public void OnPlayerReady(NetworkPlayer player, string settingJson)
+    {
+        Debug.Log(String.Format("Player Connected {0}", player));
+
+        GameObject newPlayer = Game.Instance.MakeNetworkPlayer();
+        PlayerBehaviour character = newPlayer.GetComponent<PlayerBehaviour>();
+        newPlayer.networkView.RPC("SetOwner", RPCMode.AllBuffered, player, settingJson);
+    }
 
     void OnPlayerDisconnected(NetworkPlayer player)
     {
@@ -132,6 +150,8 @@ public class Game : MonoBehaviour
         {
             Destroy(player.Value.gameObject);
         }
+
+        playerObjectTable.Clear();
 
         map = null;
     }
