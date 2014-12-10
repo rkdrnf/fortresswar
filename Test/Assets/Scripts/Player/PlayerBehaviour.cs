@@ -8,7 +8,8 @@ using C2S = Packet.C2S;
 
 public class PlayerBehaviour : MonoBehaviour {
 
-    private NetworkPlayer owner;
+    NetworkPlayer owner;
+    bool isOwner = false;
 
 	public GameObject projectile;
 
@@ -23,8 +24,6 @@ public class PlayerBehaviour : MonoBehaviour {
 	const int FIRE_POWER = 20;
 
 	bool facingRight = true;
-
-	bool isOwner = false;
 
 	float fireTimer;
 
@@ -87,21 +86,30 @@ public class PlayerBehaviour : MonoBehaviour {
 	}
 
 	[RPC]
-	public void SetOwner()
+	public void SetOwner(NetworkPlayer player)
 	{
-		NetworkViewID controllerID = Network.AllocateViewID ();
+        Game.Instance.RegisterCharacter(player, this);
+        owner = player;
+        isOwner = owner == Network.player;
 
-		controllerView.RPC ("SetControllerNetworkView", RPCMode.Server, controllerID);
+        if (isOwner && Network.isClient) // Allocating controller ID. When Network is server, ID is already allocated.
+        {
+            NetworkViewID controllerID = Network.AllocateViewID();
+            controllerView.RPC("SetControllerNetworkView", RPCMode.Server, controllerID);
+            controllerView.viewID = controllerID;
+        }
 
-		controllerView.viewID = controllerID;
-
-		isOwner = true;
-
-		Debug.Log (controllerID);
-
-        CameraBehaviour camera = GameObject.Find("Main Camera").GetComponent<CameraBehaviour>();
-        camera.target = transform;
+        if (isOwner) // Set Camera to own character.
+        {
+            CameraBehaviour camera = GameObject.Find("Main Camera").GetComponent<CameraBehaviour>();
+            camera.target = transform;
+        }
 	}
+
+    public void SetOwnerPlayer(NetworkPlayer player)
+    {
+        owner = player;
+    }
 
 	[RPC]
 	public void SetControllerNetworkView(NetworkViewID viewID)
@@ -544,5 +552,19 @@ public class PlayerBehaviour : MonoBehaviour {
 
         Debug.Log(string.Format("Fire ID :{0} registered", fire.ID));
         proj.owner = player;
+    }
+
+    public void RemoveCharacterFromNetwork()
+    {
+        Network.RemoveRPCs(transformView.viewID);
+        Network.RemoveRPCs(controllerView.viewID);
+        Network.Destroy(gameObject);
+    }
+
+    public void OnDestroy()
+    {
+        Debug.Log("Character OnDestroy");
+
+        Game.Instance.RemoveCharacter(owner);
     }
 }

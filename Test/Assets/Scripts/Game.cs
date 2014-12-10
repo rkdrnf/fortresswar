@@ -86,40 +86,64 @@ public class Game : MonoBehaviour
 			LoadMap();
 		}
 
-		GameObject serverPlayer = MakeNetworkPlayer ();
-        PlayerBehaviour character = serverPlayer.GetComponent<PlayerBehaviour>();
-		character.SetOwner();
-
-        RegisterCharacter(Network.player, character);
-
-        Debug.Log(JsonConvert.SerializeObject(Network.player));
+        OnPlayerConnected(Network.player);
 	}
 
-	public void OnPlayerConnected(NetworkPlayer player)
+	void OnPlayerConnected(NetworkPlayer player)
 	{
+        if (playerObjectTable.ContainsKey(player))
+        {
+            Debug.Log(String.Format("Already Connected Player {0} tried to connect.", player));
+        }
+
 		Debug.Log(String.Format("Player Connected {0}", player));
 		
 		GameObject newPlayer = Game.Instance.MakeNetworkPlayer ();
         PlayerBehaviour character = newPlayer.GetComponent<PlayerBehaviour>();
-		newPlayer.networkView.RPC ("SetOwner", player);
-        RegisterCharacter(player, character);
-
-		//MakeNetworkMap (player, map.mapName); StartServerGame 에서 Network.Instantiate
+		newPlayer.networkView.RPC ("SetOwner", RPCMode.AllBuffered, player);
 
         Debug.Log(JsonConvert.SerializeObject(player));
 	}
+
+    void OnPlayerDisconnected(NetworkPlayer player)
+    {
+        Debug.Log(String.Format("Player Disconnected! {0}", player));
+
+        PlayerBehaviour character = GetCharacter(player);
+        character.RemoveCharacterFromNetwork();
+    }
+
+    void OnDisconnectedFromServer(NetworkDisconnection info)
+    {
+        if (Network.isServer)
+        {
+            OnServerDown();
+        }
+
+        if (Network.isClient)
+        {
+            OnServerDown();
+        }
+    }
+
+    void OnServerDown()
+    {
+        foreach (var player in playerObjectTable)
+        {
+            Destroy(player.Value.gameObject);
+        }
+
+        map = null;
+    }
+
 
 	public GameObject MakeNetworkPlayer()
 	{
 		return (GameObject)Network.Instantiate (playerPrefab, spawnPosition, Quaternion.identity, 0);
 	}
 
-    /*
-	public void MakeNetworkMap(NetworkPlayer player, string mapName)
-	{
-		networkView.RPC ("ClientMakeMap", player, mapName);
-	}
-    */
+
+
     public void ClearGame()
     {
 		foreach (PlayerBehaviour player in players)
@@ -131,13 +155,6 @@ public class Game : MonoBehaviour
 		networkView.RPC ("ClientClearGame", RPCMode.Others);
     }
 
-    /*
-	[RPC]
-	public void ClientMakeMap(string mapName)
-	{
-		this.map = mapLoader.GetMap(mapName);
-	}
-    */
 	[RPC]
 	public void ClientClearGame()
 	{
@@ -194,5 +211,11 @@ public class Game : MonoBehaviour
     {
         Debug.Log(string.Format("NetworkPlayer {0}, Character {1} registered", player, character));
         playerObjectTable.Add(player, character);
+    }
+
+    public void RemoveCharacter(NetworkPlayer player)
+    {
+        Debug.Log(string.Format("Player removed from table"));
+        playerObjectTable.Remove(player);
     }
 }
