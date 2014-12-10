@@ -4,6 +4,7 @@ using System.Collections;
 public class NameLabelBehaviour : MonoBehaviour {
 
     PlayerBehaviour player;
+    public TextMesh textMesh;
 
 	// Use this for initialization
 	void Start () {
@@ -11,9 +12,9 @@ public class NameLabelBehaviour : MonoBehaviour {
 	}
 	
 	// Update is called once per frame
-	void Update () {
-        TextMesh label = GetComponent<TextMesh>();
-
-        label.text = player.state.ToString();
-	}
+    void Update()
+    {
+        transform.localScale = player.transform.localScale;
+        textMesh.text = player.GetSetting().name + "\n" + player.state.ToString();
+    }
 }
