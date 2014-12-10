@@ -87,5 +87,10 @@ public class Map : MonoBehaviour {
         }
     }
 
+    void OnDisconnectedFromServer(NetworkDisconnection info)
+    {
+        Destroy(gameObject);
+    }
+
     
 }
