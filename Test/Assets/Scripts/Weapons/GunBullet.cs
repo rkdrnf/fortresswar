@@ -12,7 +12,7 @@ public class GunBullet : Projectile {
 	Vector3 startPosition;
 	Vector3 currentPosition;
 
-    public bool isOwner;
+    public GameObject explosionAnimation;
 
 	// Use this for initialization
 	void Awake () {
@@ -39,13 +39,33 @@ public class GunBullet : Projectile {
 	{
 		if (Network.isServer) {
 			if (targetCollider.gameObject.CompareTag ("Tile")) {
-				GameObject tile = targetCollider.gameObject;
-				tile.GetComponent<Tile> ().Damage (DAMAGE);
-
-                Destroy();
-			} else {
-				return;
+				OnCollideToTile(targetCollider);
+			} else if (targetCollider.gameObject.CompareTag("Player")){
+                OnCollideToPlayer(targetCollider);
 			}
 		}
+        return;
+
 	}
+
+    void OnCollideToTile(Collider2D targetCollider)
+    {
+        GameObject tile = targetCollider.gameObject;
+        tile.GetComponent<Tile>().Damage(DAMAGE);
+
+        Destroy();
+
+        
+    }
+
+    void OnCollideToPlayer(Collider2D targetCollider)
+    {
+        Destroy();
+    }
+
+    void OnDestroy()
+    {
+        GameObject explosion = (GameObject)Instantiate(explosionAnimation, transform.position, transform.rotation);
+        Destroy(explosion, 0.5f);
+    }
 }
