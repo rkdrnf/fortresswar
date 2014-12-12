@@ -48,6 +48,11 @@ public class PlayerBehaviour : MonoBehaviour {
 
     double statusSetTime = 0f;
 
+    bool isDead;
+
+    const float REVIVAL_TIME = 5f;
+    double revivalTimer = 0f;
+
     S2C.GameSetting setting = new S2C.GameSetting();
 
     public bool IsInState(CharacterState state, params CharacterState[] stateList)
@@ -526,8 +531,9 @@ public class PlayerBehaviour : MonoBehaviour {
 
 	void Fire()
 	{
-        Vector3 worldMousePosition = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, transform.position.z));
-        Vector3 direction = (worldMousePosition - transform.position).normalized;
+        Vector3 worldMousePosition = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0));
+        Vector2 direction = (worldMousePosition - transform.position);
+        direction.Normalize();
 
         C2S.Fire fire = new C2S.Fire(-1, BulletType.GUN, Vector3.zero, direction);
 
@@ -603,6 +609,11 @@ public class PlayerBehaviour : MonoBehaviour {
         {
             health -= damage;
             networkView.RPC("Damage", RPCMode.Others, damage);
+            
+            if(health < 0)
+            {
+                networkView.RPC("Die", RPCMode.All);
+            }
         }
         else if (Network.isClient)
         {
@@ -612,6 +623,37 @@ public class PlayerBehaviour : MonoBehaviour {
 
             health -= damage;
         }
+    }
+
+    [RPC]
+    public void Die()
+    {
+        isDead = true;
+        revivalTimer = REVIVAL_TIME;
+        gameObject.SetActive(false);
+    }
+
+    public bool IsDead()
+    {
+        return isDead;
+    }
+
+    public void UpdateRevivalTimer(double deltaTime)
+    {
+        revivalTimer -= deltaTime;
+    }
+
+    public bool CanRevive()
+    {
+        return revivalTimer <= 0;
+    }
+
+    public void OnRevive(Vector2 location)
+    {
+        isDead = false;
+        transform.position = location;
+        fireTimer = 0f;
+        health = 100;
     }
 
     public void RemoveCharacterFromNetwork()

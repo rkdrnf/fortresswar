@@ -10,6 +10,10 @@ public abstract class Projectile : MonoBehaviour
     
     public NetworkPlayer owner;
 
+    void Awake()
+    {
+    }
+
 
 
     public void Destroy()

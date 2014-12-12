@@ -87,6 +87,20 @@ public class Map : MonoBehaviour {
         }
     }
 
+    public bool CheckInBorder(Transform obj)
+    {
+        return (obj.position.x > -mapData.mapWidth / 2f
+            && obj.position.x < mapData.mapWidth / 2f
+            && obj.position.y > -mapData.mapHeight / 2f
+            && obj.position.y < mapData.mapHeight / 2f
+            );
+    }
+
+    public bool CheckInBorder(PlayerBehaviour player)
+    {
+        return CheckInBorder(player.transform);
+    }
+
     void OnDisconnectedFromServer(NetworkDisconnection info)
     {
         Destroy(gameObject);
