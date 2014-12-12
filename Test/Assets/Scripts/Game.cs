@@ -48,6 +48,12 @@ public class Game : MonoBehaviour
 	PlayerBehaviour[] players;
 	NetworkManager netManager;
 	MapLoader mapLoader;
+
+
+
+    private Vector2 RevivalLocation;
+
+    bool isQuitting = false;
     
 
     public void Init()
@@ -56,6 +62,7 @@ public class Game : MonoBehaviour
 
         projectileObjectTable = new Dictionary<long, Projectile>();
         playerObjectTable = new Dictionary<NetworkPlayer, PlayerBehaviour>();
+        RevivalLocation = new Vector2(0f, 3f);
     }
 
 	void Awake()
@@ -162,7 +169,34 @@ public class Game : MonoBehaviour
 		return (GameObject)Network.Instantiate (playerPrefab, spawnPosition, Quaternion.identity, 0);
 	}
 
+    void FixedUpdate()
+    {
+        foreach(PlayerBehaviour player in playerObjectTable.Values)
+        {
+            if (player.IsDead())
+            {
+                player.UpdateRevivalTimer(Time.deltaTime);
 
+                if (player.CanRevive())
+                {
+                    Revive(player);
+                }
+
+                continue;
+            }
+
+            if (map.CheckInBorder(player) == false)
+            {
+                player.networkView.RPC("Die", RPCMode.All);
+            }
+        }
+    }
+
+    void Revive(PlayerBehaviour player)
+    {
+        player.OnRevive(RevivalLocation);
+        player.gameObject.SetActive(true);
+    }
 
     public void ClearGame()
     {
@@ -238,4 +272,15 @@ public class Game : MonoBehaviour
         Debug.Log(string.Format("Player removed from table"));
         playerObjectTable.Remove(player);
     }
+
+    void OnApplicationQuit()
+    {
+        isQuitting = true;
+    }
+
+    public bool IsQuitting()
+    {
+        return isQuitting;
+    }
+
 }
