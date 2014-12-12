@@ -14,6 +14,7 @@ public class PlayerBehaviour : MonoBehaviour {
     bool isOwner = false;
 
 	public GameObject projectile;
+    public int health;
 
 	const int MOVE_SPEED = 8;
 	const float WALL_WALK_SPEED = 8;
@@ -44,6 +45,8 @@ public class PlayerBehaviour : MonoBehaviour {
     public CharacterState state;
 
     int envFlag;
+
+    double statusSetTime = 0f;
 
     S2C.GameSetting setting = new S2C.GameSetting();
 
@@ -89,7 +92,35 @@ public class PlayerBehaviour : MonoBehaviour {
 		}
 	}
 
-	[RPC]
+    void OnNetworkInstantiate(NetworkMessageInfo info)
+    {
+        //Server has valid value.
+        if(Network.isServer)
+        {
+            return;
+        }
+
+        networkView.RPC("RequestCurrentStatus", RPCMode.Server);
+    }
+
+    [RPC]
+    void RequestCurrentStatus(NetworkMessageInfo info)
+    {
+        networkView.RPC("SetPlayerStatus", info.sender, health);
+    }
+
+    [RPC]
+    void SetPlayerStatus(int health, NetworkMessageInfo info)
+    {
+        //old status
+        if (statusSetTime > info.timestamp)
+            return;
+
+        statusSetTime = info.timestamp;
+        this.health = health;
+    }
+
+    [RPC]
 	public void SetOwner(NetworkPlayer player, string settingJson)
 	{
         Game.Instance.RegisterCharacter(player, this);
@@ -112,9 +143,9 @@ public class PlayerBehaviour : MonoBehaviour {
         setting = S2C.GameSetting.Deserialize(settingJson);
 	}
 
-    public void SetOwnerPlayer(NetworkPlayer player)
+    public NetworkPlayer GetOwner()
     {
-        owner = player;
+        return owner;
     }
 
     public S2C.GameSetting GetSetting()
@@ -563,6 +594,24 @@ public class PlayerBehaviour : MonoBehaviour {
 
         Debug.Log(string.Format("Fire ID :{0} registered", fire.ID));
         proj.owner = player;
+    }
+
+    [RPC]
+    public void Damage(int damage, NetworkMessageInfo info)
+    {
+        if (Network.isServer)
+        {
+            health -= damage;
+            networkView.RPC("Damage", RPCMode.Others, damage);
+        }
+        else if (Network.isClient)
+        {
+            //old damage;
+            if (statusSetTime > info.timestamp)
+                return;
+
+            health -= damage;
+        }
     }
 
     public void RemoveCharacterFromNetwork()
