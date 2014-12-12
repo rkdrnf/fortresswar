@@ -60,12 +60,19 @@ public class GunBullet : Projectile {
 
     void OnCollideToPlayer(Collider2D targetCollider)
     {
+        //When Hit My Player
+        PlayerBehaviour character = targetCollider.gameObject.GetComponent<PlayerBehaviour>();
+        if (owner == character.GetOwner()) 
+            return;
+
+        character.Damage(DAMAGE, new NetworkMessageInfo());
+
         Destroy();
     }
 
     void OnDestroy()
     {
         GameObject explosion = (GameObject)Instantiate(explosionAnimation, transform.position, transform.rotation);
-        Destroy(explosion, 0.5f);
+        Destroy(explosion, 0.4f);
     }
 }
