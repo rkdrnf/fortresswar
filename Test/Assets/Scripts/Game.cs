@@ -74,6 +74,11 @@ public class Game : MonoBehaviour
 
 	}
 
+    public void LoadChat()
+    {
+
+    }
+
 	public void LoadMap()
 	{
         GameObject mapPrefab = mapLoader.GetMap();
@@ -94,6 +99,8 @@ public class Game : MonoBehaviour
 		{
 			LoadMap();
 		}
+
+        LoadChat();
 
         OnPlayerConnected(Network.player);
 
