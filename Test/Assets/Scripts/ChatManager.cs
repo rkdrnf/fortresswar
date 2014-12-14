@@ -18,6 +18,8 @@ public class ChatManager : MonoBehaviour {
 
     ChatState state = ChatState.NONE;
 
+    Vector2 scrollPos;
+
     bool IsInState(ChatState state, params ChatState[] stateList)
     {
         return StateUtil.IsInState<ChatState>(this.state, state, stateList);
@@ -51,11 +53,13 @@ public class ChatManager : MonoBehaviour {
         if (state == ChatState.NEW_MESSAGE)
         {
             chatWindowTimer = CHAT_WINDOW_TIME;
+            scrollPos = new Vector2(0f, 99999999f);
         }
     }
 
     void Awake()
     {
+        scrollPos = Vector2.zero;
         chatList = new List<Chat>();
         writingMessage = "";
     }
@@ -114,7 +118,14 @@ public class ChatManager : MonoBehaviour {
 
     void OnGUI()
     {
+        Input.imeCompositionMode = IMECompositionMode.On;
         Event e = Event.current;
+
+        if (e.type == EventType.keyDown)
+        {
+            Debug.Log(e.keyCode);
+            Debug.Log(e.character);
+        }
 
         if (e.type == EventType.KeyDown && (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter))
         {
@@ -139,13 +150,17 @@ public class ChatManager : MonoBehaviour {
             return;
 
         // show in other states (NEW_MESSAGE, WRITING)
-        GUI.BeginScrollView(new Rect(20, Screen.height - 300, 300, 200), Vector2.zero, new Rect(0, 0, 220, 200));
+        GUILayout.BeginArea(new Rect(20, Screen.height - 300, 300, 200));
+        scrollPos = GUILayout.BeginScrollView(scrollPos, GUILayout.Width(300f), GUILayout.Height(200f));
         GUIStyle areaStyle = new GUIStyle();
         areaStyle.wordWrap = true;
         areaStyle.stretchHeight = true;
         string chatLog = String.Join("\n", chatList.Select(c => c.text).ToArray<string>());
-        GUI.TextArea(new Rect(0, 0, 300, 200), chatLog, areaStyle);
-        GUI.EndScrollView();
+        GUILayout.TextArea(chatLog, areaStyle);
+        GUILayout.EndScrollView();
+        GUILayout.EndArea();
+
+
 
         if (IsInState(ChatState.WRITING))
         {
@@ -154,6 +169,8 @@ public class ChatManager : MonoBehaviour {
 
             // Focus input field when WRITING.
             GUI.FocusControl("ChatField");
+
+            
         }
         else
         {

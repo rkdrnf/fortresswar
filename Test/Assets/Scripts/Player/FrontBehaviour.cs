@@ -16,7 +16,8 @@ public class FrontBehaviour : MonoBehaviour {
 	
 	HashSet<GameObject> contactingWalls;
 
-    Vector2[] rayDirections;
+    Vector2[] rayRightDirections;
+    Vector2[] rayLeftDirections;
     float[] rayDistances;
 
     CharacterEnv walledEnv;
@@ -27,13 +28,15 @@ public class FrontBehaviour : MonoBehaviour {
 		
 		contactingWalls = new HashSet<GameObject> ();
         walledEnv = facing == Facing.FRONT ? CharacterEnv.WALLED_FRONT : CharacterEnv.WALLED_BACK;
-        rayDirections = new Vector2[detectionPoints.Length];
+        rayRightDirections = new Vector2[detectionPoints.Length];
+        rayLeftDirections = new Vector2[detectionPoints.Length];
         rayDistances = new float[detectionPoints.Length];
 
         for(int i = 0; i < detectionPoints.Length; i++)
         {
-            rayDirections[i] = new Vector2(detectionPoints[i].position.x - transform.position.x, detectionPoints[i].position.y - transform.position.y);
-            rayDistances[i] = rayDirections[i].magnitude;
+            rayRightDirections[i] = new Vector2(detectionPoints[i].position.x - transform.position.x, detectionPoints[i].position.y - transform.position.y);
+            rayLeftDirections[i] = new Vector2(-detectionPoints[i].position.x + transform.position.x, detectionPoints[i].position.y - transform.position.y);
+            rayDistances[i] = rayRightDirections[i].magnitude;
         }
 	}
 
@@ -41,12 +44,17 @@ public class FrontBehaviour : MonoBehaviour {
     {
         for(int i = 0; i < detectionPoints.Length; i++)
         {
-            RaycastHit2D hit = Physics2D.Raycast(transform.position, rayDirections[i], rayDistances[i], wallLayer);
+            RaycastHit2D hit = Physics2D.Raycast(transform.position, (player.facingRight ? rayRightDirections[i] : rayLeftDirections[i]), rayDistances[i], wallLayer);
 
-            if (hit.collider != null && hit.normal.x == (facing == Facing.FRONT ? -1 : 1) && hit.normal.y == 0)
+            if (hit.collider != null && hit.normal.x == (player.facingRight ? -1 : 1) && hit.normal.y == 0)
             {
+                Debug.Log(walledEnv.ToString() + "Walled!");
                 player.SetEnv(walledEnv, true);
                 return;
+            }
+            else if (hit.collider != null)
+            {
+                Debug.Log(hit.normal);
             }
         }
 
@@ -54,35 +62,16 @@ public class FrontBehaviour : MonoBehaviour {
         return;
     }
 
-	
-    /*
-	void OnTriggerEnter2D(Collider2D collider)
-	{
-		if (LayerUtil.HasLayer(collider.gameObject.layer, wallLayer)){
-			contactingWalls.Add (collider.gameObject);
-			
-			//Debug.Log(string.Format("contacting walls: {0}", contactingWalls.Count));
-			
-			//No Operation when already walled front.
-            if (player.IsInEnv(walledEnv))
-				return;
-
-            player.SetEnv(walledEnv, true);
-		}
-	}
-	
-	void OnTriggerExit2D(Collider2D collider)
-	{
-		if (LayerUtil.HasLayer (collider.gameObject.layer, wallLayer)) {
-			contactingWalls.Remove (collider.gameObject);
-			
-			//Debug.Log(string.Format("contacting walls: {0}", contactingWalls.Count));
-			
-			//Set WALLED_FRONT false when no more contacting wallexists
-			if (contactingWalls.Count == 0) {
-                player.SetEnv(walledEnv, false);
-			}
-		}
-	}
-     * */
+    int GetNormal(Facing detectorFacing)
+    {
+        if ((player.facingRight && detectorFacing == Facing.FRONT)
+            || ((!player.facingRight) && detectorFacing == Facing.BACK))
+        {
+            return -1;
+        }
+        else
+        {
+            return 1;
+        }
+    }
 }

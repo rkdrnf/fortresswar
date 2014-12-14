@@ -42,13 +42,13 @@ public class FootBehaviour : MonoBehaviour {
 			//ray hit and normal = (0,1) then ground;
 			if (hit.collider != null && hit.normal.x == 0 && hit.normal.y == 1)
 			{
-				if (player.state == CharacterState.GROUNDED)
+				if (player.IsInState(CharacterState.GROUNDED, CharacterState.JUMPING_UP))
 				{
 					//Maintain State;
 					return;
 				}
 
-				if (player.IsInState(CharacterState.FALLING, CharacterState.JUMPING_UP, CharacterState.WALL_JUMPING, CharacterState.WALL_WALKING))
+				if (player.IsInState(CharacterState.FALLING, CharacterState.WALL_JUMPING, CharacterState.WALL_WALKING))
 				{
 					Debug.Log("grounded!");
 					player.state = CharacterState.GROUNDED;
