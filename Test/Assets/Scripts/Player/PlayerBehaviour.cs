@@ -610,7 +610,7 @@ public class PlayerBehaviour : MonoBehaviour {
             health -= damage;
             networkView.RPC("Damage", RPCMode.Others, damage);
             
-            if(health < 0)
+            if(health <= 0)
             {
                 networkView.RPC("Die", RPCMode.All);
             }
