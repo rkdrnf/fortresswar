@@ -2,6 +2,8 @@
 using System.Collections;
 using System.Text;
 using System;
+using Const;
+using Util;
 
 public class Menu : MonoBehaviour {
 
@@ -10,27 +12,61 @@ public class Menu : MonoBehaviour {
 
 	NetworkManager netManager;
 
+    MenuState state;
+
+    bool IsInState(MenuState state)
+    {
+        return Util.StateUtil.IsInState(this.state, state);
+    }
+
+    void SetState(MenuState state)
+    {
+        Util.StateUtil.SetState(out this.state, state);
+
+        Camera menuCamera = GameObject.Find("MenuCamera").camera;
+
+        switch (state)
+        {
+            case MenuState.OFF:
+                menuCamera.enabled = false;
+                netManager.ClearServerList();
+                break;
+
+            case MenuState.ON:
+                menuCamera.enabled = true;
+                netManager.ClearServerList();
+                break;
+        }
+
+        return;
+    }
+
 	void Awake()
 	{
 		netManager = netManagerObj.GetComponent<NetworkManager> ();
 	}
 
-	void Start()
-	{
-	}
-
 	public void RefreshServerList()
 	{
+        if (IsInState(MenuState.OFF))
+            return;
+
 		netManager.RefreshHostList ();
 	}
 
 	public void StartServer()
 	{
+        if (IsInState(MenuState.OFF))
+            return;
+
 		netManager.StartServer ();
 	}
 
 	void OnGUI()
 	{
+        if (IsInState(MenuState.OFF))
+            return;
+
 		HostData[] hostList = netManager.GetServerList ();
 
 		if (hostList.Length > 0)
@@ -51,10 +87,17 @@ public class Menu : MonoBehaviour {
 	{
 		if (Input.GetButtonUp ("Cancel"))
 		{
-			Camera menuCamera = GameObject.Find("MenuCamera").camera;
-			menuCamera.enabled = !menuCamera.enabled;
+            if (IsInState(MenuState.OFF))
+            {
+                SetState(MenuState.ON);
+                return;
+            }
 
-			netManager.ClearServerList();
+            if (IsInState(MenuState.ON))
+            {
+                SetState(MenuState.OFF);
+                return;
+            }
 		}
 	}
 }

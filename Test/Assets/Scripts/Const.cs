@@ -10,6 +10,32 @@
 using System;
 namespace Const
 {
+    public enum GameState
+    {
+        IN_MENU,
+        SETTING_PLAYER,
+        PLAYING
+    }
+
+    public enum InputFocus
+    {
+        CHAT_WINDOW,
+        PLAYER,
+    }
+
+    public enum ChatState
+    {
+        NONE,
+        WRITING,
+        NEW_MESSAGE
+    }
+
+    public enum MenuState
+    {
+        ON,
+        OFF
+    }
+    
     //Unique State.
 	public enum CharacterState 
 	{

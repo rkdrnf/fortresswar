@@ -2,6 +2,7 @@
 using System.Collections;
 using Const;
 using Newtonsoft.Json;
+using Util;
 
 using S2C = Packet.S2C;
 using C2S = Packet.C2S;
@@ -57,18 +58,21 @@ public class PlayerBehaviour : MonoBehaviour {
 
     public bool IsInState(CharacterState state, params CharacterState[] stateList)
     {
-        bool result = this.state == state;
-
-        foreach (CharacterState stateVal in stateList)
-        {
-            if (result == true)
-                break;
-
-            result = this.state == stateVal;
-        }
-
-        return result;
+        return StateUtil.IsInState<CharacterState>(this.state, state, stateList);
     }
+
+    public bool IsNotInState(CharacterState state, params CharacterState[] stateList)
+    {
+        return StateUtil.IsNotInState<CharacterState>(this.state, state, stateList);
+    }
+
+    public void SetState(CharacterState state)
+    {
+        StateUtil.SetState(out this.state, state);
+    }
+
+    
+
 
 
     public bool IsInEnv(CharacterEnv env, params CharacterEnv[] envList)

@@ -32,5 +32,43 @@ namespace Util
 			}
 				
 		}
+
+        public abstract class StateUtil
+        {
+            public static bool IsInState<T>(T srcState, T state, params T[] stateList) where T : IComparable
+            {
+                bool result = srcState.CompareTo(state) == 0;
+
+                foreach (T stateVal in stateList)
+                {
+                    if (result == true)
+                        break;
+
+                    result = srcState.CompareTo(stateVal) == 0;
+                }
+
+                return result;
+            }
+
+            public static void SetState<T>(out T srcState, T trgState)
+            {
+                srcState = trgState;
+            }
+
+            public static bool IsNotInState<T>(T srcState, T state, params T[] stateList) where T : IComparable
+            {
+                bool result = srcState.CompareTo(state) != 0;
+
+                foreach (T stateVal in stateList)
+                {
+                    if (result == false)
+                        break;
+
+                    result = srcState.CompareTo(stateVal) != 0;
+                }
+
+                return result;
+            }
+        }
 }
 
