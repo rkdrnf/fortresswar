@@ -59,6 +59,7 @@ public class Menu : MonoBehaviour {
         if (IsInState(MenuState.OFF))
             return;
 
+        SetState(MenuState.OFF);
 		netManager.StartServer ();
 	}
 
@@ -75,8 +76,8 @@ public class Menu : MonoBehaviour {
 			{
 				if (GUI.Button(new Rect(20, 70 * (i + 1) + 20, 450, 50), string.Format("Name: {0}, IP: {1}:{2}, Players: {3}, Nat:{4}", hostList[i].gameName, String.Join(".", hostList[i].ip), hostList[i].port, hostList[i].connectedPlayers, hostList[i].useNat)))
 				{
+                    SetState(MenuState.OFF);
 					var cError = netManager.Connect(hostList[i]);
-
 					Debug.Log(cError);
 				}
 			}
