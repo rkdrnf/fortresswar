@@ -13,6 +13,7 @@ using System.Collections;
 using System.Threading;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using Const;
 
 using S2C = Packet.S2C;
 using C2S = Packet.C2S;
@@ -49,8 +50,28 @@ public class Game : MonoBehaviour
 	NetworkManager netManager;
 	MapLoader mapLoader;
 
+    InputFocus focus;
 
+    public bool IsFocused(InputFocus focus, params InputFocus[] focusList)
+    {
+        bool result = this.focus == focus;
 
+        foreach (InputFocus focusVal in focusList)
+        {
+            if (result == true)
+                break;
+
+            result = this.focus == focusVal;
+        }
+
+        return result;
+    }
+
+    public void FreeFocus(InputFocus focus)
+    {
+        focus = InputFocus.PLAYER;
+    }
+    
     private Vector2 RevivalLocation;
 
     bool isQuitting = false;
@@ -105,6 +126,8 @@ public class Game : MonoBehaviour
         OnPlayerConnected(Network.player);
 
         OpenGameMenu();
+
+        focus = InputFocus.PLAYER;
 	}
 
 	void OnPlayerConnected(NetworkPlayer player)
@@ -113,6 +136,8 @@ public class Game : MonoBehaviour
         {
             Debug.Log(String.Format("Already Connected Player {0} tried to connect.", player));
         }
+
+        
 	}
 
     void OnConnectedToServer()
@@ -120,6 +145,8 @@ public class Game : MonoBehaviour
         Debug.Log(String.Format("Connected to server."));
 
         OpenGameMenu();
+
+        focus = InputFocus.PLAYER;
     }
 
     void OpenGameMenu()
