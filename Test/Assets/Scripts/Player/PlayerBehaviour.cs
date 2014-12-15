@@ -51,8 +51,6 @@ public class PlayerBehaviour : MonoBehaviour {
 
     double statusSetTime = 0f;
 
-    bool isDead;
-
     const float REVIVAL_TIME = 5f;
     double revivalTimer = 0f;
 
@@ -223,7 +221,7 @@ public class PlayerBehaviour : MonoBehaviour {
         fireTimer += Time.deltaTime;
 
 		if (isOwner) {
-            if (isDead)
+            if (IsDead())
                 return;
 
 			horMov = Input.GetAxisRaw ("Horizontal");
@@ -246,7 +244,7 @@ public class PlayerBehaviour : MonoBehaviour {
 		// When Update() Period is shorter than fixed period, Update() can be called multiple times between FixedUpdate().
 		// Because Input Data is reset in Update(), FixedUpdate() Can't get input data properly.
 		if (Network.isServer) {
-            if (isDead)
+            if (IsDead())
             {
                 horMov = 0f;
                 verMov = 0f;
@@ -529,7 +527,7 @@ public class PlayerBehaviour : MonoBehaviour {
 
     void Flip()
     {
-        if (isDead)
+        if (IsDead())
             return;
 
         facingRight = !facingRight;
@@ -542,7 +540,7 @@ public class PlayerBehaviour : MonoBehaviour {
 
 	void Fire()
 	{
-        if (isDead)
+        if (IsDead())
             return;
 
         Vector3 worldMousePosition = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0));
@@ -590,7 +588,7 @@ public class PlayerBehaviour : MonoBehaviour {
 
     public bool CanFire()
     {
-        if (isDead)
+        if (IsDead())
             return false;
 
         if (fireTimer > FIRE_RATE)
@@ -622,7 +620,7 @@ public class PlayerBehaviour : MonoBehaviour {
     [RPC]
     public void Damage(int damage, NetworkMessageInfo info)
     {
-        if (isDead)
+        if (IsDead())
             return;
 
         if (Network.isServer)
@@ -653,14 +651,14 @@ public class PlayerBehaviour : MonoBehaviour {
     [RPC]
     public void Die()
     {
-        isDead = true;
-        animator.SetBool("Dead", isDead);
+        SetState(CharacterState.DEAD);
+        animator.SetBool("Dead", true);
         revivalTimer = REVIVAL_TIME;
     }
 
     public bool IsDead()
     {
-        return isDead;
+        return IsInState(CharacterState.DEAD);
     }
 
     public void UpdateRevivalTimer(double deltaTime)
@@ -675,8 +673,8 @@ public class PlayerBehaviour : MonoBehaviour {
 
     public void Revive()
     {
-        isDead = false;
-        animator.SetBool("Dead", isDead);
+        SetState(CharacterState.FALLING);
+        animator.SetBool("Dead", false);
         transform.position = Game.Instance.RevivalLocation;
         fireTimer = 0f;
         health = 100;

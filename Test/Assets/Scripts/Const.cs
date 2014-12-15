@@ -39,6 +39,7 @@ namespace Const
     //Unique State.
 	public enum CharacterState 
 	{
+        DEAD = -1,
 		GROUNDED = 0,
 		JUMPING_UP,
 		FALLING,
