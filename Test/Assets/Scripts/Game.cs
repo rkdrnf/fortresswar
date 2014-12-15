@@ -45,7 +45,7 @@ public class Game : MonoBehaviour
     public MapData mapData;
     public GameMenu gameMenu;
 
-    Map map;
+    public Map map;
 	PlayerBehaviour[] players;
 	NetworkManager netManager;
 	MapLoader mapLoader;
@@ -72,17 +72,13 @@ public class Game : MonoBehaviour
         focus = InputFocus.PLAYER;
     }
     
-    private Vector2 RevivalLocation;
+    public Vector2 RevivalLocation;
 
     bool isQuitting = false;
-    
 
     public void Init()
     {
         instance = this;
-
-        projectileObjectTable = new Dictionary<long, Projectile>();
-        playerObjectTable = new Dictionary<NetworkPlayer, PlayerBehaviour>();
         RevivalLocation = new Vector2(0f, 3f);
     }
 
@@ -94,11 +90,6 @@ public class Game : MonoBehaviour
 		mapLoader = GetComponent<MapLoader> ();
 
 	}
-
-    public void LoadChat()
-    {
-
-    }
 
 	public void LoadMap()
 	{
@@ -121,8 +112,6 @@ public class Game : MonoBehaviour
 			LoadMap();
 		}
 
-        LoadChat();
-
         OnPlayerConnected(Network.player);
 
         OpenGameMenu();
@@ -132,12 +121,10 @@ public class Game : MonoBehaviour
 
 	void OnPlayerConnected(NetworkPlayer player)
 	{
-        if (playerObjectTable.ContainsKey(player))
+        if (PlayerManager.Instance.Exists(player))
         {
             Debug.Log(String.Format("Already Connected Player {0} tried to connect.", player));
         }
-
-        
 	}
 
     void OnConnectedToServer()
@@ -164,13 +151,7 @@ public class Game : MonoBehaviour
         newPlayer.networkView.RPC("SetOwner", RPCMode.AllBuffered, player, settingJson);
     }
 
-    void OnPlayerDisconnected(NetworkPlayer player)
-    {
-        Debug.Log(String.Format("Player Disconnected! {0}", player));
-
-        PlayerBehaviour character = GetCharacter(player);
-        character.RemoveCharacterFromNetwork();
-    }
+    
 
     void OnDisconnectedFromServer(NetworkDisconnection info)
     {
@@ -187,12 +168,8 @@ public class Game : MonoBehaviour
 
     void OnServerDown()
     {
-        foreach (var player in playerObjectTable)
-        {
-            Destroy(player.Value.gameObject);
-        }
-
-        playerObjectTable.Clear();
+        PlayerManager.Instance.Clear();
+        ProjectileManager.Instance.Clear();
 
         map = null;
     }
@@ -202,35 +179,6 @@ public class Game : MonoBehaviour
 	{
 		return (GameObject)Network.Instantiate (playerPrefab, spawnPosition, Quaternion.identity, 0);
 	}
-
-    void FixedUpdate()
-    {
-        foreach(PlayerBehaviour player in playerObjectTable.Values)
-        {
-            if (player.IsDead())
-            {
-                player.UpdateRevivalTimer(Time.deltaTime);
-
-                if (player.CanRevive())
-                {
-                    Revive(player);
-                }
-
-                continue;
-            }
-
-            if (map.CheckInBorder(player) == false)
-            {
-                player.networkView.RPC("Die", RPCMode.All);
-            }
-        }
-    }
-
-    void Revive(PlayerBehaviour player)
-    {
-        player.OnRevive(RevivalLocation);
-        player.gameObject.SetActive(true);
-    }
 
     public void ClearGame()
     {
@@ -249,63 +197,13 @@ public class Game : MonoBehaviour
 		map = null;
 	}
 
-
-    Dictionary<long, Projectile> projectileObjectTable;
-    long totalProjectileCount = 0;
-
-    public long GetUniqueKeyForNewProjectile()
-    {
-        return Interlocked.Increment(ref totalProjectileCount);
-    }
-
-    public Projectile GetProjectile(long projectileID)
-    {
-        return (Projectile)projectileObjectTable[projectileID];
-    }
-
-    public void RegisterProjectile(long projectileID, Projectile projectile)
-    {
-        projectileObjectTable.Add(projectileID, projectile);
-    }
+    
 
     // Projectile management
 
-    [RPC]
-    public void DestroyProjectile(string destroyProjectileJson)
-    {
-        S2C.DestroyProjectile pck = S2C.DestroyProjectile.Deserialize(destroyProjectileJson);
+    
 
-        if (Network.isServer)
-        {
-            Debug.Log(string.Format("[SERVER] projectile {0} Destroyed", pck.projectileID));
-            Destroy((UnityEngine.Object)projectileObjectTable[pck.projectileID].gameObject);
-            networkView.RPC("DestroyProjectile", RPCMode.Others, destroyProjectileJson);
-        }
-        else if (Network.isClient)
-        {
-            Debug.Log(string.Format("[CLIENT] projectile {0} Destroyed", pck.projectileID));
-            Destroy((UnityEngine.Object)projectileObjectTable[pck.projectileID].gameObject);
-        }
-    }
-
-    Dictionary<NetworkPlayer, PlayerBehaviour> playerObjectTable;
-
-    public PlayerBehaviour GetCharacter(NetworkPlayer player)
-    {
-        return (PlayerBehaviour)playerObjectTable[player];
-    }
-
-    public void RegisterCharacter(NetworkPlayer player, PlayerBehaviour character)
-    {
-        Debug.Log(string.Format("NetworkPlayer {0}, Character {1} registered", player, character));
-        playerObjectTable.Add(player, character);
-    }
-
-    public void RemoveCharacter(NetworkPlayer player)
-    {
-        Debug.Log(string.Format("Player removed from table"));
-        playerObjectTable.Remove(player);
-    }
+    
 
     void OnApplicationQuit()
     {

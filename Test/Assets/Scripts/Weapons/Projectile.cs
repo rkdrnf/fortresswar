@@ -16,13 +16,12 @@ public abstract class Projectile : MonoBehaviour
 
 
 
-    public void Destroy()
+    public void DestroyFromNetwork()
     {
         if (Network.isServer)
         {
             Packet.S2C.DestroyProjectile pck = new Packet.S2C.DestroyProjectile(ID);
-            Game.Instance.DestroyProjectile(pck.Serialize());
+            ProjectileManager.Instance.DestroyProjectile(pck.Serialize());
         }
-
     }
 }
