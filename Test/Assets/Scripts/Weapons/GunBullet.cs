@@ -25,6 +25,7 @@ public class GunBullet : Projectile {
         Tile tile = targetCollider.gameObject.GetComponent<Tile>();
         if (tile)
         {
+            tile.Damage(damage);
             DestroyFromNetwork();
         }
     }
