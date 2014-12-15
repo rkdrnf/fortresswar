@@ -47,6 +47,10 @@ public class Missile : Projectile {
         {
             if (owner == character.GetOwner())
                 return;
+
+            if (character.IsDead())
+                return;
+
             character.Damage(damage, new NetworkMessageInfo());
         }
     }
