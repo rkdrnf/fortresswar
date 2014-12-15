@@ -78,6 +78,7 @@ namespace Const
     public enum BulletType
     {
         GUN,
+        MISSLE,
 
         MAX
 
