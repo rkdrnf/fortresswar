@@ -34,7 +34,7 @@ public class GunBullet : Projectile {
 
         if ((currentPosition - startPosition).sqrMagnitude > RANGE * RANGE)
         {
-            Destroy();
+            DestroyFromNetwork();
         }
 	}
 
@@ -57,7 +57,7 @@ public class GunBullet : Projectile {
         GameObject tile = targetCollider.gameObject;
         tile.GetComponent<Tile>().Damage(DAMAGE);
 
-        Destroy();
+        DestroyFromNetwork();
 
         
     }
@@ -69,11 +69,12 @@ public class GunBullet : Projectile {
         if (owner == character.GetOwner()) 
             return;
 
-
+        if (character.IsDead())
+            return;
 
         character.Damage(DAMAGE, new NetworkMessageInfo());
 
-        Destroy();
+        DestroyFromNetwork();
     }
 
     void OnApplicationQuit()

@@ -33,10 +33,6 @@ public class Map : MonoBehaviour {
         this.Load(mapData);
     }
 
-	// Use this for initialization
-	void Start () {
-	}
-
     public Tile GetTile(int ID)
     {
         return tileList[ID];

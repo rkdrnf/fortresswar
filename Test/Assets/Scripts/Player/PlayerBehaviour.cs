@@ -43,6 +43,8 @@ public class PlayerBehaviour : MonoBehaviour {
 	NetworkView transformView;
 	NetworkView controllerView;
 
+    Animator animator;
+
     public CharacterState state;
 
     int envFlag;
@@ -72,9 +74,6 @@ public class PlayerBehaviour : MonoBehaviour {
     }
 
     
-
-
-
     public bool IsInEnv(CharacterEnv env, params CharacterEnv[] envList)
 	{
         bool result = (envFlag & (1 << (int)env)) != 0;
@@ -132,7 +131,7 @@ public class PlayerBehaviour : MonoBehaviour {
     [RPC]
 	public void SetOwner(NetworkPlayer player, string settingJson)
 	{
-        Game.Instance.RegisterCharacter(player, this);
+        PlayerManager.Instance.Set(player, this);
         owner = player;
         isOwner = owner == Network.player;
 
@@ -174,6 +173,7 @@ public class PlayerBehaviour : MonoBehaviour {
 	{
 		fireTimer = 0f;
 		wallWalkTimer = 0f;
+        animator = GetComponent<Animator>();
 
 		Component[] views = gameObject.GetComponents(typeof(NetworkView));
 		foreach (Component view in views) {
@@ -188,11 +188,6 @@ public class PlayerBehaviour : MonoBehaviour {
 				transformView = nView;
 			}
 		}
-
-	}
-
-	// Use this for initialization
-	void Start () {
 
 	}
 
@@ -228,6 +223,9 @@ public class PlayerBehaviour : MonoBehaviour {
         fireTimer += Time.deltaTime;
 
 		if (isOwner) {
+            if (isDead)
+                return;
+
 			horMov = Input.GetAxisRaw ("Horizontal");
 			verMov = Input.GetAxisRaw("Vertical");
 
@@ -240,14 +238,20 @@ public class PlayerBehaviour : MonoBehaviour {
 
 		//Animation Rendering.
 		//Every client must do his own Animation Rendering.
-		Animator anim = GetComponent<Animator>();
-		anim.SetBool("HorMoving", horMov != 0);
+		
+		animator.SetBool("HorMoving", horMov != 0);
 
 		// Server Rendering. Rendering from input must be in Update()
 		// Fixed Update refreshes in fixed period. 
 		// When Update() Period is shorter than fixed period, Update() can be called multiple times between FixedUpdate().
 		// Because Input Data is reset in Update(), FixedUpdate() Can't get input data properly.
 		if (Network.isServer) {
+            if (isDead)
+            {
+                horMov = 0f;
+                verMov = 0f;
+            }
+
 			do
 			{
                 if (state == CharacterState.GROUNDED)
@@ -525,6 +529,9 @@ public class PlayerBehaviour : MonoBehaviour {
 
     void Flip()
     {
+        if (isDead)
+            return;
+
         facingRight = !facingRight;
         Vector3 scale = transform.localScale;
         scale.x = -scale.x;
@@ -535,6 +542,9 @@ public class PlayerBehaviour : MonoBehaviour {
 
 	void Fire()
 	{
+        if (isDead)
+            return;
+
         Vector3 worldMousePosition = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0));
         Vector2 direction = (worldMousePosition - transform.position);
         direction.Normalize();
@@ -557,16 +567,16 @@ public class PlayerBehaviour : MonoBehaviour {
     [RPC]
     public void ServerFire(string fireJson, NetworkPlayer player)
     {
-        C2S.Fire fire = C2S.Fire.Deserialize(fireJson);
-
-        PlayerBehaviour character = Game.Instance.GetCharacter(player);
+        PlayerBehaviour character = PlayerManager.Instance.Get(player);
 
         if (character.CanFire() == false)
         {
             return;
         }
 
-        long projID = Game.Instance.GetUniqueKeyForNewProjectile();
+        C2S.Fire fire = C2S.Fire.Deserialize(fireJson);
+
+        long projID = ProjectileManager.Instance.GetUniqueKeyForNewProjectile();
 
         Debug.Log(string.Format("Fire of player {0}, fireID:{1}", player, projID));
 
@@ -580,6 +590,9 @@ public class PlayerBehaviour : MonoBehaviour {
 
     public bool CanFire()
     {
+        if (isDead)
+            return false;
+
         if (fireTimer > FIRE_RATE)
         {
             fireTimer = 0;
@@ -600,7 +613,7 @@ public class PlayerBehaviour : MonoBehaviour {
 
         Projectile proj = projObj.GetComponent<Projectile>();
         proj.ID = fire.ID;
-        Game.Instance.RegisterProjectile(fire.ID, proj);
+        ProjectileManager.Instance.Set(fire.ID, proj);
 
         Debug.Log(string.Format("Fire ID :{0} registered", fire.ID));
         proj.owner = player;
@@ -609,6 +622,9 @@ public class PlayerBehaviour : MonoBehaviour {
     [RPC]
     public void Damage(int damage, NetworkMessageInfo info)
     {
+        if (isDead)
+            return;
+
         if (Network.isServer)
         {
             health -= damage;
@@ -633,8 +649,8 @@ public class PlayerBehaviour : MonoBehaviour {
     public void Die()
     {
         isDead = true;
+        animator.SetBool("Dead", isDead);
         revivalTimer = REVIVAL_TIME;
-        gameObject.SetActive(false);
     }
 
     public bool IsDead()
@@ -652,10 +668,11 @@ public class PlayerBehaviour : MonoBehaviour {
         return revivalTimer <= 0;
     }
 
-    public void OnRevive(Vector2 location)
+    public void Revive()
     {
         isDead = false;
-        transform.position = location;
+        animator.SetBool("Dead", isDead);
+        transform.position = Game.Instance.RevivalLocation;
         fireTimer = 0f;
         health = 100;
     }
@@ -665,12 +682,5 @@ public class PlayerBehaviour : MonoBehaviour {
         Network.RemoveRPCs(transformView.viewID);
         Network.RemoveRPCs(controllerView.viewID);
         Network.Destroy(gameObject);
-    }
-
-    public void OnDestroy()
-    {
-        Debug.Log("Character OnDestroy");
-
-        Game.Instance.RemoveCharacter(owner);
     }
 }
