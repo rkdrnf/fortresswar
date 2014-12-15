@@ -5,28 +5,28 @@ public class Missile : Projectile {
 
     public int splashRange;
 
+    public int sqrSplashRange;
+
+    public int distDamping;
+
+    void Awake()
+    {
+        sqrSplashRange = splashRange * splashRange;
+    }
+
     protected override void CollisionFunc(Collider2D targetCollider)
     {
         if (Network.isServer)
         {
-            GameObject obj = targetCollider.gameObject;
-            if (obj.GetComponent<Tile>() || obj.GetComponent<PlayerBehaviour>())
+            if (targetCollider.gameObject.CompareTag("Tile"))
             {
-                Collider2D[] colliders =
-                    Physics2D.OverlapCircleAll(new Vector2(obj.transform.position.x, obj.transform.position.y), (float)splashRange);
-
-                for (int i = 0; i < colliders.Length; ++i)
-                {
-                    if (colliders[i].gameObject.CompareTag("Tile"))
-                    {
-                        OnCollideToTile(colliders[i]);
-                    }
-                    else if (colliders[i].gameObject.CompareTag("Player"))
-                    {
-                        OnCollideToPlayer(colliders[i]);
-                    }
-                }
+                OnCollideToTile(targetCollider);
             }
+            else if (targetCollider.gameObject.CompareTag("Player"))
+            {
+                OnCollideToPlayer(targetCollider);
+            }
+            
         }
     }
 
@@ -35,7 +35,8 @@ public class Missile : Projectile {
         Tile tile = targetCollider.gameObject.GetComponent<Tile>();
         if (tile)
         {
-            tile.GetComponent<Tile>().Damage(damage);
+            DamageAround(new Vector2(transform.position.x, transform.position.y));
+            DestroyFromNetwork();
         }
     }
 
@@ -51,7 +52,44 @@ public class Missile : Projectile {
             if (character.IsDead())
                 return;
 
-            character.Damage(damage, new NetworkMessageInfo());
+            DamageAround(new Vector2(transform.position.x, transform.position.y));
+            DestroyFromNetwork();
         }
     }
+    void DamageAround(Vector2 origin)
+    {
+        Collider2D[] colliders =
+            Physics2D.OverlapCircleAll(origin, (float)splashRange);
+
+        for (int i = 0; i < colliders.Length; ++i)
+        {
+            GameObject collidingObject = colliders[i].gameObject;
+            if (collidingObject.CompareTag("Tile"))
+            {
+                collidingObject.GetComponent<Tile>().Damage(DamageByDistance(collidingObject.transform.position));
+            }
+            else if (collidingObject.CompareTag("Player"))
+            {
+                collidingObject.GetComponent<PlayerBehaviour>().Damage(DamageByDistance(collidingObject.transform.position), new NetworkMessageInfo());
+            }
+        }
+    }
+
+    int DamageByDistance(Vector3 targetPoint)
+    {
+        if (splashRange <= 0)
+        {
+            return damage;
+        }
+
+        Vector2 dist2D = transform.position - targetPoint;
+        int finalDamage = damage - (int)((damage * (dist2D.sqrMagnitude / sqrSplashRange)) * distDamping);
+
+        if (finalDamage < 0)
+            return 0;
+
+        return finalDamage;
+    }
+
+    
 }

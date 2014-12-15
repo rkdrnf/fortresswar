@@ -14,7 +14,7 @@ public class PlayerBehaviour : MonoBehaviour {
     NetworkPlayer owner;
     bool isOwner = false;
 
-	public GameObject projectile;
+	public BulletType weapon;
     public int health;
 
 	const int MOVE_SPEED = 8;
@@ -549,7 +549,7 @@ public class PlayerBehaviour : MonoBehaviour {
         Vector2 direction = (worldMousePosition - transform.position);
         direction.Normalize();
 
-        C2S.Fire fire = new C2S.Fire(-1, BulletType.GUN, Vector3.zero, direction);
+        C2S.Fire fire = new C2S.Fire(-1, weapon, Vector3.zero, direction);
 
         Debug.Log(string.Format("Player {0} pressed Fire", Network.player));
 
@@ -628,6 +628,11 @@ public class PlayerBehaviour : MonoBehaviour {
         if (Network.isServer)
         {
             health -= damage;
+            if (health < 0)
+            {
+                health = 0;
+            }
+
             networkView.RPC("Damage", RPCMode.Others, damage);
             
             if(health <= 0)
