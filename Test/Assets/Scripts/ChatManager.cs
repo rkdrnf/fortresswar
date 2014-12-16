@@ -20,6 +20,8 @@ public class ChatManager : MonoBehaviour {
 
     Vector2 scrollPos;
 
+    public Texture2D ChatBackground;
+
     bool IsInState(ChatState state, params ChatState[] stateList)
     {
         return StateUtil.IsInState<ChatState>(this.state, state, stateList);
@@ -150,13 +152,24 @@ public class ChatManager : MonoBehaviour {
             return;
 
         // show in other states (NEW_MESSAGE, WRITING)
-        GUILayout.BeginArea(new Rect(20, Screen.height - 300, 300, 200));
+        GUI.color = Color.gray;
+        GUIStyle areaStyle = new GUIStyle(GUI.skin.box);
+        areaStyle.padding = new RectOffset(5, 5, 5, 5);
+        areaStyle.margin = new RectOffset();
+        areaStyle.alignment = TextAnchor.UpperLeft;
+        GUI.contentColor = new Color(255f, 255f, 255f, 255f);
+        GUILayout.BeginArea(new Rect(20, Screen.height - 300, 300, 200), areaStyle);
         scrollPos = GUILayout.BeginScrollView(scrollPos, GUILayout.Width(300f), GUILayout.Height(200f));
-        GUIStyle areaStyle = new GUIStyle();
-        areaStyle.wordWrap = true;
-        areaStyle.stretchHeight = true;
+
+        GUIStyle textAreaStyle = new GUIStyle(GUI.skin.textArea);
+        GUI.color = new Color(255f, 255f, 255f, 255f);
+        GUI.contentColor = new Color(255f, 255f, 255f, 255f);
+        textAreaStyle.wordWrap = true;
+        textAreaStyle.stretchHeight = true;
+        
         string chatLog = String.Join("\n", chatList.Select(c => string.Format("{0}: {1}",PlayerManager.Inst.GetSetting(c.playerID).name, c.text)).ToArray<string>());
-        GUILayout.TextArea(chatLog, areaStyle);
+        GUILayout.TextArea(chatLog, textAreaStyle);
+        GUI.color = Color.gray;
         GUILayout.EndScrollView();
         GUILayout.EndArea();
 
