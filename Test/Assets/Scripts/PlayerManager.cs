@@ -47,7 +47,7 @@ public class PlayerManager : MonoBehaviour
 
         character.RemoveCharacterFromNetwork();
 
-        networkView.RPC("OnPlayerRemoved", RPCMode.All, player);
+        networkView.RPC("OnPlayerRemoved", RPCMode.All, playerID);
     }
 
     [RPC]

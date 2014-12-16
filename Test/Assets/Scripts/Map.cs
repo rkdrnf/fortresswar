@@ -13,6 +13,8 @@ public class Map : MonoBehaviour {
     
     MapData mapData;
 
+    double mapLoadTime;
+
     void OnNetworkInstantiate(NetworkMessageInfo info)
     {
         if (Network.isServer)
@@ -20,17 +22,55 @@ public class Map : MonoBehaviour {
             Debug.Log("[Server] map instantiated by " + info.sender);
             //Send Clients MapInfo;
 
-            networkView.RPC("SetMapInfo", RPCMode.AllBuffered, Game.Inst.mapData.name);
+            networkView.RPC("SetMapInfo", RPCMode.OthersBuffered, Game.Inst.mapData.name);
+            OnSetMapInfo(Game.Inst.mapData.name);
         }
 
+        mapLoadTime = 0f;
         Game.Inst.SetMap(this);
     }
 
     [RPC]
-    void SetMapInfo(string mapName)
+    void SetMapInfo(string mapName, NetworkMessageInfo info)
+    {
+        if (!Network.isClient) return;
+        //CheckServer
+
+        OnSetMapInfo(mapName);
+        networkView.RPC("RequestMapStatus", RPCMode.Server);
+    }
+
+    void OnSetMapInfo(string mapName)
     {
         this.mapData = Resources.Load("Maps/" + mapName, typeof(MapData)) as MapData;
         this.Load(mapData);
+    }
+
+    [RPC]
+    void RequestMapStatus(NetworkMessageInfo info)
+    {
+        if (!Network.isServer) return;
+
+        S2C.MapInfo mapInfo = new S2C.MapInfo(tileList);
+
+        networkView.RPC("SetMapStatus", info.sender, mapInfo.SerializeToBytes());
+    }
+
+    [RPC]
+    void SetMapStatus(byte[] mapInfoData, NetworkMessageInfo info)
+    {
+        if (!Network.isClient) return;
+        //CheckServer
+
+        mapLoadTime = info.timestamp;
+
+        S2C.MapInfo mapInfo = S2C.MapInfo.DeserializeFromBytes(mapInfoData);
+
+        foreach(var tileStatus in mapInfo.tileStatusList)
+        {
+            Tile tile = GetTile(tileStatus.ID);
+            tile.DamageInternal(tile.maxHealth - tileStatus.health);
+        }
     }
 
     public Tile GetTile(int ID)
@@ -77,6 +117,10 @@ public class Map : MonoBehaviour {
     {
         if (!Network.isClient) return;
         //ServerCheck
+
+        //old Info
+        if (mapLoadTime == 0f || mapLoadTime > info.timestamp) return;
+            
 
         S2C.DamageTile pck = S2C.DamageTile.DeserializeFromBytes(damageTileData);
         Tile tile = GetTile(pck.tileID);

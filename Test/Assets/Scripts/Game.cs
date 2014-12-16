@@ -150,7 +150,7 @@ public class Game : MonoBehaviour
         SetMyID(newID);
 
         networkView.RPC("PlayerListRequest", RPCMode.Server, ID);
-
+        
         OpenGameMenu();
     }
 
@@ -165,7 +165,7 @@ public class Game : MonoBehaviour
     }
 
     [RPC]
-    public void EnterCharacter(byte[] settingData, NetworkMessageInfo info)
+    void EnterCharacter(byte[] settingData, NetworkMessageInfo info)
     {
         PlayerSetting setting = PlayerSetting.DeserializeFromBytes(settingData);
 
@@ -204,19 +204,22 @@ public class Game : MonoBehaviour
     void PlayerListRequest(int requestorID, NetworkMessageInfo info)
     {
         if (!Network.isServer) return;
-        if (!PlayerManager.Inst.IsValidPlayer(ID, info.sender)) return;
+        if (!PlayerManager.Inst.IsValidPlayer(requestorID, info.sender)) return;
             
-        networkView.RPC("SetPlayerList", info.sender,
-            JsonConvert.SerializeObject(PlayerManager.Inst.GetSettings(), Formatting.None, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }));
+        S2C.PlayerList settings = new S2C.PlayerList(PlayerManager.Inst.GetSettings());
+
+        byte[] settingsData = settings.SerializeToBytes();
+
+        networkView.RPC("SetPlayerList", info.sender, settingsData);
     }
 
     [RPC]
-    void SetPlayerList(string settingList, NetworkMessageInfo info)
+    void SetPlayerList(byte[] playersData, NetworkMessageInfo info)
     {
         if (!Network.isClient)
             return;
 
-        List<PlayerSetting> settings = JsonConvert.DeserializeObject<List<PlayerSetting>>(settingList);
+        List<PlayerSetting> settings = S2C.PlayerList.DeserializeFromBytes(playersData).settings;
 
         foreach (PlayerSetting setting in settings)
         {
