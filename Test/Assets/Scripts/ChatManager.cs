@@ -152,20 +152,21 @@ public class ChatManager : MonoBehaviour {
             return;
 
         // show in other states (NEW_MESSAGE, WRITING)
-        GUI.color = Color.gray;
         GUIStyle areaStyle = new GUIStyle(GUI.skin.box);
-        areaStyle.padding = new RectOffset(5, 5, 5, 5);
+        areaStyle.padding = new RectOffset(0, 0, 10, 0);
         areaStyle.margin = new RectOffset();
         areaStyle.alignment = TextAnchor.UpperLeft;
-        GUI.contentColor = new Color(255f, 255f, 255f, 255f);
         GUILayout.BeginArea(new Rect(20, Screen.height - 300, 300, 200), areaStyle);
-        scrollPos = GUILayout.BeginScrollView(scrollPos, GUILayout.Width(300f), GUILayout.Height(200f));
 
-        GUIStyle textAreaStyle = new GUIStyle(GUI.skin.textArea);
-        GUI.color = new Color(255f, 255f, 255f, 255f);
-        GUI.contentColor = new Color(255f, 255f, 255f, 255f);
+        GUIStyle scrollStyle = new GUIStyle();
+        scrollStyle.padding = new RectOffset(0, 0, 0, 0);
+        scrollPos = GUILayout.BeginScrollView(scrollPos, scrollStyle, GUILayout.Width(300f), GUILayout.Height(190f));
+
+        GUIStyle textAreaStyle = new GUIStyle();
+        textAreaStyle.normal.textColor = new Color(255f, 255f, 255f, 255f);
         textAreaStyle.wordWrap = true;
         textAreaStyle.stretchHeight = true;
+        textAreaStyle.padding = new RectOffset(5, 5, 5, 5);
         
         string chatLog = String.Join("\n", chatList.Select(c => string.Format("{0}: {1}",PlayerManager.Inst.GetSetting(c.playerID).name, c.text)).ToArray<string>());
         GUILayout.TextArea(chatLog, textAreaStyle);
