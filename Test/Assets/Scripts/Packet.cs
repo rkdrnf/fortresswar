@@ -5,14 +5,62 @@ using System.Text;
 using UnityEngine;
 using Const;
 using Newtonsoft.Json;
-
+using System.Runtime.Serialization.Formatters.Binary;
+using System.IO;
+using ProtoBuf;
+using ProtoBuf.Meta;
 namespace Packet
 {
-    public abstract class Packet<T>
+    [ProtoContract]
+    public class PacketNetworkPlayer
+    {
+        public PacketNetworkPlayer()
+        { }
+
+        public PacketNetworkPlayer(NetworkPlayer player)
+        {
+            networkPlayer = player;
+        }
+
+        public NetworkPlayer networkPlayer
+        {
+            get
+            {
+                NetworkPlayer player = new NetworkPlayer(ip, port);
+                return player;
+            }
+
+            set
+            {
+                ip = value.ipAddress;
+                port = value.port;
+            }
+        }
+
+        [ProtoMember(1)]
+        public string ip;
+        [ProtoMember(2)]
+        public int port;
+    }
+
+    public abstract class Packet<T> where T : Packet<T>
     {
         public string Serialize()
         {
             return JsonConvert.SerializeObject(this, typeof(T), Formatting.None, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
+        }
+
+        public byte[] SerializeToBytes()
+        {
+            MemoryStream ms = new MemoryStream();
+            Serializer.Serialize<T>(ms, (T)this);
+            return ms.ToArray();
+        }
+
+        public static T DeserializeFromBytes(byte[] arrBytes)
+        {
+            MemoryStream ms = new MemoryStream(arrBytes);
+            return Serializer.Deserialize<T>(ms);
         }
 
         public static T Deserialize(string json)
@@ -59,15 +107,17 @@ namespace Packet
     {
         public class Fire : Packet<Fire>
         {
-            public Fire(long projectileID, BulletType bulletType, Vector3 origin, Vector3 direction)
+            public Fire(int playerID, long projectileID, BulletType bulletType, Vector3 origin, Vector3 direction)
             {
+                this.playerID = playerID;
                 this.bulletType = bulletType;
                 this.origin = origin;
                 this.direction = direction;
-                this.ID = projectileID;
+                this.projectileID = projectileID;
             }
 
-            public long ID;
+            public int playerID;
+            public long projectileID;
             public BulletType bulletType;
             public Vector3 origin;
             public Vector3 direction;

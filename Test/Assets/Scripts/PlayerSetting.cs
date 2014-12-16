@@ -3,15 +3,24 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using ProtoBuf;
+using Packet;
 
+[ProtoContract]
 public class PlayerSetting : Packet.Packet<PlayerSetting>
 {
-    public PlayerSetting (NetworkPlayer player, string name)
+    public PlayerSetting()
+    { }
+
+    public PlayerSetting (int playerID, string name)
     {
-        this.player = player;
+        this.playerID = playerID;
         this.name = name;
     }
 
-    public NetworkPlayer player;
+    [ProtoMember(1)]
+    public int playerID;
+
+    [ProtoMember(2)]
     public string name = "name";
 }

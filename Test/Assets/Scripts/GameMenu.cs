@@ -11,7 +11,7 @@ public class GameMenu : MonoBehaviour
     void Awake()
     {
         gameObject.SetActive(false);
-        setting = new PlayerSetting(Network.player, "");
+        setting = new PlayerSetting(-1, "");
     }
     void OnGUI()
     {
@@ -19,15 +19,15 @@ public class GameMenu : MonoBehaviour
 
         if (GUI.Button(new Rect(Screen.width / 2 - 50, Screen.height / 2 - 20, 100f, 20f), "Enter"))
         {
-            setting.player = Network.player;
+            setting.playerID = Game.Inst.GetID();
 
             if (Network.isServer)
             {
-                Game.Inst.OnPlayerReady(setting.Serialize(), new NetworkMessageInfo());
+                Game.Inst.OnEnterCharacter(setting);
             }
             else if (Network.isClient)
             {
-                Game.Inst.networkView.RPC("OnPlayerReady", RPCMode.Server, setting.Serialize());
+                Game.Inst.networkView.RPC("OnPlayerReady", RPCMode.Server, setting.SerializeToBytes());
             }
             
             gameObject.SetActive(false);

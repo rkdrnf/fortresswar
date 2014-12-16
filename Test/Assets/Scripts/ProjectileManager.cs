@@ -31,33 +31,28 @@ public class ProjectileManager : MonoBehaviour {
         projectileObjManager = new ProjectileObjManager();
     }
 
-    [RPC]
-    public void DestroyProjectile(string destroyProjectileJson)
+    public void DestroyProjectile(long projID)
     {
-        S2C.DestroyProjectile pck = S2C.DestroyProjectile.Deserialize(destroyProjectileJson);
+        if (!Network.isServer) return;
 
-        if (Network.isServer)
-        {
-            Debug.Log(string.Format("[SERVER] projectile {0} Destroyed", pck.projectileID));
-            Destroy((UnityEngine.Object)projectileObjManager.Get(pck.projectileID).gameObject);
-            networkView.RPC("DestroyProjectile", RPCMode.Others, destroyProjectileJson);
-            networkView.RPC("OnProjectileRemoved", RPCMode.All, destroyProjectileJson);
-        }
-        else if (Network.isClient)
-        {
-            Debug.Log(string.Format("[CLIENT] projectile {0} Destroyed", pck.projectileID));
-            Destroy((UnityEngine.Object)projectileObjManager.Get(pck.projectileID).gameObject);
-        }
+        Debug.Log(string.Format("[SERVER] projectile {0} Destroyed", projID));
+        Destroy((UnityEngine.Object)projectileObjManager.Get(projID).gameObject);
+        projectileObjManager.Remove(projID);
+        networkView.RPC("ClientDestroyProjectile", RPCMode.Others, projID);
     }
 
     [RPC]
-    public void OnProjectileRemoved(string destroyProjectileJson)
+    void ClientDestroyProjectile(byte[] destroyData, NetworkMessageInfo info)
     {
-        S2C.DestroyProjectile pck = S2C.DestroyProjectile.Deserialize(destroyProjectileJson);
+        S2C.DestroyProjectile pck = S2C.DestroyProjectile.DeserializeFromBytes(destroyData);
 
+        if (!Network.isClient) return;
+        //ServerCheck
+
+        Debug.Log(string.Format("[CLIENT] projectile {0} Destroyed", pck.projectileID));
+        Destroy((UnityEngine.Object)projectileObjManager.Get(pck.projectileID).gameObject);
         projectileObjManager.Remove(pck.projectileID);
     }
-
 
     public long GetUniqueKeyForNewProjectile()
     {
