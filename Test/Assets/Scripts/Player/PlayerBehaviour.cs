@@ -9,9 +9,7 @@ using C2S = Packet.C2S;
 
 public class PlayerBehaviour : MonoBehaviour {
 
-    
-
-    NetworkPlayer owner;
+    int owner;
     bool isOwner = false;
 
 	public BulletType weapon;
@@ -125,11 +123,19 @@ public class PlayerBehaviour : MonoBehaviour {
     }
 
     [RPC]
-	public void SetOwner(NetworkPlayer player)
+	public void SetOwner(int playerID, NetworkMessageInfo info)
 	{
-        PlayerManager.Inst.Set(player, this);
-        owner = player;
-        isOwner = owner == Network.player;
+        if (!Network.isClient) return;
+        //ServerCheck
+
+        OnSetOwner(playerID);
+	}
+
+    public void OnSetOwner(int playerID)
+    {
+        PlayerManager.Inst.Set(playerID, this);
+        owner = playerID;
+        isOwner = owner == Game.Inst.GetID();
 
         if (isOwner && Network.isClient) // Allocating controller ID. When Network is server, ID is already allocated.
         {
@@ -143,9 +149,9 @@ public class PlayerBehaviour : MonoBehaviour {
             CameraBehaviour camera = GameObject.Find("Main Camera").GetComponent<CameraBehaviour>();
             camera.target = transform;
         }
-	}
+    }
 
-    public NetworkPlayer GetOwner()
+    public int GetOwner()
     {
         return owner;
     }
@@ -154,8 +160,6 @@ public class PlayerBehaviour : MonoBehaviour {
 	public void SetControllerNetworkView(NetworkViewID viewID)
 	{
 		controllerView.viewID = viewID;
-
-		Debug.Log (viewID);
 	}
 
 	void Awake()
@@ -206,6 +210,27 @@ public class PlayerBehaviour : MonoBehaviour {
 		}
 	}
 
+    void FixedUpdate()
+    {
+        if (!Network.isServer) return;
+
+        if (IsDead())
+        {
+            UpdateRevivalTimer(Time.deltaTime);
+
+            if (CanRevive())
+            {
+                Revive();
+                networkView.RPC("ClientRevive", RPCMode.Others);
+            }
+        }
+
+        if (Game.Inst.map.CheckInBorder(this) == false)
+        {
+            networkView.RPC("Die", RPCMode.Others);
+            OnDie();
+        }
+    }
 	// Update is called once per frame
 	// Reset input data per frame.
 	void Update () {
@@ -534,47 +559,62 @@ public class PlayerBehaviour : MonoBehaviour {
         if (IsDead())
             return;
 
+        
+
         Vector3 worldMousePosition = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0));
         Vector2 direction = (worldMousePosition - transform.position);
         direction.Normalize();
 
-        C2S.Fire fire = new C2S.Fire(-1, weapon, Vector3.zero, direction);
+        C2S.Fire fire = new C2S.Fire(owner, -1, weapon, Vector3.zero, direction);
 
         Debug.Log(string.Format("Player {0} pressed Fire", Network.player));
 
         if (Network.isServer)
         {
-            ServerFire(fire.Serialize(), Network.player);
+            OnServerFire(fire);
         }
         else
         { 
-            networkView.RPC("ServerFire", RPCMode.Server, fire.Serialize(), Network.player);
+            networkView.RPC("ServerFire", RPCMode.Server, fire.SerializeToBytes());
         }
         
 	}
 
     [RPC]
-    public void ServerFire(string fireJson, NetworkPlayer player)
+    public void ServerFire(byte[] fireData, NetworkMessageInfo info)
     {
-        PlayerBehaviour character = PlayerManager.Inst.Get(player);
 
-        if (character.CanFire() == false)
+        if (!Network.isServer) return;
+        
+        C2S.Fire fire = C2S.Fire.DeserializeFromBytes(fireData);
+
+        if (PlayerManager.Inst.IsValidPlayer(fire.playerID, info.sender)) return;
+
+        OnServerFire(fire);
+
+        return;
+    }
+
+    public void OnServerFire(C2S.Fire fire)
+    {
+        if (!Network.isServer) return;
+
+        if (CanFire() == false)
         {
             return;
         }
 
-        C2S.Fire fire = C2S.Fire.Deserialize(fireJson);
+        PlayerBehaviour character = PlayerManager.Inst.Get(fire.playerID);
 
         long projID = ProjectileManager.Inst.GetUniqueKeyForNewProjectile();
 
-        Debug.Log(string.Format("Fire of player {0}, fireID:{1}", player, projID));
+        Debug.Log(string.Format("Fire of player {0}, fireID:{1}", fire.playerID, projID));
 
-        fire.ID = projID;
+        fire.projectileID = projID;
         fire.origin = character.gameObject.transform.position;
 
-        networkView.RPC("BroadcastFire", RPCMode.All, fire.Serialize(), player);
-
-        return;
+        networkView.RPC("BroadcastFire", RPCMode.Others, fire.SerializeToBytes());
+        OnBroadcastFire(fire);
     }
 
     public bool CanFire()
@@ -592,55 +632,79 @@ public class PlayerBehaviour : MonoBehaviour {
     }
 
     [RPC]
-    public void BroadcastFire(string fireJson, NetworkPlayer player)
+    public void BroadcastFire(byte[] fireData, NetworkMessageInfo info)
     {
-        C2S.Fire fire = C2S.Fire.Deserialize(fireJson);
+        if (!Network.isClient) return;
+        //ServerCheck
 
+        C2S.Fire fire = C2S.Fire.DeserializeFromBytes(fireData);
+
+        OnBroadcastFire(fire);
+    }
+
+    public void OnBroadcastFire(C2S.Fire fire)
+    {
         GameObject projObj = (GameObject)Instantiate(Game.Inst.projectileSet.projectiles[(int)fire.bulletType], fire.origin, Quaternion.identity);
 
         projObj.rigidbody2D.AddForce(new Vector2(fire.direction.x * FIRE_POWER, fire.direction.y * FIRE_POWER), ForceMode2D.Impulse);
 
         Projectile proj = projObj.GetComponent<Projectile>();
-        proj.ID = fire.ID;
-        ProjectileManager.Inst.Set(fire.ID, proj);
+        proj.ID = fire.projectileID;
+        ProjectileManager.Inst.Set(fire.projectileID, proj);
 
-        Debug.Log(string.Format("Fire ID :{0} registered", fire.ID));
-        proj.owner = player;
+        Debug.Log(string.Format("Fire ID :{0} registered", fire.projectileID));
+        proj.owner = fire.playerID;
     }
 
-    [RPC]
     public void Damage(int damage, NetworkMessageInfo info)
     {
+        if (!Network.isServer) return;
+        
         if (IsDead())
             return;
 
-        if (Network.isServer)
+        health -= damage;
+        if (health < 0)
         {
-            health -= damage;
-            if (health < 0)
-            {
-                health = 0;
-            }
-
-            networkView.RPC("Damage", RPCMode.Others, damage);
-            
-            if(health <= 0)
-            {
-                networkView.RPC("Die", RPCMode.All);
-            }
+            health = 0;
         }
-        else if (Network.isClient)
-        {
-            //old damage;
-            if (statusSetTime > info.timestamp)
-                return;
 
-            health -= damage;
+        networkView.RPC("ClientDamage", RPCMode.Others, damage);
+        
+        if(health <= 0)
+        {
+            networkView.RPC("Die", RPCMode.Others);
+            OnDie();
         }
     }
 
     [RPC]
-    public void Die()
+    void ClientDamage(int damage, NetworkMessageInfo info)
+    {
+        if (!Network.isClient) return;
+        //ServerCheck
+
+        //old damage;
+        if (statusSetTime > info.timestamp) return;
+            
+
+        health -= damage;
+        if (health < 0)
+        {
+            health = 0;
+        }
+    }
+
+    [RPC]
+    void Die(NetworkMessageInfo info)
+    {
+        if (!Network.isClient) return;
+        //ServerCheck
+
+        OnDie();
+    }
+
+    void OnDie()
     {
         SetState(CharacterState.DEAD);
         animator.SetBool("Dead", true);
@@ -652,21 +716,36 @@ public class PlayerBehaviour : MonoBehaviour {
         return IsInState(CharacterState.DEAD);
     }
 
-    public void UpdateRevivalTimer(double deltaTime)
+    void UpdateRevivalTimer(double deltaTime)
     {
         revivalTimer -= deltaTime;
     }
 
-    public bool CanRevive()
+    bool CanRevive()
     {
         return revivalTimer <= 0;
     }
 
-    public void Revive()
+    void Revive()
+    {
+        if (!Network.isServer) return;
+
+        transform.position = Game.Inst.RevivalLocation;
+        OnRevive();
+    }
+
+    void ClientRevive(NetworkMessageInfo info)
+    {
+        if (!Network.isClient) return;
+        //ServerCheck
+
+        OnRevive();
+    }
+
+    void OnRevive()
     {
         SetState(CharacterState.FALLING);
         animator.SetBool("Dead", false);
-        transform.position = Game.Inst.RevivalLocation;
         fireTimer = 0f;
         health = 100;
     }

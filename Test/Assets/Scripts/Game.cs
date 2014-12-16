@@ -18,6 +18,8 @@ using Const;
 using S2C = Packet.S2C;
 using C2S = Packet.C2S;
 
+using ProtoBuf.Meta;
+
 
 public class Game : MonoBehaviour
 {
@@ -46,11 +48,17 @@ public class Game : MonoBehaviour
     public GameMenu gameMenu;
 
     public Map map;
-	PlayerBehaviour[] players;
 	NetworkManager netManager;
 	MapLoader mapLoader;
 
     InputFocus focus;
+
+    private int ID = -1;
+
+    public int GetID()
+    {
+        return ID;
+    }
 
     public bool IsFocused(InputFocus focus, params InputFocus[] focusList)
     {
@@ -85,7 +93,6 @@ public class Game : MonoBehaviour
 	void Awake()
 	{
         Init();
-		players = new PlayerBehaviour[]{};
 		netManager = netManagerObject.GetComponent<NetworkManager> ();
 		mapLoader = GetComponent<MapLoader> ();
 
@@ -112,6 +119,8 @@ public class Game : MonoBehaviour
 			LoadMap();
 		}
 
+        SetMyID(PlayerManager.Inst.GetUniqueID());
+
         OnPlayerConnected(Network.player);
 
         OpenGameMenu();
@@ -123,19 +132,34 @@ public class Game : MonoBehaviour
 	{
         if (PlayerManager.Inst.Exists(player))
         {
-            Debug.Log(String.Format("Already Connected Player {0} tried to connect.", player));
+            //Clear previous connection;
+            return;
         }
+
+        int ID = PlayerManager.Inst.SetID(PlayerManager.Inst.GetUniqueID(), player);
+        networkView.RPC("SetPlayerID", player, ID);
 	}
-
-    void OnConnectedToServer()
+    
+    [RPC]
+    void SetPlayerID(int newID, NetworkMessageInfo info)
     {
-        Debug.Log(String.Format("Connected to server."));
+        if (!Network.isClient)
+        { 
+            return;
+        }
+     
+        SetMyID(newID);
 
-        networkView.RPC("PlayerSettingRequest", RPCMode.Server);
+        networkView.RPC("PlayerListRequest", RPCMode.Server, ID);
 
         OpenGameMenu();
 
         focus = InputFocus.PLAYER;
+    }
+
+    void SetMyID(int newID)
+    {
+        ID = newID;
     }
 
     void OpenGameMenu()
@@ -144,46 +168,53 @@ public class Game : MonoBehaviour
     }
 
     [RPC]
-    public void OnPlayerReady(string settingJson, NetworkMessageInfo info)
+    public void EnterCharacter(byte[] settingData, NetworkMessageInfo info)
     {
-        if (!Network.isServer)
-            return;
+        PlayerSetting setting = PlayerSetting.DeserializeFromBytes(settingData);
 
-        Debug.Log(String.Format("Player Ready {0}", info.sender));
+        if (!Network.isServer) return;
+        if (!PlayerManager.Inst.IsValidPlayer(setting.playerID, info.sender)) return;
 
-        PlayerSetting setting = PlayerSetting.Deserialize(settingJson);
-        setting.player = info.sender;
+        OnEnterCharacter(setting);
+    }
+
+    public void OnEnterCharacter(PlayerSetting setting)
+    {
+        if (!Network.isServer) return;
+
+        Debug.Log(String.Format("Player Ready {0}", setting.playerID));
 
         PlayerManager.Inst.SetSetting(setting);
-        networkView.RPC("NewPlayer", RPCMode.All, info.sender, settingJson);
+        networkView.RPC("NewPlayer", RPCMode.Others, setting.SerializeToBytes());
 
         GameObject newPlayer = Game.Inst.MakeNetworkPlayer();
         PlayerBehaviour character = newPlayer.GetComponent<PlayerBehaviour>();
-        newPlayer.networkView.RPC("SetOwner", RPCMode.AllBuffered, info.sender);
+        character.OnSetOwner(setting.playerID);
+        newPlayer.networkView.RPC("SetOwner", RPCMode.OthersBuffered, setting.playerID);
     }
 
     [RPC]
-    void NewPlayer(NetworkPlayer player, string settingJson)
+    void NewPlayer(byte[] settingData)
     {
-        PlayerSetting setting = PlayerSetting.Deserialize(settingJson);
-
-        setting.player = player;
-
+        if (!Network.isClient) return;
+        //ServerCheck
+        
+        PlayerSetting setting = PlayerSetting.DeserializeFromBytes(settingData);
         PlayerManager.Inst.SetSetting(setting);
     }
 
     [RPC]
-    void PlayerSettingRequest(NetworkMessageInfo info)
+    void PlayerListRequest(int requestorID, NetworkMessageInfo info)
     {
-        if (!Network.isServer)
-            return;
-
-        networkView.RPC("PlayerSettingResponse", info.sender,
+        if (!Network.isServer) return;
+        if (!PlayerManager.Inst.IsValidPlayer(ID, info.sender)) return;
+            
+        networkView.RPC("SetPlayerList", info.sender,
             JsonConvert.SerializeObject(PlayerManager.Inst.GetSettings(), Formatting.None, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }));
     }
 
     [RPC]
-    void PlayerSettingResponse(string settingList)
+    void SetPlayerList(string settingList, NetworkMessageInfo info)
     {
         if (!Network.isClient)
             return;
@@ -225,10 +256,7 @@ public class Game : MonoBehaviour
 
     public void ClearGame()
     {
-		foreach (PlayerBehaviour player in players)
-		{
-			Network.Destroy(player.gameObject);
-		}
+        PlayerManager.Inst.Clear();
 
 		map = null;
 		networkView.RPC ("ClientClearGame", RPCMode.Others);

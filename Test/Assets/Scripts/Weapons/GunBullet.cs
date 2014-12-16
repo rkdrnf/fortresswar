@@ -4,7 +4,6 @@ using System.Collections;
 public class GunBullet : Projectile {
 
 	protected override void CollisionFunc(Collider2D targetCollider)
-
 	{
         Debug.Log("collided");
 		if (Network.isServer) {
