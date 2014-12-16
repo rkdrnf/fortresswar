@@ -44,7 +44,7 @@ public class NetworkManager : MonoBehaviour {
 	{
 		Debug.Log ("Server Initialized!");
 
-		Game.Instance.StartServerGame();
+		Game.Inst.StartServerGame();
 	}
 
 	public NetworkConnectionError Connect(HostData hostData)

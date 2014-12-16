@@ -12,7 +12,7 @@ public class ProjectileManager : MonoBehaviour {
 
     private static ProjectileManager instance;
 
-    public static ProjectileManager Instance
+    public static ProjectileManager Inst
     {
         get
         {

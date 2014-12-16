@@ -53,11 +53,6 @@ namespace Packet
 
             public long projectileID;
         }
-
-        public class GameSetting : Packet<GameSetting>
-        {
-            public string name = "name";
-        }
     }
 
     namespace C2S

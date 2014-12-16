@@ -8,9 +8,12 @@ public class PlayerManager : MonoBehaviour
 {
     private PlayerObjManager playerObjManager;
 
+    private Dictionary<NetworkPlayer, PlayerSetting> settingDic;
+
+
     private static PlayerManager instance;
 
-    public static PlayerManager Instance
+    public static PlayerManager Inst
     {
         get
         {
@@ -26,6 +29,7 @@ public class PlayerManager : MonoBehaviour
     {
         instance = this;
         playerObjManager = new PlayerObjManager();
+        settingDic = new Dictionary<NetworkPlayer, PlayerSetting>();
     }
 
     void FixedUpdate()
@@ -44,7 +48,7 @@ public class PlayerManager : MonoBehaviour
                 continue;
             }
 
-            if (Game.Instance.map.CheckInBorder(player) == false)
+            if (Game.Inst.map.CheckInBorder(player) == false)
             {
                 player.networkView.RPC("Die", RPCMode.All);
             }
@@ -56,15 +60,17 @@ public class PlayerManager : MonoBehaviour
         Debug.Log(String.Format("Player Disconnected! {0}", player));
 
         PlayerBehaviour character = playerObjManager.Get(player);
+
         character.RemoveCharacterFromNetwork();
 
-        networkView.RPC("OnCharacterRemoved", RPCMode.All, player);
+        networkView.RPC("OnPlayerRemoved", RPCMode.All, player);
     }
 
     [RPC]
-    void OnCharacterRemoved(NetworkPlayer player)
+    void OnPlayerRemoved(NetworkPlayer player)
     {
         playerObjManager.Remove(player);
+        settingDic.Remove(player);
     }
 
     // Dictionary Functions
@@ -91,5 +97,23 @@ public class PlayerManager : MonoBehaviour
     public void Clear()
     {
         playerObjManager.Clear();
+    }
+
+    public PlayerSetting GetSetting(NetworkPlayer player)
+    {
+        if (settingDic.ContainsKey(player))
+            return settingDic[player];
+
+        return null;
+    }
+
+    public void SetSetting(PlayerSetting setting)
+    {
+        settingDic[setting.player] = setting;
+    }
+
+    public List<PlayerSetting> GetSettings()
+    {
+        return settingDic.Values.ToList<PlayerSetting>();
     }
 }

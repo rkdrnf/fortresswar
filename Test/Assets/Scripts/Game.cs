@@ -23,7 +23,7 @@ public class Game : MonoBehaviour
 {
     private static Game instance;
 
-	public static Game Instance
+	public static Game Inst
 	{
 		get
 		{
@@ -121,7 +121,7 @@ public class Game : MonoBehaviour
 
 	void OnPlayerConnected(NetworkPlayer player)
 	{
-        if (PlayerManager.Instance.Exists(player))
+        if (PlayerManager.Inst.Exists(player))
         {
             Debug.Log(String.Format("Already Connected Player {0} tried to connect.", player));
         }
@@ -130,6 +130,8 @@ public class Game : MonoBehaviour
     void OnConnectedToServer()
     {
         Debug.Log(String.Format("Connected to server."));
+
+        networkView.RPC("PlayerSettingRequest", RPCMode.Server);
 
         OpenGameMenu();
 
@@ -142,16 +144,57 @@ public class Game : MonoBehaviour
     }
 
     [RPC]
-    public void OnPlayerReady(NetworkPlayer player, string settingJson)
+    public void OnPlayerReady(string settingJson, NetworkMessageInfo info)
     {
-        Debug.Log(String.Format("Player Connected {0}", player));
+        if (!Network.isServer)
+            return;
 
-        GameObject newPlayer = Game.Instance.MakeNetworkPlayer();
+        Debug.Log(String.Format("Player Ready {0}", info.sender));
+
+        PlayerSetting setting = PlayerSetting.Deserialize(settingJson);
+        setting.player = info.sender;
+
+        PlayerManager.Inst.SetSetting(setting);
+        networkView.RPC("NewPlayer", RPCMode.All, info.sender, settingJson);
+
+        GameObject newPlayer = Game.Inst.MakeNetworkPlayer();
         PlayerBehaviour character = newPlayer.GetComponent<PlayerBehaviour>();
-        newPlayer.networkView.RPC("SetOwner", RPCMode.AllBuffered, player, settingJson);
+        newPlayer.networkView.RPC("SetOwner", RPCMode.AllBuffered, info.sender);
     }
 
-    
+    [RPC]
+    void NewPlayer(NetworkPlayer player, string settingJson)
+    {
+        PlayerSetting setting = PlayerSetting.Deserialize(settingJson);
+
+        setting.player = player;
+
+        PlayerManager.Inst.SetSetting(setting);
+    }
+
+    [RPC]
+    void PlayerSettingRequest(NetworkMessageInfo info)
+    {
+        if (!Network.isServer)
+            return;
+
+        networkView.RPC("PlayerSettingResponse", info.sender,
+            JsonConvert.SerializeObject(PlayerManager.Inst.GetSettings(), Formatting.None, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore }));
+    }
+
+    [RPC]
+    void PlayerSettingResponse(string settingList)
+    {
+        if (!Network.isClient)
+            return;
+
+        List<PlayerSetting> settings = JsonConvert.DeserializeObject<List<PlayerSetting>>(settingList);
+
+        foreach (PlayerSetting setting in settings)
+        {
+            PlayerManager.Inst.SetSetting(setting);
+        }
+    }
 
     void OnDisconnectedFromServer(NetworkDisconnection info)
     {
@@ -168,8 +211,8 @@ public class Game : MonoBehaviour
 
     void OnServerDown()
     {
-        PlayerManager.Instance.Clear();
-        ProjectileManager.Instance.Clear();
+        PlayerManager.Inst.Clear();
+        ProjectileManager.Inst.Clear();
 
         map = null;
     }
