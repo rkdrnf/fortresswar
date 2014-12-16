@@ -11,45 +11,8 @@ using ProtoBuf;
 using ProtoBuf.Meta;
 namespace Packet
 {
-    [ProtoContract]
-    public class PacketNetworkPlayer
-    {
-        public PacketNetworkPlayer()
-        { }
-
-        public PacketNetworkPlayer(NetworkPlayer player)
-        {
-            networkPlayer = player;
-        }
-
-        public NetworkPlayer networkPlayer
-        {
-            get
-            {
-                NetworkPlayer player = new NetworkPlayer(ip, port);
-                return player;
-            }
-
-            set
-            {
-                ip = value.ipAddress;
-                port = value.port;
-            }
-        }
-
-        [ProtoMember(1)]
-        public string ip;
-        [ProtoMember(2)]
-        public int port;
-    }
-
     public abstract class Packet<T> where T : Packet<T>
     {
-        public string Serialize()
-        {
-            return JsonConvert.SerializeObject(this, typeof(T), Formatting.None, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
-        }
-
         public byte[] SerializeToBytes()
         {
             MemoryStream ms = new MemoryStream();
@@ -62,14 +25,10 @@ namespace Packet
             MemoryStream ms = new MemoryStream(arrBytes);
             return Serializer.Deserialize<T>(ms);
         }
-
-        public static T Deserialize(string json)
-        {
-            return JsonConvert.DeserializeObject<T>(json);
-        }
     }
     namespace S2C
     {
+        [ProtoContract]
         public class DamageTile : Packet<DamageTile>
         {
             public DamageTile(int tileID, int damage)
@@ -77,11 +36,13 @@ namespace Packet
                 this.tileID = tileID;
                 this.damage = damage;
             }
-
+            [ProtoMember(1)]
             public int tileID;
+            [ProtoMember(2)]
             public int damage;
         }
 
+        [ProtoContract]
         public class DestroyTile : Packet<DestroyTile>
         {
             public DestroyTile(Vector3 position)
@@ -89,9 +50,11 @@ namespace Packet
                 this.position = position;
             }
 
+            [ProtoMember(1)]
             public Vector3 position;
         }
 
+        [ProtoContract]
         public class DestroyProjectile : Packet<DestroyProjectile>
         {
             public DestroyProjectile(long projectileID)
@@ -99,12 +62,14 @@ namespace Packet
                 this.projectileID = projectileID;
             }
 
+            [ProtoMember(1)]
             public long projectileID;
         }
     }
 
     namespace C2S
     {
+        [ProtoContract]
         public class Fire : Packet<Fire>
         {
             public Fire(int playerID, long projectileID, BulletType bulletType, Vector3 origin, Vector3 direction)
@@ -116,10 +81,15 @@ namespace Packet
                 this.projectileID = projectileID;
             }
 
+            [ProtoMember(1)]
             public int playerID;
+            [ProtoMember(2)]
             public long projectileID;
+            [ProtoMember(3)]
             public BulletType bulletType;
+            [ProtoMember(4)]
             public Vector3 origin;
+            [ProtoMember(5)]
             public Vector3 direction;
         }
 

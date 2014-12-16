@@ -30,7 +30,7 @@ public class HealthBarBehaviour : MonoBehaviour {
 
 
 
-        GUI.color = Blend(fullColor, dyingColor, healthRate);
+        GUI.color = Blend(dyingColor, fullColor, healthRate);
         GUI.DrawTexture(new Rect(targetPos.x - 20, Screen.height - targetPos.y - 10, healthRate * 40, 5), texture, ScaleMode.StretchToFill, false); //displays a healthbar
         GUI.color = Color.white;
     }

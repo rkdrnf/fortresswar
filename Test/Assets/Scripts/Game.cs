@@ -84,10 +84,13 @@ public class Game : MonoBehaviour
 
     bool isQuitting = false;
 
-    public void Init()
+    void Init()
     {
         instance = this;
         RevivalLocation = new Vector2(0f, 3f);
+
+        RuntimeTypeModel.Default.Add(typeof(Vector3), true);
+        RuntimeTypeModel.Default.Add(typeof(Vector2), true);
     }
 
 	void Awake()
@@ -119,13 +122,9 @@ public class Game : MonoBehaviour
 			LoadMap();
 		}
 
-        SetMyID(PlayerManager.Inst.GetUniqueID());
-
-        OnPlayerConnected(Network.player);
+        SetMyID(PlayerManager.Inst.SetID(PlayerManager.Inst.GetUniqueID(), Network.player));
 
         OpenGameMenu();
-
-        focus = InputFocus.PLAYER;
 	}
 
 	void OnPlayerConnected(NetworkPlayer player)
@@ -153,8 +152,6 @@ public class Game : MonoBehaviour
         networkView.RPC("PlayerListRequest", RPCMode.Server, ID);
 
         OpenGameMenu();
-
-        focus = InputFocus.PLAYER;
     }
 
     void SetMyID(int newID)

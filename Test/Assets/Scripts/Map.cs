@@ -73,14 +73,14 @@ public class Map : MonoBehaviour {
     }
 
     [RPC]
-    public void BroadCastDamageTile(string damageTileJson)
+    public void ClientDamageTile(byte[] damageTileData, NetworkMessageInfo info)
     {
-        if (Network.isClient)
-        {
-            S2C.DamageTile pck = S2C.DamageTile.Deserialize(damageTileJson);
-            Tile tile = GetTile(pck.tileID);
-            tile.DamageInternal(pck.damage);
-        }
+        if (!Network.isClient) return;
+        //ServerCheck
+
+        S2C.DamageTile pck = S2C.DamageTile.DeserializeFromBytes(damageTileData);
+        Tile tile = GetTile(pck.tileID);
+        tile.DamageInternal(pck.damage);
     }
 
     public bool CheckInBorder(Transform obj)

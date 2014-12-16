@@ -734,6 +734,7 @@ public class PlayerBehaviour : MonoBehaviour {
         OnRevive();
     }
 
+    [RPC]
     void ClientRevive(NetworkMessageInfo info)
     {
         if (!Network.isClient) return;
