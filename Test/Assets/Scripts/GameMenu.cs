@@ -6,12 +6,12 @@ using S2C = Packet.S2C;
 
 public class GameMenu : MonoBehaviour
 {
-    S2C.GameSetting setting;
+    PlayerSetting setting;
 
     void Awake()
     {
         gameObject.SetActive(false);
-        setting = new S2C.GameSetting();
+        setting = new PlayerSetting(Network.player, "");
     }
     void OnGUI()
     {
@@ -19,13 +19,15 @@ public class GameMenu : MonoBehaviour
 
         if (GUI.Button(new Rect(Screen.width / 2 - 50, Screen.height / 2 - 20, 100f, 20f), "Enter"))
         {
+            setting.player = Network.player;
+
             if (Network.isServer)
             {
-                Game.Instance.OnPlayerReady(Network.player, setting.Serialize());
+                Game.Inst.OnPlayerReady(setting.Serialize(), new NetworkMessageInfo());
             }
             else if (Network.isClient)
             {
-                Game.Instance.networkView.RPC("OnPlayerReady", RPCMode.Server, Network.player, setting.Serialize());
+                Game.Inst.networkView.RPC("OnPlayerReady", RPCMode.Server, setting.Serialize());
             }
             
             gameObject.SetActive(false);

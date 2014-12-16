@@ -20,10 +20,10 @@ public class Map : MonoBehaviour {
             Debug.Log("[Server] map instantiated by " + info.sender);
             //Send Clients MapInfo;
 
-            networkView.RPC("SetMapInfo", RPCMode.AllBuffered, Game.Instance.mapData.name);
+            networkView.RPC("SetMapInfo", RPCMode.AllBuffered, Game.Inst.mapData.name);
         }
 
-        Game.Instance.SetMap(this);
+        Game.Inst.SetMap(this);
     }
 
     [RPC]

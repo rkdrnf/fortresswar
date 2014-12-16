@@ -54,8 +54,6 @@ public class PlayerBehaviour : MonoBehaviour {
     const float REVIVAL_TIME = 5f;
     double revivalTimer = 0f;
 
-    S2C.GameSetting setting = new S2C.GameSetting();
-
     public bool IsInState(CharacterState state, params CharacterState[] stateList)
     {
         return StateUtil.IsInState<CharacterState>(this.state, state, stateList);
@@ -127,9 +125,9 @@ public class PlayerBehaviour : MonoBehaviour {
     }
 
     [RPC]
-	public void SetOwner(NetworkPlayer player, string settingJson)
+	public void SetOwner(NetworkPlayer player)
 	{
-        PlayerManager.Instance.Set(player, this);
+        PlayerManager.Inst.Set(player, this);
         owner = player;
         isOwner = owner == Network.player;
 
@@ -145,18 +143,11 @@ public class PlayerBehaviour : MonoBehaviour {
             CameraBehaviour camera = GameObject.Find("Main Camera").GetComponent<CameraBehaviour>();
             camera.target = transform;
         }
-
-        setting = S2C.GameSetting.Deserialize(settingJson);
 	}
 
     public NetworkPlayer GetOwner()
     {
         return owner;
-    }
-
-    public S2C.GameSetting GetSetting()
-    {
-        return setting;
     }
 
 	[RPC]
@@ -565,7 +556,7 @@ public class PlayerBehaviour : MonoBehaviour {
     [RPC]
     public void ServerFire(string fireJson, NetworkPlayer player)
     {
-        PlayerBehaviour character = PlayerManager.Instance.Get(player);
+        PlayerBehaviour character = PlayerManager.Inst.Get(player);
 
         if (character.CanFire() == false)
         {
@@ -574,7 +565,7 @@ public class PlayerBehaviour : MonoBehaviour {
 
         C2S.Fire fire = C2S.Fire.Deserialize(fireJson);
 
-        long projID = ProjectileManager.Instance.GetUniqueKeyForNewProjectile();
+        long projID = ProjectileManager.Inst.GetUniqueKeyForNewProjectile();
 
         Debug.Log(string.Format("Fire of player {0}, fireID:{1}", player, projID));
 
@@ -605,13 +596,13 @@ public class PlayerBehaviour : MonoBehaviour {
     {
         C2S.Fire fire = C2S.Fire.Deserialize(fireJson);
 
-        GameObject projObj = (GameObject)Instantiate(Game.Instance.projectileSet.projectiles[(int)fire.bulletType], fire.origin, Quaternion.identity);
+        GameObject projObj = (GameObject)Instantiate(Game.Inst.projectileSet.projectiles[(int)fire.bulletType], fire.origin, Quaternion.identity);
 
         projObj.rigidbody2D.AddForce(new Vector2(fire.direction.x * FIRE_POWER, fire.direction.y * FIRE_POWER), ForceMode2D.Impulse);
 
         Projectile proj = projObj.GetComponent<Projectile>();
         proj.ID = fire.ID;
-        ProjectileManager.Instance.Set(fire.ID, proj);
+        ProjectileManager.Inst.Set(fire.ID, proj);
 
         Debug.Log(string.Format("Fire ID :{0} registered", fire.ID));
         proj.owner = player;
@@ -675,7 +666,7 @@ public class PlayerBehaviour : MonoBehaviour {
     {
         SetState(CharacterState.FALLING);
         animator.SetBool("Dead", false);
-        transform.position = Game.Instance.RevivalLocation;
+        transform.position = Game.Inst.RevivalLocation;
         fireTimer = 0f;
         health = 100;
     }
