@@ -19,29 +19,35 @@ public class Tile : MonoBehaviour {
     public Const.TileType tileType;
 	public bool destroyable;
 	public int health;
+    public int maxHealth;
 
     public Map map;
 
     public spriteInfo[] sprites;
-    private int curSpriteIdx;
-
     private SpriteRenderer spriteRenderer;
 
 	// Use this for initialization
 	void Start () {
         spriteRenderer = GetComponent<SpriteRenderer>();
-        curSpriteIdx = 0;
-        while (curSpriteIdx + 1 < sprites.Length && health - sprites[curSpriteIdx + 1].HealthValue < 0)
-        {
-            curSpriteIdx++;
-        }
-        spriteRenderer.sprite = sprites[curSpriteIdx].sprite;
+        spriteRenderer.sprite = GetSprite(health);
 	}
 	
 	// Update is called once per frame
 	void Update () {
 	
 	}
+
+    Sprite GetSprite(int health)
+    {
+        int index = 0;
+
+        while (index + 1 < sprites.Length && health < sprites[index].HealthValue)
+        {
+            index++;
+        }
+
+        return sprites[index].sprite;
+    }
 
     public void Damage(int damage)
     {
@@ -50,7 +56,7 @@ public class Tile : MonoBehaviour {
         DamageInternal(damage);
         S2C.DamageTile pck = new S2C.DamageTile(this.ID, damage);
 
-        map.networkView.RPC("ClientDamageTile", RPCMode.OthersBuffered, pck.SerializeToBytes());
+        map.networkView.RPC("ClientDamageTile", RPCMode.Others, pck.SerializeToBytes());
     }
 
     public void DamageInternal(int damage)
@@ -59,12 +65,12 @@ public class Tile : MonoBehaviour {
         {
             health -= damage;
             if (health < 1)
-                Destroy(gameObject);
-            else if (health < sprites[curSpriteIdx].HealthValue)
             {
-                curSpriteIdx++;
-                spriteRenderer.sprite = sprites[curSpriteIdx].sprite;
+                gameObject.SetActive(false);
+                //Destroy(gameObject);
             }
+
+            spriteRenderer.sprite = GetSprite(health);
         }
     }
 

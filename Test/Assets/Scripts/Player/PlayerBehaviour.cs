@@ -3,7 +3,7 @@ using System.Collections;
 using Const;
 using Newtonsoft.Json;
 using Util;
-
+using Packet;
 using S2C = Packet.S2C;
 using C2S = Packet.C2S;
 
@@ -559,7 +559,6 @@ public class PlayerBehaviour : MonoBehaviour {
         if (IsDead())
             return;
 
-        
 
         Vector3 worldMousePosition = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0));
         Vector2 direction = (worldMousePosition - transform.position);
@@ -588,7 +587,7 @@ public class PlayerBehaviour : MonoBehaviour {
         
         C2S.Fire fire = C2S.Fire.DeserializeFromBytes(fireData);
 
-        if (PlayerManager.Inst.IsValidPlayer(fire.playerID, info.sender)) return;
+        if (!PlayerManager.Inst.IsValidPlayer(fire.playerID, info.sender)) return;
 
         OnServerFire(fire);
 

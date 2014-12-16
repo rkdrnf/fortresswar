@@ -27,7 +27,7 @@ public class GameMenu : MonoBehaviour
             }
             else if (Network.isClient)
             {
-                Game.Inst.networkView.RPC("OnPlayerReady", RPCMode.Server, setting.SerializeToBytes());
+                Game.Inst.networkView.RPC("EnterCharacter", RPCMode.Server, setting.SerializeToBytes());
             }
             
             gameObject.SetActive(false);
