@@ -17,7 +17,13 @@ namespace Const
         PLAYING
     }
 
-    public enum InputFocus
+    public enum InputKeyFocus
+    {
+        CHAT_WINDOW,
+        PLAYER,
+    }
+
+    public enum InputMouseFocus
     {
         CHAT_WINDOW,
         PLAYER,

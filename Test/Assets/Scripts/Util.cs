@@ -9,66 +9,67 @@
 //------------------------------------------------------------------------------
 using System;
 using UnityEngine;
+using Const;
 
 namespace Util
 {
-		public abstract class LayerUtil
+	public abstract class LayerUtil
+	{
+
+		public static bool HasLayer(int layer, LayerMask layers)
 		{
-
-			public static bool HasLayer(int layer, LayerMask layers)
-			{
-				return HasLayer (layer, layers.value);
-			}
-
-			public static bool HasLayer(int layer, params string[] layers)
-			{
-				return HasLayer(layer, LayerMask.GetMask(layers));
-			}
-
-
-			public static bool HasLayer(int layer, int layerArray)
-			{
-				return ((1 << layer) & layerArray) != 0;
-			}
-				
+			return HasLayer (layer, layers.value);
 		}
 
-        public abstract class StateUtil
+		public static bool HasLayer(int layer, params string[] layers)
+		{
+			return HasLayer(layer, LayerMask.GetMask(layers));
+		}
+
+
+		public static bool HasLayer(int layer, int layerArray)
+		{
+			return ((1 << layer) & layerArray) != 0;
+		}
+			
+	}
+
+    public abstract class StateUtil
+    {
+        public static bool IsInState<T>(T srcState, T state, params T[] stateList) where T : IComparable
         {
-            public static bool IsInState<T>(T srcState, T state, params T[] stateList) where T : IComparable
+            bool result = srcState.CompareTo(state) == 0;
+
+            foreach (T stateVal in stateList)
             {
-                bool result = srcState.CompareTo(state) == 0;
+                if (result == true)
+                    break;
 
-                foreach (T stateVal in stateList)
-                {
-                    if (result == true)
-                        break;
-
-                    result = srcState.CompareTo(stateVal) == 0;
-                }
-
-                return result;
+                result = srcState.CompareTo(stateVal) == 0;
             }
 
-            public static void SetState<T>(out T srcState, T trgState)
-            {
-                srcState = trgState;
-            }
-
-            public static bool IsNotInState<T>(T srcState, T state, params T[] stateList) where T : IComparable
-            {
-                bool result = srcState.CompareTo(state) != 0;
-
-                foreach (T stateVal in stateList)
-                {
-                    if (result == false)
-                        break;
-
-                    result = srcState.CompareTo(stateVal) != 0;
-                }
-
-                return result;
-            }
+            return result;
         }
+
+        public static void SetState<T>(out T srcState, T trgState)
+        {
+            srcState = trgState;
+        }
+
+        public static bool IsNotInState<T>(T srcState, T state, params T[] stateList) where T : IComparable
+        {
+            bool result = srcState.CompareTo(state) != 0;
+
+            foreach (T stateVal in stateList)
+            {
+                if (result == false)
+                    break;
+
+                result = srcState.CompareTo(stateVal) != 0;
+            }
+
+            return result;
+        }
+    }
 }
 

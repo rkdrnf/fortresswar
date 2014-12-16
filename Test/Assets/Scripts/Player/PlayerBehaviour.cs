@@ -240,14 +240,20 @@ public class PlayerBehaviour : MonoBehaviour {
             if (IsDead())
                 return;
 
-			horMov = Input.GetAxisRaw ("Horizontal");
-			verMov = Input.GetAxisRaw("Vertical");
+            if (Game.Inst.keyFocusManager.IsFocused(InputKeyFocus.PLAYER))
+            { 
+			    horMov = Input.GetAxisRaw ("Horizontal");
+			    verMov = Input.GetAxisRaw("Vertical");
+            }
 
-			if (Input.GetButton ("Fire1")) {
-				Debug.Log("fire button pressed");
-                Fire();
-				
-			}
+            if (Game.Inst.mouseFocusManager.IsFocused(InputMouseFocus.PLAYER))
+            { 
+			    if (Input.GetButton ("Fire1")) {
+			    	Debug.Log("fire button pressed");
+                    Fire();
+			    	
+			    }
+            }
 		}
 
 		//Animation Rendering.

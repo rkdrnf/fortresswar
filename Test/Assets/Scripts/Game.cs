@@ -19,6 +19,7 @@ using S2C = Packet.S2C;
 using C2S = Packet.C2S;
 
 using ProtoBuf.Meta;
+using FocusManager;
 
 
 public class Game : MonoBehaviour
@@ -51,7 +52,7 @@ public class Game : MonoBehaviour
 	NetworkManager netManager;
 	MapLoader mapLoader;
 
-    InputFocus focus;
+    
 
     private int ID = -1;
 
@@ -60,25 +61,8 @@ public class Game : MonoBehaviour
         return ID;
     }
 
-    public bool IsFocused(InputFocus focus, params InputFocus[] focusList)
-    {
-        bool result = this.focus == focus;
-
-        foreach (InputFocus focusVal in focusList)
-        {
-            if (result == true)
-                break;
-
-            result = this.focus == focusVal;
-        }
-
-        return result;
-    }
-
-    public void FreeFocus(InputFocus focus)
-    {
-        focus = InputFocus.PLAYER;
-    }
+    public KeyFocusManager keyFocusManager;
+    public MouseFocusManager mouseFocusManager;
     
     public Vector2 RevivalLocation;
 
@@ -88,6 +72,10 @@ public class Game : MonoBehaviour
     {
         instance = this;
         RevivalLocation = new Vector2(0f, 3f);
+        keyFocusManager = new KeyFocusManager();
+        mouseFocusManager = new MouseFocusManager();
+        keyFocusManager.FreeFocus();
+        mouseFocusManager.FreeFocus();
 
         RuntimeTypeModel.Default.Add(typeof(Vector3), true);
         RuntimeTypeModel.Default.Add(typeof(Vector2), true);

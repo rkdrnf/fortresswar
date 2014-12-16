@@ -41,6 +41,8 @@ public class ChatManager : MonoBehaviour {
                 break;
 
             case ChatState.NEW_MESSAGE:
+                Game.Inst.keyFocusManager.FreeFocus();
+                Game.Inst.mouseFocusManager.FreeFocus();
                 if (IsNotInState(ChatState.WRITING))
                 {
                     StateUtil.SetState<ChatState>(out this.state, state);
@@ -48,6 +50,8 @@ public class ChatManager : MonoBehaviour {
                 break;
 
             case ChatState.WRITING:
+                Game.Inst.keyFocusManager.FocusTo(InputKeyFocus.CHAT_WINDOW);
+                Game.Inst.mouseFocusManager.FocusTo(InputMouseFocus.CHAT_WINDOW);
                 StateUtil.SetState<ChatState>(out this.state, state);
                 break;
         }
@@ -152,15 +156,16 @@ public class ChatManager : MonoBehaviour {
             return;
 
         // show in other states (NEW_MESSAGE, WRITING)
+
         GUIStyle areaStyle = new GUIStyle(GUI.skin.box);
         areaStyle.padding = new RectOffset(0, 0, 10, 0);
         areaStyle.margin = new RectOffset();
         areaStyle.alignment = TextAnchor.UpperLeft;
         GUILayout.BeginArea(new Rect(20, Screen.height - 300, 300, 200), areaStyle);
 
-        GUIStyle scrollStyle = new GUIStyle();
+        GUIStyle scrollStyle = new GUIStyle(GUI.skin.verticalScrollbar);
         scrollStyle.padding = new RectOffset(0, 0, 0, 0);
-        scrollPos = GUILayout.BeginScrollView(scrollPos, scrollStyle, GUILayout.Width(300f), GUILayout.Height(190f));
+        scrollPos = GUILayout.BeginScrollView(scrollPos, GUIStyle.none, (IsInState(ChatState.WRITING) ? scrollStyle : GUIStyle.none), GUILayout.Width(300f), GUILayout.Height(190f));
 
         GUIStyle textAreaStyle = new GUIStyle();
         textAreaStyle.normal.textColor = new Color(255f, 255f, 255f, 255f);
@@ -183,12 +188,6 @@ public class ChatManager : MonoBehaviour {
 
             // Focus input field when WRITING.
             GUI.FocusControl("ChatField");
-
-            
-        }
-        else
-        {
-            GUI.FocusControl("INVALID");
         }
     }
 }
