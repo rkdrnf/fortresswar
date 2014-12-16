@@ -6,11 +6,11 @@ using UnityEngine;
 
 public class Chat
 {
-	public Chat(NetworkPlayer player, string chat)
+	public Chat(int playerID, string chat)
     {
-        this.player = player;
+        this.playerID = playerID;
         this.text = chat;
     }
     public string text;
-    public NetworkPlayer player;
+    public int playerID;
 }

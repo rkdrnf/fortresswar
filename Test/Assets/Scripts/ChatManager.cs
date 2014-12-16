@@ -93,21 +93,21 @@ public class ChatManager : MonoBehaviour {
     {
         if (text.Trim().Length > 0)
         {
-            networkView.RPC("BroadCastChat", RPCMode.All, text);
+            networkView.RPC("BroadCastChat", RPCMode.All, Game.Inst.GetID(), text);
         }
         writingMessage = "";
     }
 
 
     [RPC]
-    void BroadCastChat(string text, NetworkMessageInfo info)
+    void BroadCastChat(int playerID, string text, NetworkMessageInfo info)
     {
-        NewChat(info.sender, text);
+        NewChat(playerID, text);
     }
 
-    void NewChat(NetworkPlayer player, string text)
+    void NewChat(int playerID, string text)
     {
-        chatList.Add(new Chat(player, text));
+        chatList.Add(new Chat(playerID, text));
         SetState(ChatState.NEW_MESSAGE);
     }
 
@@ -155,7 +155,7 @@ public class ChatManager : MonoBehaviour {
         GUIStyle areaStyle = new GUIStyle();
         areaStyle.wordWrap = true;
         areaStyle.stretchHeight = true;
-        string chatLog = String.Join("\n", chatList.Select(c => c.text).ToArray<string>());
+        string chatLog = String.Join("\n", chatList.Select(c => string.Format("{0}: {1}",PlayerManager.Inst.GetSetting(c.playerID).name, c.text)).ToArray<string>());
         GUILayout.TextArea(chatLog, areaStyle);
         GUILayout.EndScrollView();
         GUILayout.EndArea();
