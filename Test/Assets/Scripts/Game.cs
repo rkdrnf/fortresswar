@@ -245,6 +245,7 @@ public class Game : MonoBehaviour
     public void ClearGame()
     {
         PlayerManager.Inst.Clear();
+        ProjectileManager.Inst.Clear();
 
 		map = null;
 		networkView.RPC ("ClientClearGame", RPCMode.Others);
@@ -253,16 +254,10 @@ public class Game : MonoBehaviour
 	[RPC]
 	public void ClientClearGame()
 	{
+        PlayerManager.Inst.Clear();
+        ProjectileManager.Inst.Clear();
 		map = null;
 	}
-
-    
-
-    // Projectile management
-
-    
-
-    
 
     void OnApplicationQuit()
     {
