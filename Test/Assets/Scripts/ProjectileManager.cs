@@ -36,9 +36,10 @@ public class ProjectileManager : MonoBehaviour {
         if (!Network.isServer) return;
 
         Debug.Log(string.Format("[SERVER] projectile {0} Destroyed", projID));
-        Destroy((UnityEngine.Object)projectileObjManager.Get(projID).gameObject);
-        projectileObjManager.Remove(projID);
-        networkView.RPC("ClientDestroyProjectile", RPCMode.Others, projID);
+        OnDestroyProjectile(projID);
+
+        S2C.DestroyProjectile pck = new S2C.DestroyProjectile(projID);
+        networkView.RPC("ClientDestroyProjectile", RPCMode.Others, pck.SerializeToBytes());
     }
 
     [RPC]
@@ -50,8 +51,13 @@ public class ProjectileManager : MonoBehaviour {
         //ServerCheck
 
         Debug.Log(string.Format("[CLIENT] projectile {0} Destroyed", pck.projectileID));
-        Destroy((UnityEngine.Object)projectileObjManager.Get(pck.projectileID).gameObject);
-        projectileObjManager.Remove(pck.projectileID);
+        OnDestroyProjectile(pck.projectileID);
+    }
+
+    void OnDestroyProjectile(long projID)
+    {
+        Destroy((UnityEngine.Object)projectileObjManager.Get(projID).gameObject);
+        projectileObjManager.Remove(projID);
     }
 
     public long GetUniqueKeyForNewProjectile()

@@ -45,10 +45,12 @@ public class Tile : MonoBehaviour {
 
     public void Damage(int damage)
     {
+        if (!Network.isServer) return;
+
         DamageInternal(damage);
         S2C.DamageTile pck = new S2C.DamageTile(this.ID, damage);
 
-        map.networkView.RPC("BroadCastDamageTile", RPCMode.OthersBuffered, pck.Serialize());
+        map.networkView.RPC("ClientDamageTile", RPCMode.OthersBuffered, pck.SerializeToBytes());
     }
 
     public void DamageInternal(int damage)
