@@ -52,6 +52,9 @@ public class Game : MonoBehaviour
 	NetworkManager netManager;
 	MapLoader mapLoader;
 
+
+    TeamSelector teamSelector;
+
     
 
     private int ID = -1;
@@ -72,8 +75,8 @@ public class Game : MonoBehaviour
     {
         instance = this;
         RevivalLocation = new Vector2(0f, 3f);
-        keyFocusManager = new KeyFocusManager();
-        mouseFocusManager = new MouseFocusManager();
+        keyFocusManager = new KeyFocusManager(InputKeyFocus.PLAYER);
+        mouseFocusManager = new MouseFocusManager(InputMouseFocus.PLAYER);
         keyFocusManager.FreeFocus();
         mouseFocusManager.FreeFocus();
 
@@ -86,6 +89,7 @@ public class Game : MonoBehaviour
         Init();
 		netManager = netManagerObject.GetComponent<NetworkManager> ();
 		mapLoader = GetComponent<MapLoader> ();
+        teamSelector = GetComponent<TeamSelector>();
 
 	}
 
@@ -152,40 +156,177 @@ public class Game : MonoBehaviour
         gameMenu.gameObject.SetActive(true);
     }
 
-    [RPC]
-    void EnterCharacter(byte[] settingData, NetworkMessageInfo info)
+    public void SelectTeam(Team team)
     {
-        PlayerSetting setting = PlayerSetting.DeserializeFromBytes(settingData);
-
-        if (!Network.isServer) return;
-        if (!PlayerManager.Inst.IsValidPlayer(setting.playerID, info.sender)) return;
-
-        OnEnterCharacter(setting);
+        C2S.UpdatePlayerTeam selectTeam = new C2S.UpdatePlayerTeam(ID, team);
+        networkView.RPC("ServerSelectTeam", RPCMode.Server, selectTeam.SerializeToBytes());
     }
 
-    public void OnEnterCharacter(PlayerSetting setting)
+    [RPC]
+    void ServerSelectTeam(byte[] updateData, NetworkMessageInfo info)
+    {
+        if (!Network.isServer) return;
+
+        C2S.UpdatePlayerTeam update = C2S.UpdatePlayerTeam.DeserializeFromBytes(updateData);
+        if (!PlayerManager.Inst.IsValidPlayer(update.playerID, info.sender)) return;
+
+        //TODO::TeamSelect Validation (team balance)
+
+        OnSelectTeam(update);
+        networkView.RPC("SetPlayerTeam", RPCMode.Others, updateData);
+
+        ReadyToEnterCharacter(PlayerManager.Inst.GetSetting(update.playerID));
+    }
+
+    [RPC]
+    void SetPlayerTeam(byte[] updateData, NetworkMessageInfo info)
+    {
+        if (!Network.isClient) return;
+        //ServerCheck
+
+        C2S.UpdatePlayerTeam update = C2S.UpdatePlayerTeam.DeserializeFromBytes(updateData);
+
+        OnSelectTeam(update);
+    }
+
+    void OnSelectTeam(C2S.UpdatePlayerTeam update)
+    {
+        PlayerManager.Inst.UpdatePlayer(update);
+    }
+
+    public void ServerSpecificSelectTeam(Team team)
+    {
+        C2S.UpdatePlayerTeam update = new C2S.UpdatePlayerTeam(ID, team);
+
+        OnSelectTeam(update);
+        networkView.RPC("SetPlayerTeam", RPCMode.Others, update.SerializeToBytes());
+
+        PlayerSetting setting = PlayerManager.Inst.GetSetting(update.playerID);
+
+        PlayerSettingError error = setting.IsSettingCompleted();
+        if (error == PlayerSettingError.NONE)
+        {
+            EnterCharacter(setting);
+            return;
+        }
+
+        S2C.PlayerNotReady notReady = new S2C.PlayerNotReady(error);
+
+        switch (notReady.error)
+        {
+            case PlayerSettingError.NAME:
+                OpenGameMenu();
+                break;
+
+            case PlayerSettingError.TEAM:
+                teamSelector.Open();
+                break;
+        }
+    }
+
+    [RPC]
+    public void ServerSetPlayerName(byte[] updateData, NetworkMessageInfo info)
+    {
+        if (!Network.isServer) return;
+
+        C2S.UpdatePlayerName update = C2S.UpdatePlayerName.DeserializeFromBytes(updateData);
+        if (!PlayerManager.Inst.IsValidPlayer(update.playerID, info.sender)) return;
+
+        PlayerManager.Inst.UpdatePlayer(update);
+
+        networkView.RPC("ClientSetPlayerName", RPCMode.Others, update.SerializeToBytes());
+
+        ReadyToEnterCharacter(PlayerManager.Inst.GetSetting(update.playerID));
+    }
+
+    [RPC]
+    void ClientSetPlayerName(byte[] updateData)
+    {
+        if (!Network.isClient) return;
+        //ServerCheck
+
+        C2S.UpdatePlayerName update = C2S.UpdatePlayerName.DeserializeFromBytes(updateData);
+
+        PlayerManager.Inst.UpdatePlayer(update);
+    }
+
+    public void ServerSpecificUpdatePlayerName(C2S.UpdatePlayerName update)
+    {
+        PlayerManager.Inst.UpdatePlayer(update);
+        Game.Inst.networkView.RPC("ClientSetPlayerName", RPCMode.Others, update.SerializeToBytes());
+
+        PlayerSetting setting = PlayerManager.Inst.GetSetting(update.playerID);
+
+        PlayerSettingError error = setting.IsSettingCompleted();
+        if (error == PlayerSettingError.NONE)
+        {
+            EnterCharacter(setting);
+            return;
+        }
+
+        S2C.PlayerNotReady notReady = new S2C.PlayerNotReady(error);
+
+        switch (notReady.error)
+        {
+            case PlayerSettingError.NAME:
+                OpenGameMenu();
+                break;
+
+            case PlayerSettingError.TEAM:
+                teamSelector.Open();
+                break;
+        }
+    }
+
+    void ReadyToEnterCharacter(PlayerSetting setting)
+    {
+        if (!Network.isServer) return;
+
+        PlayerSettingError error = setting.IsSettingCompleted();
+        if (error == PlayerSettingError.NONE)
+        {
+            EnterCharacter(setting);
+            return;
+        }
+
+        S2C.PlayerNotReady notReady = new S2C.PlayerNotReady(error);
+        NetworkPlayer player = PlayerManager.Inst.GetPlayer(setting.playerID);
+        networkView.RPC("PlayerNotReadyToEnter", player, notReady.SerializeToBytes());
+    }
+
+    [RPC]
+    void PlayerNotReadyToEnter(byte[] notReadyData, NetworkMessageInfo info)
+    {
+        if (!Network.isClient) return;
+        //ServerCheck
+
+        S2C.PlayerNotReady notReady = S2C.PlayerNotReady.DeserializeFromBytes(notReadyData);
+
+        switch(notReady.error)
+        {
+            case PlayerSettingError.NAME:
+                OpenGameMenu();
+                break;
+
+            case PlayerSettingError.TEAM:
+                teamSelector.Open();
+                break;
+        }
+    
+    }
+    
+    
+
+    public void EnterCharacter(PlayerSetting setting)
     {
         if (!Network.isServer) return;
 
         Debug.Log(String.Format("Player Ready {0}", setting.playerID));
 
-        PlayerManager.Inst.SetSetting(setting);
-        networkView.RPC("NewPlayer", RPCMode.Others, setting.SerializeToBytes());
-
         GameObject newPlayer = Game.Inst.MakeNetworkPlayer();
         PlayerBehaviour character = newPlayer.GetComponent<PlayerBehaviour>();
         character.OnSetOwner(setting.playerID);
         newPlayer.networkView.RPC("SetOwner", RPCMode.OthersBuffered, setting.playerID);
-    }
-
-    [RPC]
-    void NewPlayer(byte[] settingData)
-    {
-        if (!Network.isClient) return;
-        //ServerCheck
-        
-        PlayerSetting setting = PlayerSetting.DeserializeFromBytes(settingData);
-        PlayerManager.Inst.SetSetting(setting);
     }
 
     [RPC]

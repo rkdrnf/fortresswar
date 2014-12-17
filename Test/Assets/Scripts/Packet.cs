@@ -158,6 +158,19 @@ namespace Packet
             [ProtoMember(1)]
             public List<TileStatus> tileStatusList;
         }
+
+        [ProtoContract]
+        public class PlayerNotReady : Packet<PlayerNotReady>
+        {
+            public PlayerNotReady() { }
+            public PlayerNotReady(PlayerSettingError error)
+            {
+                this.error = error;
+            }
+
+            [ProtoMember(1)]
+            public PlayerSettingError error;
+        }
     }
 
     namespace C2S
@@ -185,6 +198,54 @@ namespace Packet
             public PacketVector2 origin;
             [ProtoMember(5)]
             public PacketVector2 direction;
+        }
+
+        [ProtoContract]
+        public class UpdatePlayerName : Packet<UpdatePlayerName>
+        {
+            public UpdatePlayerName() { }
+            public UpdatePlayerName(int playerID, string name)
+            {
+                this.playerID = playerID;
+                this.name = name;
+            }
+
+            [ProtoMember(1)]
+            public int playerID;
+            [ProtoMember(2)]
+            public string name;
+        }
+
+        [ProtoContract]
+        public class UpdatePlayerTeam : Packet<UpdatePlayerTeam>
+        {
+            public UpdatePlayerTeam() { }
+            public UpdatePlayerTeam(int playerID, Team team)
+            {
+                this.playerID = playerID;
+                this.team = team;
+            }
+
+            [ProtoMember(1)]
+            public int playerID;
+            [ProtoMember(2)]
+            public Team team;
+        }
+
+        [ProtoContract]
+        public class UpdatePlayerStatus : Packet<UpdatePlayerStatus>
+        {
+            public UpdatePlayerStatus() { }
+            public UpdatePlayerStatus(int playerID, PlayerStatus status)
+            {
+                this.playerID = playerID;
+                this.status = status;
+            }
+
+            [ProtoMember(1)]
+            public int playerID;
+            [ProtoMember(2)]
+            public PlayerStatus status;
         }
 
     }

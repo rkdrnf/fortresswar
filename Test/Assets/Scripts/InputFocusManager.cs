@@ -9,33 +9,42 @@ namespace FocusManager
     public abstract class InputFocusManager<T> where T : IComparable
     {
         protected T focus;
+        protected Stack<T> oldFocuses;
+
+        public InputFocusManager(T defaultFocus)
+        {
+            focus = defaultFocus;
+            oldFocuses = new Stack<T>();
+        }
     
         public bool IsFocused(T focus, params T[] focusList)
         {
             return Util.StateUtil.IsInState<T>(this.focus, focus, focusList);
         }
     
-        public abstract void FreeFocus();
-    
-        public void FocusTo(T focus)
+        public void FreeFocus()
         {
-            this.focus = focus;
+            if (oldFocuses.Count == 0)
+                return;
+            
+            focus = oldFocuses.Last();
+            oldFocuses.Pop();
+        }
+    
+        public void FocusTo(T newFocus)
+        {
+            oldFocuses.Push(focus);
+            focus = newFocus;
         }
     }
     
     public class KeyFocusManager : InputFocusManager<InputKeyFocus>
     {
-        override public void FreeFocus()
-        {
-            focus = InputKeyFocus.PLAYER;
-        }
+        public KeyFocusManager(InputKeyFocus focus) : base(focus) {}
     }
     
     public class MouseFocusManager : InputFocusManager<InputMouseFocus>
     {
-        override public void FreeFocus()
-        {
-            focus = InputMouseFocus.PLAYER;
-        }
+        public MouseFocusManager(InputMouseFocus focus) : base(focus) { }
     }
 }

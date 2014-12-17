@@ -71,5 +71,31 @@ namespace Util
             return result;
         }
     }
+
+    public abstract class StateManager<T> where T : IComparable
+    {
+        protected T state;
+
+        public bool IsInState(T state, params T[] states)
+        {
+            return StateUtil.IsInState<T>(this.state, state, states);
+        }
+
+        public T GetState()
+        {
+            return state;
+        }
+
+        public virtual void SetState(T state)
+        {
+            StateUtil.SetState<T>(out this.state, state);
+        }
+
+        public bool IsNotInState(T state, params T[] states)
+        {
+            return StateUtil.IsNotInState<T>(this.state, state, states);
+        }
+
+    }
 }
 

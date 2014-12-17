@@ -4,6 +4,9 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using System.Threading;
+using Const;
+using S2C = Packet.S2C;
+using C2S = Packet.C2S;
 
 public class PlayerManager : MonoBehaviour
 {
@@ -96,6 +99,38 @@ public class PlayerManager : MonoBehaviour
         return null;
     }
 
+    public void UpdatePlayer(C2S.UpdatePlayerName update)
+    {
+        if (settingDic.ContainsKey(update.playerID) == false)
+        {
+            PlayerSetting setting = new PlayerSetting(update.playerID);
+            settingDic[update.playerID] = setting;
+        }
+
+        settingDic[update.playerID].name = update.name;
+    }
+
+    public void UpdatePlayer(C2S.UpdatePlayerTeam update)
+    {
+        if (settingDic.ContainsKey(update.playerID) == false)
+        {
+            PlayerSetting setting = new PlayerSetting(update.playerID);
+            settingDic[update.playerID] = setting;
+        }
+        settingDic[update.playerID].team = update.team;
+    }
+
+    public void UpdatePlayer(C2S.UpdatePlayerStatus update)
+    {
+        if (settingDic.ContainsKey(update.playerID) == false)
+        {
+            PlayerSetting setting = new PlayerSetting(update.playerID);
+            settingDic[update.playerID] = setting;
+        }
+
+        settingDic[update.playerID].status = update.status;
+    }
+
     public void SetSetting(PlayerSetting setting)
     {
         settingDic[setting.playerID] = setting;
@@ -131,6 +166,11 @@ public class PlayerManager : MonoBehaviour
     public bool IsValidPlayer(int ID, NetworkPlayer player)
     {
         return playerIDDic[ID] == player;
+    }
+
+    public NetworkPlayer GetPlayer(int ID)
+    {
+        return playerIDDic[ID];
     }
 
     

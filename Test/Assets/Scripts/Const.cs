@@ -21,12 +21,14 @@ namespace Const
     {
         CHAT_WINDOW,
         PLAYER,
+        TEAM_SELECTOR
     }
 
     public enum InputMouseFocus
     {
         CHAT_WINDOW,
         PLAYER,
+        TEAM_SELECTOR
     }
 
     public enum ChatState
@@ -36,11 +38,49 @@ namespace Const
         NEW_MESSAGE
     }
 
+
+    public enum TeamSelectorState
+    {
+        ON,
+        OFF
+    }
+
     public enum MenuState
     {
         ON,
         OFF
     }
+
+    public enum Team
+    {
+        NONE,
+        BLUE,
+        RED
+    }
+
+    public enum PlayerStatus
+    {
+        NONE,
+        OBSERVING,
+        PLAYING
+    }
+
+    public enum PlayerSettingError
+    {
+        NONE,
+        ID,
+        NAME,
+        TEAM,
+    }
+
+    public enum PlayerSettingColumn
+    {
+        ID,
+        NAME,
+        TEAM,
+        STATUS
+    }
+
     
     //Unique State.
 	public enum CharacterState 

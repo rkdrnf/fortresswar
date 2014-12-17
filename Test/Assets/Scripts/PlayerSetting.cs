@@ -5,6 +5,7 @@ using System.Text;
 using UnityEngine;
 using ProtoBuf;
 using Packet;
+using Const;
 
 [ProtoContract]
 public class PlayerSetting : Packet.Packet<PlayerSetting>
@@ -12,10 +13,20 @@ public class PlayerSetting : Packet.Packet<PlayerSetting>
     public PlayerSetting()
     { }
 
+    public PlayerSetting(int playerID)
+    {
+        this.playerID = playerID;
+        this.name = "";
+        this.team = Team.NONE;
+        this.status = PlayerStatus.NONE;
+    }
+
     public PlayerSetting (int playerID, string name)
     {
         this.playerID = playerID;
         this.name = name;
+        this.team = Team.NONE;
+        this.status = PlayerStatus.NONE;
     }
 
     [ProtoMember(1)]
@@ -23,4 +34,22 @@ public class PlayerSetting : Packet.Packet<PlayerSetting>
 
     [ProtoMember(2)]
     public string name = "name";
+
+    [ProtoMember(3)]
+    public Team team;
+
+    [ProtoMember(4)]
+    public PlayerStatus status;
+
+    public PlayerSettingError IsSettingCompleted()
+    {
+        if (playerID == -1) return PlayerSettingError.ID;
+
+        if (name == "") return PlayerSettingError.NAME;
+
+        if (team == Team.NONE) return PlayerSettingError.TEAM;
+
+        return PlayerSettingError.NONE;
+    }
 }
+
