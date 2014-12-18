@@ -15,7 +15,10 @@ public abstract class MonoObjManager<K, V> where V : UnityEngine.MonoBehaviour
 
     public V Get(K key)
     {
-        return objectDic[key];
+        if (objectDic.ContainsKey(key))
+            return objectDic[key];
+
+        return null;
     }
 
     public void Set(K key, V val)

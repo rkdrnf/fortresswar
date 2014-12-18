@@ -12,6 +12,8 @@ public abstract class Projectile : MonoBehaviour
     public int damage;
     public int range;
 
+    public bool friendlyFire;
+
     protected Vector3 startPosition;
     public GameObject explosionAnimation;
 
@@ -37,10 +39,34 @@ public abstract class Projectile : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D targetCollider)
     {
-        CollisionFunc(targetCollider);
+        if (Network.isServer)
+        {
+            if (targetCollider.gameObject.CompareTag("Tile"))
+            {
+                OnCollideToTile(targetCollider);
+            }
+            else if (targetCollider.gameObject.CompareTag("Player"))
+            {
+                if (friendlyFire == false)
+                {
+                    PlayerBehaviour character = targetCollider.gameObject.GetComponent<PlayerBehaviour>();
+                    PlayerSetting myPlayerSetting = PlayerManager.Inst.GetSetting(owner);
+                    PlayerSetting targetPlayerSetting = PlayerManager.Inst.GetSetting(character.GetOwner());
+
+                    if (myPlayerSetting.team == targetPlayerSetting.team)
+                    
+                        return;
+                }
+
+                OnCollideToPlayer(targetCollider);
+            }
+
+        }
     }
 
-    protected abstract void CollisionFunc(Collider2D targetCollider);
+    protected abstract void OnCollideToTile(Collider2D targetCollider);
+
+    protected abstract void OnCollideToPlayer(Collider2D targetCollider);
 
     void OnApplicationQuit()
     {

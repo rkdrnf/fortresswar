@@ -55,7 +55,10 @@ public class Game : MonoBehaviour
 
     TeamSelector teamSelector;
 
-    
+    public void OpenTeamSelector()
+    {
+        teamSelector.Open();
+    }
 
     private int ID = -1;
 
@@ -173,9 +176,19 @@ public class Game : MonoBehaviour
         //TODO::TeamSelect Validation (team balance)
 
         OnSelectTeam(update);
-        networkView.RPC("SetPlayerTeam", RPCMode.Others, updateData);
 
-        ReadyToEnterCharacter(PlayerManager.Inst.GetSetting(update.playerID));
+        PlayerBehaviour player = PlayerManager.Inst.Get(update.playerID);
+
+        if (player != null)
+        {
+            player.BroadcastDie();
+            networkView.RPC("SetPlayerTeam", RPCMode.Others, updateData);
+        }
+        else
+        {
+            networkView.RPC("SetPlayerTeam", RPCMode.Others, updateData);
+            ReadyToEnterCharacter(PlayerManager.Inst.GetSetting(update.playerID));
+        }
     }
 
     [RPC]
@@ -192,6 +205,8 @@ public class Game : MonoBehaviour
     void OnSelectTeam(C2S.UpdatePlayerTeam update)
     {
         PlayerManager.Inst.UpdatePlayer(update);
+
+        
     }
 
     public void ServerSpecificSelectTeam(Team team)
@@ -199,28 +214,38 @@ public class Game : MonoBehaviour
         C2S.UpdatePlayerTeam update = new C2S.UpdatePlayerTeam(ID, team);
 
         OnSelectTeam(update);
-        networkView.RPC("SetPlayerTeam", RPCMode.Others, update.SerializeToBytes());
 
-        PlayerSetting setting = PlayerManager.Inst.GetSetting(update.playerID);
-
-        PlayerSettingError error = setting.IsSettingCompleted();
-        if (error == PlayerSettingError.NONE)
+        PlayerBehaviour player = PlayerManager.Inst.Get(update.playerID);
+        if (player != null)
         {
-            EnterCharacter(setting);
-            return;
+            player.BroadcastDie();
+            networkView.RPC("SetPlayerTeam", RPCMode.Others, update.SerializeToBytes());
         }
-
-        S2C.PlayerNotReady notReady = new S2C.PlayerNotReady(error);
-
-        switch (notReady.error)
+        else
         {
-            case PlayerSettingError.NAME:
-                OpenGameMenu();
-                break;
+            networkView.RPC("SetPlayerTeam", RPCMode.Others, update.SerializeToBytes());
 
-            case PlayerSettingError.TEAM:
-                teamSelector.Open();
-                break;
+            PlayerSetting setting = PlayerManager.Inst.GetSetting(update.playerID);
+
+            PlayerSettingError error = setting.IsSettingCompleted();
+            if (error == PlayerSettingError.NONE)
+            {
+                EnterCharacter(setting);
+                return;
+            }
+
+            S2C.PlayerNotReady notReady = new S2C.PlayerNotReady(error);
+
+            switch (notReady.error)
+            {
+                case PlayerSettingError.NAME:
+                    OpenGameMenu();
+                    break;
+
+                case PlayerSettingError.TEAM:
+                    OpenTeamSelector();
+                    break;
+            }
         }
     }
 
@@ -273,7 +298,7 @@ public class Game : MonoBehaviour
                 break;
 
             case PlayerSettingError.TEAM:
-                teamSelector.Open();
+                OpenTeamSelector();
                 break;
         }
     }
@@ -309,7 +334,7 @@ public class Game : MonoBehaviour
                 break;
 
             case PlayerSettingError.TEAM:
-                teamSelector.Open();
+                OpenTeamSelector();
                 break;
         }
     

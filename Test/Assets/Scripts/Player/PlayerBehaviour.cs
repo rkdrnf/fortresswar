@@ -99,6 +99,7 @@ public class PlayerBehaviour : MonoBehaviour {
         //Server has valid value.
         if(Network.isServer)
         {
+            StateUtil.SetState(out this.state, CharacterState.DEAD);
             return;
         }
 
@@ -220,15 +221,14 @@ public class PlayerBehaviour : MonoBehaviour {
 
             if (CanRevive())
             {
-                Revive();
-                networkView.RPC("ClientRevive", RPCMode.Others);
+                BroadcastRevive();
+                
             }
         }
 
         if (Game.Inst.map.CheckInBorder(this) == false)
         {
-            networkView.RPC("Die", RPCMode.Others);
-            OnDie();
+            BroadcastDie();
         }
     }
 	// Update is called once per frame
@@ -244,6 +244,12 @@ public class PlayerBehaviour : MonoBehaviour {
             { 
 			    horMov = Input.GetAxisRaw ("Horizontal");
 			    verMov = Input.GetAxisRaw("Vertical");
+
+
+                if (Input.GetKey(KeyCode.M))
+                {
+                    Game.Inst.OpenTeamSelector();
+                }
             }
 
             if (Game.Inst.mouseFocusManager.IsFocused(InputMouseFocus.PLAYER))
@@ -678,8 +684,7 @@ public class PlayerBehaviour : MonoBehaviour {
         
         if(health <= 0)
         {
-            networkView.RPC("Die", RPCMode.Others);
-            OnDie();
+            BroadcastDie();
         }
     }
 
@@ -698,6 +703,14 @@ public class PlayerBehaviour : MonoBehaviour {
         {
             health = 0;
         }
+    }
+
+    public void BroadcastDie()
+    {
+        if (!Network.isServer) return;
+
+        networkView.RPC("Die", RPCMode.Others);
+        OnDie();
     }
 
     [RPC]
@@ -731,6 +744,12 @@ public class PlayerBehaviour : MonoBehaviour {
         return revivalTimer <= 0;
     }
 
+    void BroadcastRevive()
+    {
+        Revive();
+        networkView.RPC("ClientRevive", RPCMode.Others);
+    }
+
     void Revive()
     {
         if (!Network.isServer) return;
@@ -751,6 +770,8 @@ public class PlayerBehaviour : MonoBehaviour {
     void OnRevive()
     {
         SetState(CharacterState.FALLING);
+        PlayerSetting setting = PlayerManager.Inst.GetSetting(owner);
+        animator.SetBool("IsBlueTeam", setting.team == Team.BLUE);
         animator.SetBool("Dead", false);
         fireTimer = 0f;
         health = 100;
