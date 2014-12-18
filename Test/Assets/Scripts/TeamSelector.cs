@@ -20,11 +20,17 @@ public class TeamSelector : MonoBehaviour {
 
     public void Open()
     {
+        if (stateManager.IsInState(TeamSelectorState.ON))
+            return;
+
         stateManager.SetState(TeamSelectorState.ON);
     }
 
     public void Close()
     {
+        if (stateManager.IsInState(TeamSelectorState.OFF))
+            return;
+
         stateManager.SetState(TeamSelectorState.OFF);
     }
 
@@ -35,11 +41,15 @@ public class TeamSelector : MonoBehaviour {
             return;
 
         GUIStyle areaStyle = new GUIStyle(GUI.skin.box);
-        GUILayout.BeginArea(new Rect(150, 150, 400, 300), areaStyle);
-        
-        GUIStyle blueStyle = new GUIStyle();
-        blueStyle.fixedWidth = 150f;
-        blueStyle.fixedHeight = 100f;
+        GUILayout.BeginArea(new Rect(Screen.width / 2 - 150f, Screen.height / 2 - 50f, 300, 100), areaStyle);
+
+        GUILayout.BeginHorizontal();
+        GUILayout.FlexibleSpace();
+
+        GUI.color = Color.blue;
+        GUIStyle blueStyle = new GUIStyle(GUI.skin.button);
+        blueStyle.fixedWidth = 145f;
+        blueStyle.fixedHeight = 90f;
 
         if (GUILayout.Button("BLUE", blueStyle))
         {
@@ -51,9 +61,10 @@ public class TeamSelector : MonoBehaviour {
             Close();
         }
 
-        GUIStyle redStyle = new GUIStyle();
-        redStyle.fixedWidth = 150f;
-        redStyle.fixedHeight = 100f;
+        GUI.color = Color.red;
+        GUIStyle redStyle = new GUIStyle(GUI.skin.button);
+        redStyle.fixedWidth = 145f;
+        redStyle.fixedHeight = 90f;
         if (GUILayout.Button("RED", redStyle))
         {
             if (Network.isServer)
@@ -63,6 +74,7 @@ public class TeamSelector : MonoBehaviour {
             Close();
         }
 
+        GUILayout.EndHorizontal();
         GUILayout.EndArea();
     }
 }

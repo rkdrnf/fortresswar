@@ -172,6 +172,4 @@ public class PlayerManager : MonoBehaviour
     {
         return playerIDDic[ID];
     }
-
-    
 }

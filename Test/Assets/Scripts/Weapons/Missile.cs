@@ -4,9 +4,7 @@ using System.Collections;
 public class Missile : Projectile {
 
     public int splashRange;
-
     public int sqrSplashRange;
-
     public int distDamping;
 
     void Awake()
@@ -14,23 +12,7 @@ public class Missile : Projectile {
         sqrSplashRange = splashRange * splashRange;
     }
 
-    protected override void CollisionFunc(Collider2D targetCollider)
-    {
-        if (Network.isServer)
-        {
-            if (targetCollider.gameObject.CompareTag("Tile"))
-            {
-                OnCollideToTile(targetCollider);
-            }
-            else if (targetCollider.gameObject.CompareTag("Player"))
-            {
-                OnCollideToPlayer(targetCollider);
-            }
-            
-        }
-    }
-
-    void OnCollideToTile(Collider2D targetCollider)
+    protected override void OnCollideToTile(Collider2D targetCollider)
     {
         Tile tile = targetCollider.gameObject.GetComponent<Tile>();
         if (tile)
@@ -40,7 +22,7 @@ public class Missile : Projectile {
         }
     }
 
-    void OnCollideToPlayer(Collider2D targetCollider)
+    protected override void OnCollideToPlayer(Collider2D targetCollider)
     {
         //When Hit My Player
         PlayerBehaviour character = targetCollider.gameObject.GetComponent<PlayerBehaviour>();
@@ -56,6 +38,8 @@ public class Missile : Projectile {
             DestroyFromNetwork();
         }
     }
+
+
     void DamageAround(Vector2 origin)
     {
         Collider2D[] colliders =
