@@ -6,6 +6,7 @@ using Util;
 using Packet;
 using S2C = Packet.S2C;
 using C2S = Packet.C2S;
+using System;
 
 public class PlayerBehaviour : MonoBehaviour {
 
@@ -65,6 +66,23 @@ public class PlayerBehaviour : MonoBehaviour {
     public void SetState(CharacterState state)
     {
         StateUtil.SetState(out this.state, state);
+
+        if (!Network.isServer) return;
+
+        S2C.CharacterChangeState pck = new S2C.CharacterChangeState(state);
+        networkView.RPC("ClientSetState", RPCMode.Others, pck.SerializeToBytes());
+        
+    }
+
+    [RPC]
+    void ClientSetState(byte[] pckData, NetworkMessageInfo info)
+    {
+        if (!Network.isClient) return;
+        //ServerCheck
+
+        S2C.CharacterChangeState pck = S2C.CharacterChangeState.DeserializeFromBytes(pckData);
+
+        SetState(pck.state);
     }
 
     
@@ -192,22 +210,21 @@ public class PlayerBehaviour : MonoBehaviour {
 			if (isOwner) {
 				float horMoveVal = horMov;
 				float verMoveVal = verMov;
-				//bool jumpVal = jumpMov;
+
 				stream.Serialize (ref horMoveVal);
 				stream.Serialize (ref verMoveVal);
-				//stream.Serialize (ref jumpVal);
 			}
 		} else {
 			Debug.Log ("reading");
 			float horMoveVal = 0;
 			float verMoveVal = 0;
-			//bool jumpVal = false;
+            int stateVal = (int)CharacterState.DEAD;
+
 			stream.Serialize(ref horMoveVal);
-			stream.Serialize(ref verMoveVal);
-			//stream.Serialize (ref jumpVal);
+            stream.Serialize(ref verMoveVal);
+
 			horMov = horMoveVal;
 			verMov = verMoveVal;
-			//jumpMov = jumpVal;
 		}
 	}
 
@@ -236,6 +253,14 @@ public class PlayerBehaviour : MonoBehaviour {
 	void Update () {
         fireTimer += Time.deltaTime;
 
+        //Animation Rendering.
+        //Every client must do his own Animation Rendering.
+
+        animator.SetBool("HorMoving", horMov != 0);
+        animator.SetBool("Dead", IsInState(CharacterState.DEAD));
+
+
+        //Client Input Processing
 		if (isOwner) {
             if (IsDead())
                 return;
@@ -262,10 +287,7 @@ public class PlayerBehaviour : MonoBehaviour {
             }
 		}
 
-		//Animation Rendering.
-		//Every client must do his own Animation Rendering.
 		
-		animator.SetBool("HorMoving", horMov != 0);
 
 		// Server Rendering. Rendering from input must be in Update()
 		// Fixed Update refreshes in fixed period. 
@@ -381,7 +403,7 @@ public class PlayerBehaviour : MonoBehaviour {
 
         if (rigidbody2D.velocity.y <= 0f)
         {
-            state = CharacterState.FALLING;
+            SetState(CharacterState.FALLING);
         }
     }
 
@@ -415,7 +437,7 @@ public class PlayerBehaviour : MonoBehaviour {
         //Fall to ground.
         if (horMov == 0)
         {
-            state = CharacterState.FALLING;
+            SetState(CharacterState.FALLING);
             return;
         }
 
@@ -440,7 +462,8 @@ public class PlayerBehaviour : MonoBehaviour {
             {
                 rigidbody2D.velocity = new Vector2(horMov * MOVE_SPEED, rigidbody2D.velocity.y);
 
-                state = CharacterState.FALLING;
+                
+                SetState(CharacterState.FALLING);
                 return;
             }
 
@@ -465,7 +488,7 @@ public class PlayerBehaviour : MonoBehaviour {
 
 	void Jump()
 	{
-		state = CharacterState.JUMPING_UP;
+		SetState(CharacterState.JUMPING_UP);
 		rigidbody2D.velocity = new Vector2 (rigidbody2D.velocity.x, JUMP_SPEED);
 	}
 
@@ -475,7 +498,7 @@ public class PlayerBehaviour : MonoBehaviour {
 		if ((!(state == CharacterState.WALL_WALKING)) && WallWalked (direction))
 			return;
 
-        state = CharacterState.WALL_WALKING;
+        SetState(CharacterState.WALL_WALKING);
 
 		SetEnv(GetWallWalkStateByDirection (direction), true);
         SetEnv(direction == Direction.RIGHT ? CharacterEnv.WALL_WALKED_LEFT : CharacterEnv.WALL_WALKED_RIGHT, false);
@@ -483,7 +506,7 @@ public class PlayerBehaviour : MonoBehaviour {
 
 		if (wallWalkTimer > WALL_WALK_TIME) {
 			EndWallWalk();
-            state = CharacterState.FALLING;
+            SetState(CharacterState.FALLING);
 			return;
 		}
 
@@ -549,7 +572,7 @@ public class PlayerBehaviour : MonoBehaviour {
 		Debug.Log ("Wall Jump!!");
         EndWallWalk();
 
-        state = CharacterState.WALL_JUMPING;
+        SetState(CharacterState.WALL_JUMPING);
 		rigidbody2D.velocity = new Vector2 (direction == Direction.RIGHT ? WALL_JUMP_SPEED_X : -WALL_JUMP_SPEED_X, WALL_JUMP_SPEED_Y);
 	}
 
@@ -725,7 +748,7 @@ public class PlayerBehaviour : MonoBehaviour {
     void OnDie()
     {
         SetState(CharacterState.DEAD);
-        animator.SetBool("Dead", true);
+        
         revivalTimer = REVIVAL_TIME;
     }
 
@@ -770,11 +793,36 @@ public class PlayerBehaviour : MonoBehaviour {
     void OnRevive()
     {
         SetState(CharacterState.FALLING);
-        PlayerSetting setting = PlayerManager.Inst.GetSetting(owner);
-        animator.SetBool("IsBlueTeam", setting.team == Team.BLUE);
-        animator.SetBool("Dead", false);
+        
+        LoadAnimation();
         fireTimer = 0f;
         health = 100;
+    }
+
+    void LoadAnimation()
+    {
+        PlayerSetting setting = PlayerManager.Inst.GetSetting(owner);
+        Team team = setting.team;
+
+        RuntimeAnimatorController animController;
+
+        if(team == Team.BLUE)
+        {
+            animController = (RuntimeAnimatorController)Resources.Load("Animations/Player/Player", typeof(RuntimeAnimatorController));
+            
+        }
+        else
+        {
+            animController = (RuntimeAnimatorController)Resources.Load("Animations/Player/Player_red", typeof(RuntimeAnimatorController));
+        }
+
+        animator.runtimeAnimatorController = animController;
+        
+    }
+
+    public void OnSettingChange()
+    {
+        LoadAnimation();
     }
 
     public void RemoveCharacterFromNetwork()
@@ -784,3 +832,4 @@ public class PlayerBehaviour : MonoBehaviour {
         Network.Destroy(gameObject);
     }
 }
+

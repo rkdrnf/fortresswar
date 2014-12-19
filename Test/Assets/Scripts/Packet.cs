@@ -171,6 +171,19 @@ namespace Packet
             [ProtoMember(1)]
             public PlayerSettingError error;
         }
+
+        [ProtoContract]
+        public class CharacterChangeState : Packet<CharacterChangeState>
+        {
+            public CharacterChangeState() { }
+            public CharacterChangeState(CharacterState state)
+            {
+                this.state = state;
+            }
+
+            [ProtoMember(1)]
+            public CharacterState state;
+        }
     }
 
     namespace C2S
