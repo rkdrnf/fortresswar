@@ -378,6 +378,8 @@ public class Game : MonoBehaviour
         foreach (PlayerSetting setting in settings)
         {
             PlayerManager.Inst.SetSetting(setting);
+            PlayerBehaviour character = PlayerManager.Inst.Get(setting.playerID);
+            character.OnSettingChange();
         }
     }
 
