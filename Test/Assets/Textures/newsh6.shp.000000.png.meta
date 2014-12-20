@@ -1,0 +1,190 @@
+fileFormatVersion: 2
+guid: dfaed5ae9b95e4c48906f96d79c819e5
+TextureImporter:
+  fileIDToRecycleName:
+    21300000: newsh6.shp.000000_0
+    21300002: newsh6.shp.000000_1
+    21300004: newsh6.shp.000000_2
+    21300006: newsh6.shp.000000_3
+    21300008: newsh6.shp.000000_4
+    21300010: newsh6.shp.000000_5
+    21300012: newsh6.shp.000000_6
+    21300014: newsh6.shp.000000_7
+    21300016: newsh6.shp.000000_8
+    21300018: newsh6.shp.000000_9
+    21300020: newsh6.shp.000000_10
+    21300022: newsh6.shp.000000_11
+    21300024: newsh6.shp.000000_12
+  serializedVersion: 2
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    linearTexture: 0
+    correctGamma: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: .25
+    normalMapFilter: 0
+  isReadable: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 0
+  seamlessCubemap: 0
+  textureFormat: -3
+  maxTextureSize: 1024
+  textureSettings:
+    filterMode: 0
+    aniso: 16
+    mipBias: -1
+    wrapMode: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: .5, y: .5}
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spritePixelsToUnits: 8
+  alphaIsTransparency: 1
+  textureType: 8
+  buildTargetSettings: []
+  spriteSheet:
+    sprites:
+    - name: newsh6.shp.000000_0
+      rect:
+        serializedVersion: 2
+        x: 72
+        y: 127
+        width: 12
+        height: 12
+      alignment: 0
+      pivot: {x: .5, y: .5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+    - name: newsh6.shp.000000_1
+      rect:
+        serializedVersion: 2
+        x: 84
+        y: 127
+        width: 12
+        height: 12
+      alignment: 0
+      pivot: {x: .5, y: .5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+    - name: newsh6.shp.000000_2
+      rect:
+        serializedVersion: 2
+        x: 96
+        y: 127
+        width: 12
+        height: 12
+      alignment: 0
+      pivot: {x: .5, y: .5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+    - name: newsh6.shp.000000_3
+      rect:
+        serializedVersion: 2
+        x: 108
+        y: 127
+        width: 12
+        height: 12
+      alignment: 0
+      pivot: {x: .5, y: .5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+    - name: newsh6.shp.000000_4
+      rect:
+        serializedVersion: 2
+        x: 120
+        y: 127
+        width: 12
+        height: 12
+      alignment: 0
+      pivot: {x: .5, y: .5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+    - name: newsh6.shp.000000_5
+      rect:
+        serializedVersion: 2
+        x: 132
+        y: 127
+        width: 12
+        height: 12
+      alignment: 0
+      pivot: {x: .5, y: .5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+    - name: newsh6.shp.000000_6
+      rect:
+        serializedVersion: 2
+        x: 144
+        y: 127
+        width: 12
+        height: 12
+      alignment: 0
+      pivot: {x: .5, y: .5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+    - name: newsh6.shp.000000_7
+      rect:
+        serializedVersion: 2
+        x: 156
+        y: 127
+        width: 12
+        height: 12
+      alignment: 0
+      pivot: {x: .5, y: .5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+    - name: newsh6.shp.000000_8
+      rect:
+        serializedVersion: 2
+        x: 168
+        y: 127
+        width: 12
+        height: 12
+      alignment: 0
+      pivot: {x: .5, y: .5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+    - name: newsh6.shp.000000_9
+      rect:
+        serializedVersion: 2
+        x: 180
+        y: 127
+        width: 12
+        height: 12
+      alignment: 0
+      pivot: {x: .5, y: .5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+    - name: newsh6.shp.000000_10
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 127
+        width: 12
+        height: 12
+      alignment: 0
+      pivot: {x: .5, y: .5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+    - name: newsh6.shp.000000_11
+      rect:
+        serializedVersion: 2
+        x: 204
+        y: 127
+        width: 12
+        height: 12
+      alignment: 0
+      pivot: {x: .5, y: .5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+    - name: newsh6.shp.000000_12
+      rect:
+        serializedVersion: 2
+        x: 216
+        y: 127
+        width: 12
+        height: 12
+      alignment: 0
+      pivot: {x: .5, y: .5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+  spritePackingTag: 
+  userData: 
