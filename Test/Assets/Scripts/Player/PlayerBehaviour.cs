@@ -40,6 +40,7 @@ public class PlayerBehaviour : MonoBehaviour {
 	NetworkView transformView;
 	NetworkView controllerView;
 
+    public Vector2 lookingDirection;
     
     public CharacterState state;
 
@@ -295,21 +296,25 @@ public class PlayerBehaviour : MonoBehaviour {
 			if (isOwner) {
 				float horMoveVal = horMov;
 				float verMoveVal = verMov;
+                Vector3 lookingDirectionVal = lookingDirection;
 
 				stream.Serialize (ref horMoveVal);
 				stream.Serialize (ref verMoveVal);
+                stream.Serialize (ref lookingDirectionVal);
 			}
 		} else {
 			Debug.Log ("reading");
 			float horMoveVal = 0;
 			float verMoveVal = 0;
-            int stateVal = (int)CharacterState.DEAD;
-
+            Vector3 lookingDirectionVal = Vector2.right;
+            
 			stream.Serialize(ref horMoveVal);
             stream.Serialize(ref verMoveVal);
+            stream.Serialize(ref lookingDirectionVal);
 
 			horMov = horMoveVal;
 			verMov = verMoveVal;
+            lookingDirection = lookingDirectionVal;
 		}
 	}
 
@@ -382,6 +387,9 @@ public class PlayerBehaviour : MonoBehaviour {
                 }
             }
 
+            Vector3 worldMousePosition = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0));
+            lookingDirection = (worldMousePosition - transform.position);
+
         } while (false);
 
 		
@@ -432,10 +440,10 @@ public class PlayerBehaviour : MonoBehaviour {
 			while(false);
 
 			
-			if (horMov < 0 && facingRight) {
+			if (lookingDirection.x < 0 && facingRight) {
 				Flip();
 			}
-			if (horMov > 0 && !facingRight) {
+			if (lookingDirection.x > 0 && !facingRight) {
 				Flip();
 			}
 		}

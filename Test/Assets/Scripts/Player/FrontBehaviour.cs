@@ -46,7 +46,7 @@ public class FrontBehaviour : MonoBehaviour {
         {
             RaycastHit2D hit = Physics2D.Raycast(transform.position, (player.facingRight ? rayRightDirections[i] : rayLeftDirections[i]), rayDistances[i], wallLayer);
 
-            if (hit.collider != null && hit.normal.x == (player.facingRight ? -1 : 1) && hit.normal.y == 0)
+            if (hit.collider != null && hit.normal.x == GetNormal(facing) && hit.normal.y == 0)
             {
                 Debug.Log(walledEnv.ToString() + "Walled!");
                 player.SetEnv(walledEnv, true);
