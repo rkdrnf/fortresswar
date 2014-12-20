@@ -80,8 +80,10 @@ namespace Packet
             this.health = health;
         }
         [ProtoMember(1)]
-        public int ID;
+        public int packetID = -1;
         [ProtoMember(2)]
+        public int ID;
+        [ProtoMember(3)]
         public int health;
     }
 
@@ -97,8 +99,10 @@ namespace Packet
                 this.damage = damage;
             }
             [ProtoMember(1)]
-            public int tileID;
+            public int packetID = -1;
             [ProtoMember(2)]
+            public int tileID;
+            [ProtoMember(3)]
             public int damage;
         }
 
@@ -112,6 +116,8 @@ namespace Packet
             }
 
             [ProtoMember(1)]
+            public int packetID = -1;
+            [ProtoMember(2)]
             public Vector3 position;
         }
 
@@ -125,6 +131,8 @@ namespace Packet
             }
 
             [ProtoMember(1)]
+            public int packetID = -1;
+            [ProtoMember(2)]
             public long projectileID;
         }
 
@@ -138,6 +146,8 @@ namespace Packet
             }
 
             [ProtoMember(1)]
+            public int packetID = -1;
+            [ProtoMember(2)]
             public List<PlayerSetting> settings;
         }
 
@@ -154,8 +164,9 @@ namespace Packet
                     tileStatusList.Add(new TileStatus(tile.Key, tile.Value.health));
                 }
             }
-
             [ProtoMember(1)]
+            public int packetID = -1;
+            [ProtoMember(2)]
             public List<TileStatus> tileStatusList;
         }
 
@@ -169,6 +180,8 @@ namespace Packet
             }
 
             [ProtoMember(1)]
+            public int packetID = -1;
+            [ProtoMember(2)]
             public PlayerSettingError error;
         }
 
@@ -182,6 +195,9 @@ namespace Packet
             }
 
             [ProtoMember(1)]
+            public int packetID = -1;
+
+            [ProtoMember(2)]
             public CharacterState state;
         }
 
@@ -197,12 +213,15 @@ namespace Packet
             }
 
             [ProtoMember(1)]
-            public Job job;
+            public int packetID = -1;
 
             [ProtoMember(2)]
-            public WeaponType weapon;
+            public Job job;
 
             [ProtoMember(3)]
+            public WeaponType weapon;
+
+            [ProtoMember(4)]
             public int health;
         }
     }
@@ -223,14 +242,16 @@ namespace Packet
             }
 
             [ProtoMember(1)]
-            public int playerID;
+            public int packetID = -1;
             [ProtoMember(2)]
-            public long projectileID;
+            public int playerID;
             [ProtoMember(3)]
-            public WeaponType weaponType;
+            public long projectileID;
             [ProtoMember(4)]
-            public PacketVector2 origin;
+            public WeaponType weaponType;
             [ProtoMember(5)]
+            public PacketVector2 origin;
+            [ProtoMember(6)]
             public PacketVector2 direction;
         }
 
@@ -244,9 +265,12 @@ namespace Packet
                 this.name = name;
             }
 
+
             [ProtoMember(1)]
-            public int playerID;
+            public int packetID = -1;
             [ProtoMember(2)]
+            public int playerID;
+            [ProtoMember(3)]
             public string name;
         }
 
@@ -261,8 +285,10 @@ namespace Packet
             }
 
             [ProtoMember(1)]
-            public int playerID;
+            public int packetID = -1;
             [ProtoMember(2)]
+            public int playerID;
+            [ProtoMember(3)]
             public Team team;
         }
 
@@ -277,8 +303,10 @@ namespace Packet
             }
 
             [ProtoMember(1)]
-            public int playerID;
+            public int packetID = -1;
             [ProtoMember(2)]
+            public int playerID;
+            [ProtoMember(3)]
             public PlayerStatus status;
         }
 
@@ -292,6 +320,9 @@ namespace Packet
             }
 
             [ProtoMember(1)]
+            public int packetID = -1;
+
+            [ProtoMember(2)]
             public Job job;
         }
     }
