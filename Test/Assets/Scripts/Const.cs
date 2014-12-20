@@ -21,14 +21,16 @@ namespace Const
     {
         CHAT_WINDOW,
         PLAYER,
-        TEAM_SELECTOR
+        TEAM_SELECTOR,
+        JOB_SELECTOR
     }
 
     public enum InputMouseFocus
     {
         CHAT_WINDOW,
         PLAYER,
-        TEAM_SELECTOR
+        TEAM_SELECTOR,
+        JOB_SELECTOR
     }
 
     public enum ChatState
@@ -45,6 +47,12 @@ namespace Const
         OFF
     }
 
+    public enum JobSelectorState
+    {
+        ON,
+        OFF
+    }
+
     public enum MenuState
     {
         ON,
@@ -56,6 +64,12 @@ namespace Const
         NONE,
         BLUE,
         RED
+    }
+
+    public enum Job
+    {
+        SCOUT,
+        HEAVY_GUNNER
     }
 
     public enum PlayerStatus
@@ -122,13 +136,12 @@ namespace Const
         MAX
     }
 
-    public enum BulletType
+    public enum WeaponType
     {
         GUN,
         MISSLE,
 
         MAX
-
     }
 }
 

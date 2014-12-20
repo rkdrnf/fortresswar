@@ -45,6 +45,7 @@ public class Game : MonoBehaviour
 	public Vector3 spawnPosition;
 	public GameObject playerPrefab;
     public ProjectileSet projectileSet;
+    public JobSet jobSet;
     public MapData mapData;
     public GameMenu gameMenu;
 
@@ -54,10 +55,16 @@ public class Game : MonoBehaviour
 
 
     TeamSelector teamSelector;
+    JobSelector jobSelector;
 
     public void OpenTeamSelector()
     {
         teamSelector.Open();
+    }
+
+    public void OpenJobSelector()
+    {
+        jobSelector.Open();
     }
 
     private int ID = -1;
@@ -93,6 +100,7 @@ public class Game : MonoBehaviour
 		netManager = netManagerObject.GetComponent<NetworkManager> ();
 		mapLoader = GetComponent<MapLoader> ();
         teamSelector = GetComponent<TeamSelector>();
+        jobSelector = GetComponent <JobSelector>();
 
 	}
 
@@ -206,7 +214,11 @@ public class Game : MonoBehaviour
     {
         PlayerManager.Inst.UpdatePlayer(update);
 
-        
+        PlayerBehaviour player = PlayerManager.Inst.Get(update.playerID);
+        if (player != null)
+        {
+            player.ChangeTeam(update);
+        }
     }
 
     public void ServerSpecificSelectTeam(Team team)
@@ -218,6 +230,7 @@ public class Game : MonoBehaviour
         PlayerBehaviour player = PlayerManager.Inst.Get(update.playerID);
         if (player != null)
         {
+            player.ChangeTeam(update);
             player.BroadcastDie();
             networkView.RPC("SetPlayerTeam", RPCMode.Others, update.SerializeToBytes());
         }

@@ -206,6 +206,58 @@ public class MapMakerEditor : Editor {
         EditorGUIUtility.PingObject(projSet);
     }
 
+    [MenuItem("Assets/Create/JobSet")]
+    static void CreateJobSet()
+    {
+        JobSet jobSet = CreateInstance<JobSet>();
+        var path = AssetDatabase.GetAssetPath(Selection.activeObject);
+
+        if (string.IsNullOrEmpty(path))
+        {
+            path = "Assets";
+        }
+        else if (Path.GetExtension(path) != "")
+        {
+            path.Replace(Path.GetFileName(path), "");
+        }
+        else
+        {
+            path += Path.DirectorySeparatorChar;
+        }
+
+        var assetPathAndName = AssetDatabase.GenerateUniqueAssetPath(path + "JobSet.asset");
+        AssetDatabase.CreateAsset(jobSet, assetPathAndName);
+        AssetDatabase.SaveAssets();
+        Selection.activeObject = jobSet;
+        EditorGUIUtility.PingObject(jobSet);
+    }
+
+    [MenuItem("Assets/Create/Job")]
+    static void CreateJob()
+    {
+        JobStat job = CreateInstance<JobStat>();
+        var path = AssetDatabase.GetAssetPath(Selection.activeObject);
+
+        if (string.IsNullOrEmpty(path))
+        {
+            path = "Assets";
+        }
+        else if (Path.GetExtension(path) != "")
+        {
+            path.Replace(Path.GetFileName(path), "");
+        }
+        else
+        {
+            path += Path.DirectorySeparatorChar;
+        }
+
+        var assetPathAndName = AssetDatabase.GenerateUniqueAssetPath(path + "Job.asset");
+        AssetDatabase.CreateAsset(job, assetPathAndName);
+        AssetDatabase.SaveAssets();
+        Selection.activeObject = job;
+        EditorGUIUtility.PingObject(job);
+    }
+
     public void LoadMap()
     {
         map.Load(mapFileAsset);

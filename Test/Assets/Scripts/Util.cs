@@ -86,7 +86,7 @@ namespace Util
             return state;
         }
 
-        public virtual void SetState(T state)
+        public virtual void SetState(T newState)
         {
             StateUtil.SetState<T>(out this.state, state);
         }

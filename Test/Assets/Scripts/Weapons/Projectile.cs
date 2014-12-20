@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-public abstract class Projectile : MonoBehaviour
+public abstract class Projectile : Weapon
 {
     public long ID;
     public int owner;
