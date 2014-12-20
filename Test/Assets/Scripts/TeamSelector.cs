@@ -13,11 +13,6 @@ public class TeamSelector : MonoBehaviour {
         stateManager.SetState(TeamSelectorState.OFF);
 	}
 	
-	// Update is called once per frame
-	void Update () {
-	
-	}
-
     public void Open()
     {
         if (stateManager.IsInState(TeamSelectorState.ON))

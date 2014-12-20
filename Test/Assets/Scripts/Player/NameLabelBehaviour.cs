@@ -26,6 +26,6 @@ public class NameLabelBehaviour : MonoBehaviour {
         }
 
         transform.localScale = player.transform.localScale;
-        textMesh.text = setting.name + "\n" + player.state.ToString();
+        textMesh.text = setting.name + "\n" + player.state.ToString() + "\n" + player.health;
     }
 }

@@ -184,6 +184,27 @@ namespace Packet
             [ProtoMember(1)]
             public CharacterState state;
         }
+
+        [ProtoContract]
+        public class CharacterStatus : Packet<CharacterStatus>
+        {
+            public CharacterStatus() { }
+            public CharacterStatus(Job job, WeaponType weapon, int health)
+            {
+                this.job = job;
+                this.weapon = weapon;
+                this.health = health;
+            }
+
+            [ProtoMember(1)]
+            public Job job;
+
+            [ProtoMember(2)]
+            public WeaponType weapon;
+
+            [ProtoMember(3)]
+            public int health;
+        }
     }
 
     namespace C2S
@@ -192,10 +213,10 @@ namespace Packet
         public class Fire : Packet<Fire>
         {
             public Fire() { }
-            public Fire(int playerID, long projectileID, BulletType bulletType, Vector3 origin, Vector3 direction)
+            public Fire(int playerID, long projectileID, WeaponType weapon, Vector3 origin, Vector3 direction)
             {
                 this.playerID = playerID;
-                this.bulletType = bulletType;
+                this.weaponType = weapon;
                 this.origin = origin;
                 this.direction = direction;
                 this.projectileID = projectileID;
@@ -206,7 +227,7 @@ namespace Packet
             [ProtoMember(2)]
             public long projectileID;
             [ProtoMember(3)]
-            public BulletType bulletType;
+            public WeaponType weaponType;
             [ProtoMember(4)]
             public PacketVector2 origin;
             [ProtoMember(5)]
@@ -261,5 +282,17 @@ namespace Packet
             public PlayerStatus status;
         }
 
+        [ProtoContract]
+        public class ChangeJob : Packet<ChangeJob>
+        {
+            public ChangeJob() { }
+            public ChangeJob(Job newJob)
+            {
+                this.job = newJob;
+            }
+
+            [ProtoMember(1)]
+            public Job job;
+        }
     }
 }

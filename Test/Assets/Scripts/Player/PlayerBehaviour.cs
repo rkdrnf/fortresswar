@@ -13,18 +13,18 @@ public class PlayerBehaviour : MonoBehaviour {
     int owner;
     bool isOwner = false;
 
-	public BulletType weapon;
+    Job job;
+    public JobStat jobStat;
+
+	public WeaponType weapon;
     public int health;
+    Animator animator;
 
-	const int MOVE_SPEED = 8;
-	const float WALL_WALK_SPEED = 8;
-
-	const float JUMP_SPEED = 12;
-	const float WALL_JUMP_SPEED_X = 15;
-	const float WALL_JUMP_SPEED_Y = 10;
-
-	const float FIRE_RATE = 0.2f;
-	const int FIRE_POWER = 20;
+    double healthLastSet = 0f;
+    double weaponLastSet = 0f;
+    
+	float FIRE_RATE = 0.2f;
+	int FIRE_POWER = 20;
 
 	public bool facingRight = true;
 
@@ -36,19 +36,14 @@ public class PlayerBehaviour : MonoBehaviour {
 
 	float wallWalkTimer;
 
-	const float WALL_WALK_TIME = 0.7f;
-
 
 	NetworkView transformView;
 	NetworkView controllerView;
 
-    Animator animator;
-
+    
     public CharacterState state;
 
     int envFlag;
-
-    double statusSetTime = 0f;
 
     const float REVIVAL_TIME = 5f;
     double revivalTimer = 0f;
@@ -112,34 +107,71 @@ public class PlayerBehaviour : MonoBehaviour {
 		}
 	}
 
-    void OnNetworkInstantiate(NetworkMessageInfo info)
+    void Awake()
     {
-        //Server has valid value.
-        if(Network.isServer)
+        fireTimer = 0f;
+        wallWalkTimer = 0f;
+        animator = GetComponent<Animator>();
+
+        Component[] views = gameObject.GetComponents(typeof(NetworkView));
+        foreach (Component view in views)
         {
-            StateUtil.SetState(out this.state, CharacterState.DEAD);
-            return;
+            NetworkView nView = (NetworkView)view;
+            if (nView.observed is PlayerBehaviour)
+            {
+                controllerView = nView;
+            }
+
+            if (nView.observed is Transform)
+            {
+                transformView = nView;
+            }
         }
 
-        networkView.RPC("RequestCurrentStatus", RPCMode.Server);
+        //Server has valid value.
+        if (Network.isServer)
+        {
+            StateUtil.SetState(out this.state, CharacterState.DEAD);
+        }
     }
 
     [RPC]
     void RequestCurrentStatus(NetworkMessageInfo info)
     {
-        networkView.RPC("SetPlayerStatus", info.sender, health);
+        S2C.CharacterStatus pck = new S2C.CharacterStatus(job, weapon, health);
+        networkView.RPC("SetPlayerStatus", info.sender, pck.SerializeToBytes());
     }
 
     [RPC]
-    void SetPlayerStatus(int health, NetworkMessageInfo info)
+    void SetPlayerStatus(byte[] data, NetworkMessageInfo info)
+    {
+        S2C.CharacterStatus pck = S2C.CharacterStatus.DeserializeFromBytes(data);
+
+        LoadJob(pck.job);
+        SetHealth(pck.health, info.timestamp);
+        SetWeapon(pck.weapon, info.timestamp);
+    }
+
+    void SetHealth(int health, double settingTime)
     {
         //old status
-        if (statusSetTime > info.timestamp)
+        if (healthLastSet > settingTime)
             return;
 
-        statusSetTime = info.timestamp;
+        healthLastSet = settingTime;
         this.health = health;
     }
+
+    void SetWeapon(WeaponType weapon, double settingTime)
+    {
+        //old status
+        if (weaponLastSet > settingTime)
+            return;
+
+        weaponLastSet = settingTime;
+        this.weapon = weapon;
+    }
+
 
     [RPC]
 	public void SetOwner(int playerID, NetworkMessageInfo info)
@@ -148,6 +180,8 @@ public class PlayerBehaviour : MonoBehaviour {
         //ServerCheck
 
         OnSetOwner(playerID);
+
+        networkView.RPC("RequestCurrentStatus", RPCMode.Server);
 	}
 
     public void OnSetOwner(int playerID)
@@ -156,6 +190,12 @@ public class PlayerBehaviour : MonoBehaviour {
         owner = playerID;
         isOwner = owner == Game.Inst.GetID();
 
+        if (isOwner) // Set Camera to own character.
+        {
+            CameraBehaviour camera = GameObject.Find("Main Camera").GetComponent<CameraBehaviour>();
+            camera.target = transform;
+        }
+
         if (isOwner && Network.isClient) // Allocating controller ID. When Network is server, ID is already allocated.
         {
             NetworkViewID controllerID = Network.AllocateViewID();
@@ -163,11 +203,13 @@ public class PlayerBehaviour : MonoBehaviour {
             controllerView.viewID = controllerID;
         }
 
-        if (isOwner) // Set Camera to own character.
+        if (Network.isServer)
         {
-            CameraBehaviour camera = GameObject.Find("Main Camera").GetComponent<CameraBehaviour>();
-            camera.target = transform;
+            //LoadJob After Setting Owner;
+            LoadJob(job);
         }
+
+        
     }
 
     public int GetOwner()
@@ -181,27 +223,70 @@ public class PlayerBehaviour : MonoBehaviour {
 		controllerView.viewID = viewID;
 	}
 
-	void Awake()
-	{
-		fireTimer = 0f;
-		wallWalkTimer = 0f;
-        animator = GetComponent<Animator>();
+    void LoadJob(Job job)
+    {
+        JobStat newJobStat = Game.Inst.jobSet.Jobs[(int)job];
 
-		Component[] views = gameObject.GetComponents(typeof(NetworkView));
-		foreach (Component view in views) {
-			NetworkView nView = (NetworkView)view;
-			if (nView.observed is PlayerBehaviour)
-			{
-				controllerView = nView;
-			}
+        this.job = job;
+        this.jobStat = newJobStat;
 
-			if (nView.observed is Transform)
-			{
-				transformView = nView;
-			}
-		}
+        this.health = newJobStat.MaxHealth;
+        this.weapon = newJobStat.Weapons[0];
+        PlayerSetting setting = PlayerManager.Inst.GetSetting(owner);
 
-	}
+        if (setting != null)
+        {
+            LoadAnimation(setting.team, newJobStat);
+        }
+    }
+
+    public void ChangeJob(Job newJob)
+    {
+        C2S.ChangeJob pck = new C2S.ChangeJob(newJob);
+        if (Network.isServer)
+        {
+            ChangeJobRequest(pck.SerializeToBytes(), new NetworkMessageInfo());
+        }
+        else if (Network.isClient)
+        { 
+            
+            networkView.RPC("ChangeJobRequest", RPCMode.Server, pck.SerializeToBytes());
+        }
+    }
+
+    [RPC]
+    void ChangeJobRequest(byte[] pckData, NetworkMessageInfo info)
+    {
+        if (!Network.isServer) return;
+        if (!PlayerManager.Inst.IsValidPlayer(owner, info.sender)) return;
+
+        //TODO::JobChangeValidation
+
+        OnChangeJob(C2S.ChangeJob.DeserializeFromBytes(pckData));
+        networkView.RPC("ClientChangeJob", RPCMode.Others, pckData);
+    }
+
+    [RPC]
+    void ClientChangeJob(byte[] pckData, NetworkMessageInfo info)
+    {
+        if (!Network.isClient) return;
+        //ServerCheck
+
+        OnChangeJob(C2S.ChangeJob.DeserializeFromBytes(pckData));
+    }
+
+    void OnChangeJob(C2S.ChangeJob changeJob)
+    {
+        LoadJob(changeJob.job);
+    }
+
+    public void ChangeTeam(C2S.UpdatePlayerTeam pck)
+    {
+        PlayerSetting setting = PlayerManager.Inst.GetSetting(owner);
+        Team team = pck.team;
+
+        LoadAnimation(team, jobStat);
+    }
 
 	void OnSerializeNetworkView(BitStream stream, NetworkMessageInfo mnInfo)
 	{
@@ -243,11 +328,12 @@ public class PlayerBehaviour : MonoBehaviour {
             }
         }
 
-        if (Game.Inst.map.CheckInBorder(this) == false)
+        if (IsDead() == false && Game.Inst.map.CheckInBorder(this) == false)
         {
             BroadcastDie();
         }
     }
+
 	// Update is called once per frame
 	// Reset input data per frame.
 	void Update () {
@@ -261,31 +347,42 @@ public class PlayerBehaviour : MonoBehaviour {
 
 
         //Client Input Processing
-		if (isOwner) {
-            if (IsDead())
-                return;
+		
+        do
+        {
+            if (!isOwner) break;
+            if (IsDead()) break;
 
             if (Game.Inst.keyFocusManager.IsFocused(InputKeyFocus.PLAYER))
-            { 
-			    horMov = Input.GetAxisRaw ("Horizontal");
-			    verMov = Input.GetAxisRaw("Vertical");
+            {
+                horMov = Input.GetAxisRaw("Horizontal");
+                verMov = Input.GetAxisRaw("Vertical");
 
 
+                //TeamSelector
                 if (Input.GetKey(KeyCode.M))
                 {
                     Game.Inst.OpenTeamSelector();
                 }
+
+                //JobSelector
+                if (Input.GetKey(KeyCode.N))
+                {
+                    Game.Inst.OpenJobSelector();
+                }
             }
 
             if (Game.Inst.mouseFocusManager.IsFocused(InputMouseFocus.PLAYER))
-            { 
-			    if (Input.GetButton ("Fire1")) {
-			    	Debug.Log("fire button pressed");
+            {
+                if (Input.GetButton("Fire1"))
+                {
+                    Debug.Log("fire button pressed");
                     Fire();
-			    	
-			    }
+
+                }
             }
-		}
+
+        } while (false);
 
 		
 
@@ -353,7 +450,7 @@ public class PlayerBehaviour : MonoBehaviour {
 
         if (horMov != 0)
         {
-            rigidbody2D.velocity = new Vector2(horMov * MOVE_SPEED, rigidbody2D.velocity.y);
+            rigidbody2D.velocity = new Vector2(horMov * jobStat.MovingSpeed, rigidbody2D.velocity.y);
         }
 
         //
@@ -387,7 +484,7 @@ public class PlayerBehaviour : MonoBehaviour {
             //Fall to ground.
             if (verMov <= 0f)
             {
-                rigidbody2D.velocity = new Vector2(horMov * MOVE_SPEED, rigidbody2D.velocity.y);
+                rigidbody2D.velocity = new Vector2(horMov * jobStat.MovingSpeed, rigidbody2D.velocity.y);
                 
                 return;
             }
@@ -398,7 +495,7 @@ public class PlayerBehaviour : MonoBehaviour {
     {
         if (horMov != 0)
         {
-            rigidbody2D.velocity = new Vector2(horMov * MOVE_SPEED, rigidbody2D.velocity.y);
+            rigidbody2D.velocity = new Vector2(horMov * jobStat.MovingSpeed, rigidbody2D.velocity.y);
         }
 
         if (rigidbody2D.velocity.y <= 0f)
@@ -411,7 +508,7 @@ public class PlayerBehaviour : MonoBehaviour {
     {
         if (horMov != 0)
         {
-            rigidbody2D.AddForce(new Vector2(horMov * MOVE_SPEED, 2f));
+            rigidbody2D.AddForce(new Vector2(horMov * jobStat.MovingSpeed, 2f));
 
             //WallJump Or Climb more.
             if (verMov > 0)
@@ -425,7 +522,7 @@ public class PlayerBehaviour : MonoBehaviour {
             //Fall to ground.
             if (verMov <= 0f)
             {
-                rigidbody2D.velocity = new Vector2(horMov * MOVE_SPEED, rigidbody2D.velocity.y);
+                rigidbody2D.velocity = new Vector2(horMov * jobStat.MovingSpeed, rigidbody2D.velocity.y);
 
                 return;
             }
@@ -460,14 +557,14 @@ public class PlayerBehaviour : MonoBehaviour {
             //Fall to ground.
             if (verMov <= 0f)
             {
-                rigidbody2D.velocity = new Vector2(horMov * MOVE_SPEED, rigidbody2D.velocity.y);
+                rigidbody2D.velocity = new Vector2(horMov * jobStat.MovingSpeed, rigidbody2D.velocity.y);
 
                 
                 SetState(CharacterState.FALLING);
                 return;
             }
 
-			rigidbody2D.velocity = new Vector2(horMov * MOVE_SPEED, rigidbody2D.velocity.y);
+            rigidbody2D.velocity = new Vector2(horMov * jobStat.MovingSpeed, rigidbody2D.velocity.y);
         }
     }
 
@@ -489,7 +586,7 @@ public class PlayerBehaviour : MonoBehaviour {
 	void Jump()
 	{
 		SetState(CharacterState.JUMPING_UP);
-		rigidbody2D.velocity = new Vector2 (rigidbody2D.velocity.x, JUMP_SPEED);
+		rigidbody2D.velocity = new Vector2 (rigidbody2D.velocity.x, jobStat.JumpingSpeed);
 	}
 
 	void WallWalk(Direction direction)
@@ -504,13 +601,13 @@ public class PlayerBehaviour : MonoBehaviour {
         SetEnv(direction == Direction.RIGHT ? CharacterEnv.WALL_WALKED_LEFT : CharacterEnv.WALL_WALKED_RIGHT, false);
 		wallWalkTimer += Time.deltaTime;
 
-		if (wallWalkTimer > WALL_WALK_TIME) {
+		if (wallWalkTimer > jobStat.WallWalkingTime) {
 			EndWallWalk();
             SetState(CharacterState.FALLING);
 			return;
 		}
 
-		rigidbody2D.velocity = new Vector2 (rigidbody2D.velocity.x, WALL_WALK_SPEED);
+		rigidbody2D.velocity = new Vector2 (rigidbody2D.velocity.x, jobStat.WallWalkingSpeed);
 	}
 
 	void EndWallWalk()
@@ -573,7 +670,7 @@ public class PlayerBehaviour : MonoBehaviour {
         EndWallWalk();
 
         SetState(CharacterState.WALL_JUMPING);
-		rigidbody2D.velocity = new Vector2 (direction == Direction.RIGHT ? WALL_JUMP_SPEED_X : -WALL_JUMP_SPEED_X, WALL_JUMP_SPEED_Y);
+        rigidbody2D.velocity = new Vector2(direction == Direction.RIGHT ? jobStat.WallJumpingSpeed.x : -jobStat.WallJumpingSpeed.x, jobStat.WallJumpingSpeed.y);
 	}
 
     void Flip()
@@ -678,7 +775,7 @@ public class PlayerBehaviour : MonoBehaviour {
 
     public void OnBroadcastFire(C2S.Fire fire)
     {
-        GameObject projObj = (GameObject)Instantiate(Game.Inst.projectileSet.projectiles[(int)fire.bulletType], fire.origin, Quaternion.identity);
+        GameObject projObj = (GameObject)Instantiate(Game.Inst.projectileSet.projectiles[(int)fire.weaponType], fire.origin, Quaternion.identity);
 
         projObj.rigidbody2D.AddForce(new Vector2(fire.direction.x * FIRE_POWER, fire.direction.y * FIRE_POWER), ForceMode2D.Impulse);
 
@@ -718,8 +815,7 @@ public class PlayerBehaviour : MonoBehaviour {
         //ServerCheck
 
         //old damage;
-        if (statusSetTime > info.timestamp) return;
-            
+        if (healthLastSet > info.timestamp) return;
 
         health -= damage;
         if (health < 0)
@@ -778,6 +874,7 @@ public class PlayerBehaviour : MonoBehaviour {
         if (!Network.isServer) return;
 
         transform.position = Game.Inst.RevivalLocation;
+        rigidbody2D.velocity = Vector2.zero;
         OnRevive();
     }
 
@@ -794,35 +891,23 @@ public class PlayerBehaviour : MonoBehaviour {
     {
         SetState(CharacterState.FALLING);
         
-        LoadAnimation();
         fireTimer = 0f;
-        health = 100;
+        health = jobStat.MaxHealth;
     }
 
-    void LoadAnimation()
+    void LoadAnimation(Team team, JobStat jobStat)
     {
-        PlayerSetting setting = PlayerManager.Inst.GetSetting(owner);
-        Team team = setting.team;
-
-        RuntimeAnimatorController animController;
-
-        if(team == Team.BLUE)
-        {
-            animController = (RuntimeAnimatorController)Resources.Load("Animations/Player/Player", typeof(RuntimeAnimatorController));
-            
-        }
-        else
-        {
-            animController = (RuntimeAnimatorController)Resources.Load("Animations/Player/Player_red", typeof(RuntimeAnimatorController));
-        }
-
-        animator.runtimeAnimatorController = animController;
-        
+        animator.runtimeAnimatorController = team == Team.BLUE ?
+            jobStat.BlueTeamAnimations :
+            jobStat.RedTeamAnimations;
     }
 
     public void OnSettingChange()
     {
-        LoadAnimation();
+        PlayerSetting setting = PlayerManager.Inst.GetSetting(owner);
+        Team team = setting.team;
+
+        LoadAnimation(team, jobStat);
     }
 
     public void RemoveCharacterFromNetwork()
