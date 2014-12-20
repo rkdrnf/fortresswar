@@ -218,6 +218,11 @@ public class PlayerBehaviour : MonoBehaviour {
         return owner;
     }
 
+    public bool IsMine()
+    {
+        return isOwner;
+    }
+
 	[RPC]
 	public void SetControllerNetworkView(NetworkViewID viewID)
 	{

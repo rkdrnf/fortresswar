@@ -9,19 +9,18 @@ class Crosshair : MonoBehaviour
     PlayerBehaviour player;
     public int distance;
 
-
     public Texture2D crosshairTexture;
 
     // Use this for initialization
     void Start()
     {
         player = transform.parent.gameObject.GetComponent<PlayerBehaviour>();
-
     }
 	
     void OnGUI()
     {
-        DrawCrosshair();
+        if (player.IsMine())
+            DrawCrosshair();
     }
 
     void DrawCrosshair()
