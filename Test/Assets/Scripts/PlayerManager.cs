@@ -41,24 +41,7 @@ public class PlayerManager : MonoBehaviour
         playerIDDic = new Dictionary<int, NetworkPlayer>();
     }
 
-    void OnPlayerDisconnected(NetworkPlayer player)
-    {
-        Debug.Log(String.Format("Player Disconnected! {0}", player));
-
-        int playerID = GetID(player);
-        PlayerBehaviour character = playerObjManager.Get(playerID);
-
-        character.RemoveCharacterFromNetwork();
-
-        networkView.RPC("OnPlayerRemoved", RPCMode.All, playerID);
-    }
-
-    [RPC]
-    void OnPlayerRemoved(int player)
-    {
-        playerObjManager.Remove(player);
-        settingDic.Remove(player);
-    }
+    
 
     // Dictionary Functions
     public PlayerBehaviour Get(int player)
@@ -97,6 +80,11 @@ public class PlayerManager : MonoBehaviour
             return settingDic[playerID];
 
         return null;
+    }
+
+    public void RemoveSetting(int playerID)
+    {
+        settingDic.Remove(playerID);
     }
 
     public void UpdatePlayer(C2S.UpdatePlayerName update)
