@@ -170,7 +170,11 @@ public class Game : MonoBehaviour
     public void SelectTeam(Team team)
     {
         C2S.UpdatePlayerTeam selectTeam = new C2S.UpdatePlayerTeam(ID, team);
-        networkView.RPC("ServerSelectTeam", RPCMode.Server, selectTeam.SerializeToBytes());
+
+        if (Network.isServer)
+            ServerSelectTeam(selectTeam.SerializeToBytes(), new NetworkMessageInfo());
+        else
+            networkView.RPC("ServerSelectTeam", RPCMode.Server, selectTeam.SerializeToBytes());
     }
 
     [RPC]
@@ -221,47 +225,6 @@ public class Game : MonoBehaviour
         }
     }
 
-    public void ServerSpecificSelectTeam(Team team)
-    {
-        C2S.UpdatePlayerTeam update = new C2S.UpdatePlayerTeam(ID, team);
-
-        OnSelectTeam(update);
-
-        PlayerBehaviour player = PlayerManager.Inst.Get(update.playerID);
-        if (player != null)
-        {
-            player.ChangeTeam(update);
-            player.BroadcastDie();
-            networkView.RPC("SetPlayerTeam", RPCMode.Others, update.SerializeToBytes());
-        }
-        else
-        {
-            networkView.RPC("SetPlayerTeam", RPCMode.Others, update.SerializeToBytes());
-
-            PlayerSetting setting = PlayerManager.Inst.GetSetting(update.playerID);
-
-            PlayerSettingError error = setting.IsSettingCompleted();
-            if (error == PlayerSettingError.NONE)
-            {
-                EnterCharacter(setting);
-                return;
-            }
-
-            S2C.PlayerNotReady notReady = new S2C.PlayerNotReady(error);
-
-            switch (notReady.error)
-            {
-                case PlayerSettingError.NAME:
-                    OpenGameMenu();
-                    break;
-
-                case PlayerSettingError.TEAM:
-                    OpenTeamSelector();
-                    break;
-            }
-        }
-    }
-
     [RPC]
     public void ServerSetPlayerName(byte[] updateData, NetworkMessageInfo info)
     {
@@ -288,34 +251,6 @@ public class Game : MonoBehaviour
         PlayerManager.Inst.UpdatePlayer(update);
     }
 
-    public void ServerSpecificUpdatePlayerName(C2S.UpdatePlayerName update)
-    {
-        PlayerManager.Inst.UpdatePlayer(update);
-        Game.Inst.networkView.RPC("ClientSetPlayerName", RPCMode.Others, update.SerializeToBytes());
-
-        PlayerSetting setting = PlayerManager.Inst.GetSetting(update.playerID);
-
-        PlayerSettingError error = setting.IsSettingCompleted();
-        if (error == PlayerSettingError.NONE)
-        {
-            EnterCharacter(setting);
-            return;
-        }
-
-        S2C.PlayerNotReady notReady = new S2C.PlayerNotReady(error);
-
-        switch (notReady.error)
-        {
-            case PlayerSettingError.NAME:
-                OpenGameMenu();
-                break;
-
-            case PlayerSettingError.TEAM:
-                OpenTeamSelector();
-                break;
-        }
-    }
-
     void ReadyToEnterCharacter(PlayerSetting setting)
     {
         if (!Network.isServer) return;
@@ -329,15 +264,16 @@ public class Game : MonoBehaviour
 
         S2C.PlayerNotReady notReady = new S2C.PlayerNotReady(error);
         NetworkPlayer player = PlayerManager.Inst.GetPlayer(setting.playerID);
-        networkView.RPC("PlayerNotReadyToEnter", player, notReady.SerializeToBytes());
+
+        if (player == Network.player) // ServerPlayer
+            PlayerNotReadyToEnter(notReady.SerializeToBytes(), new NetworkMessageInfo());
+        else
+            networkView.RPC("PlayerNotReadyToEnter", player, notReady.SerializeToBytes());
     }
 
     [RPC]
     void PlayerNotReadyToEnter(byte[] notReadyData, NetworkMessageInfo info)
     {
-        if (!Network.isClient) return;
-        //ServerCheck
-
         S2C.PlayerNotReady notReady = S2C.PlayerNotReady.DeserializeFromBytes(notReadyData);
 
         switch(notReady.error)
@@ -352,8 +288,6 @@ public class Game : MonoBehaviour
         }
     
     }
-    
-    
 
     public void EnterCharacter(PlayerSetting setting)
     {
@@ -407,6 +341,25 @@ public class Game : MonoBehaviour
         {
             OnServerDown();
         }
+    }
+
+    void OnPlayerDisconnected(NetworkPlayer player)
+    {
+        Debug.Log(String.Format("Player Disconnected! {0}", player));
+
+        int playerID = PlayerManager.Inst.GetID(player);
+        PlayerBehaviour character = PlayerManager.Inst.Get(playerID);
+
+        character.RemoveCharacterFromNetwork();
+
+        networkView.RPC("OnPlayerRemoved", RPCMode.All, playerID);
+    }
+
+    [RPC]
+    void OnPlayerRemoved(int player)
+    {
+        PlayerManager.Inst.Remove(player);
+        PlayerManager.Inst.RemoveSetting(player);
     }
 
     void OnServerDown()

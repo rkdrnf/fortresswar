@@ -49,7 +49,7 @@ public class TeamSelector : MonoBehaviour {
         if (GUILayout.Button("BLUE", blueStyle))
         {
             if (Network.isServer)
-                Game.Inst.ServerSpecificSelectTeam(Team.BLUE);
+                Game.Inst.SelectTeam(Team.BLUE);
             else
                 Game.Inst.SelectTeam(Team.BLUE);
 
@@ -63,7 +63,7 @@ public class TeamSelector : MonoBehaviour {
         if (GUILayout.Button("RED", redStyle))
         {
             if (Network.isServer)
-                Game.Inst.ServerSpecificSelectTeam(Team.RED);
+                Game.Inst.SelectTeam(Team.RED);
             else
                 Game.Inst.SelectTeam(Team.RED);
             Close();

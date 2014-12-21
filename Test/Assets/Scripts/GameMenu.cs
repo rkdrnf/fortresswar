@@ -24,7 +24,7 @@ public class GameMenu : MonoBehaviour
             if (Network.isServer)
             {
                 //Server Specific
-                Game.Inst.ServerSpecificUpdatePlayerName(updateName);
+                Game.Inst.ServerSetPlayerName(updateName.SerializeToBytes(), new NetworkMessageInfo());
             }
             else if (Network.isClient)
             {

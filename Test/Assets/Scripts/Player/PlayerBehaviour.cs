@@ -134,6 +134,13 @@ public class PlayerBehaviour : MonoBehaviour {
         {
             StateUtil.SetState(out this.state, CharacterState.DEAD);
         }
+        else
+        {
+            //Destroy(rigidbody2D);
+            //Destroy(collider2D);
+            //Destroy(GetComponent<EdgeCollider2D>());
+            //rigidbody2D.isKinematic = true;
+        }
     }
 
     [RPC]
@@ -297,7 +304,7 @@ public class PlayerBehaviour : MonoBehaviour {
 	void OnSerializeNetworkView(BitStream stream, NetworkMessageInfo mnInfo)
 	{
 		if (stream.isWriting) {
-			Debug.Log ("writing");
+			//Debug.Log (string.Format("[WRITING] player: {0} sender: {1} time: {2}", owner, mnInfo.sender, mnInfo.timestamp));
 			if (isOwner) {
 				float horMoveVal = horMov;
 				float verMoveVal = verMov;
@@ -307,8 +314,8 @@ public class PlayerBehaviour : MonoBehaviour {
 				stream.Serialize (ref verMoveVal);
                 stream.Serialize (ref lookingDirectionVal);
 			}
-		} else {
-			Debug.Log ("reading");
+		} else if (stream.isReading) {
+            //Debug.Log(string.Format("[READING] player: {0}  sender: {1} time: {2}", owner, mnInfo.sender, mnInfo.timestamp));
 			float horMoveVal = 0;
 			float verMoveVal = 0;
             Vector3 lookingDirectionVal = Vector2.right;
@@ -873,7 +880,7 @@ public class PlayerBehaviour : MonoBehaviour {
 
     bool CanRevive()
     {
-        return revivalTimer <= 0;
+        return jobStat != null && revivalTimer <= 0;
     }
 
     void BroadcastRevive()

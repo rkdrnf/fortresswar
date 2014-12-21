@@ -3,7 +3,8 @@ using System.Collections;
 
 public class CameraBehaviour : MonoBehaviour {
 
-    float height = 0.3f; 
+    float height = 0.3f;
+    float heightDamping = 8f;
 
     public Transform target;
 
@@ -26,14 +27,12 @@ public class CameraBehaviour : MonoBehaviour {
             float currentHeight = transform.position.y;
 
             // Damp the height
-            //currentHeight = Mathf.Lerp(currentHeight, wantedHeight, heightDamping * Time.deltaTime);
+            //
 
             // Set the position of the camera on the x-z plane to:
-            // distance meters behind the target
-            transform.position = new Vector3(target.position.x, target.position.y, -20);
-
             // Set the height of the camera
-        //transform.position = new Vector3(transform.position.x, currentHeight, -20);
+            currentHeight = Mathf.Lerp(currentHeight, wantedHeight, heightDamping * Time.deltaTime);
+            transform.position = new Vector3(transform.position.x, currentHeight, -20);
 
 
             // Always look at the target

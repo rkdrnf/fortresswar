@@ -20,6 +20,8 @@ public class HealthBarBehaviour : MonoBehaviour {
 	
     void OnGUI()
     {
+        if (player.jobStat == null) return;
+            
         Vector2 targetPos;
         targetPos = Camera.main.WorldToScreenPoint(transform.position);
 
