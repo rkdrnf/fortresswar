@@ -10,6 +10,7 @@ public class NetworkInterpolatedTransform : MonoBehaviour
         internal double timestamp;
         internal Vector3 pos;
         internal Quaternion rot;
+        internal Vector3 scale;
     }
 
     // We store twenty states with "playback" information
@@ -30,8 +31,10 @@ public class NetworkInterpolatedTransform : MonoBehaviour
         {
             Vector3 pos = transform.position;
             Quaternion rot = transform.rotation;
+            Vector3 scale = transform.localScale;
             stream.Serialize(ref pos);
             stream.Serialize(ref rot);
+            stream.Serialize(ref scale);
         }
         // When receiving, buffer the information
         else
@@ -39,8 +42,10 @@ public class NetworkInterpolatedTransform : MonoBehaviour
             // Receive latest state information
             Vector3 pos = Vector3.zero;
             Quaternion rot = Quaternion.identity;
+            Vector3 scale = Vector3.one;
             stream.Serialize(ref pos);
             stream.Serialize(ref rot);
+            stream.Serialize(ref scale);
 
             // Shift buffer contents, oldest data erased, 18 becomes 19, ... , 0 becomes 1
             for (int i = m_BufferedState.Length - 1; i >= 1; i--)
@@ -53,6 +58,7 @@ public class NetworkInterpolatedTransform : MonoBehaviour
             state.timestamp = info.timestamp;
             state.pos = pos;
             state.rot = rot;
+            state.scale = scale;
             m_BufferedState[0] = state;
 
             // Increment state count but never exceed buffer size
@@ -106,6 +112,7 @@ public class NetworkInterpolatedTransform : MonoBehaviour
                     // if t=0 => lhs is used directly
                     transform.localPosition = Vector3.Lerp(lhs.pos, rhs.pos, t);
                     transform.localRotation = Quaternion.Slerp(lhs.rot, rhs.rot, t);
+                    transform.localScale = Vector3.Lerp(lhs.scale, rhs.scale, t);
                     return;
                 }
             }
@@ -118,6 +125,7 @@ public class NetworkInterpolatedTransform : MonoBehaviour
 
             transform.localPosition = latest.pos;
             transform.localRotation = latest.rot;
+            transform.localScale = latest.scale;
         }
     }
 }

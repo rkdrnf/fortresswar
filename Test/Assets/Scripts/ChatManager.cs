@@ -37,14 +37,13 @@ public class ChatManager : MonoBehaviour {
         switch (state)
         {
             case ChatState.NONE:
-                Input.imeCompositionMode = IMECompositionMode.Off;
                 Game.Inst.keyFocusManager.FreeFocus();
                 Game.Inst.mouseFocusManager.FreeFocus();
                 StateUtil.SetState<ChatState>(out this.state, state);
                 break;
 
             case ChatState.NEW_MESSAGE:
-                Input.imeCompositionMode = IMECompositionMode.Off;
+                
                 Game.Inst.keyFocusManager.FreeFocus();
                 Game.Inst.mouseFocusManager.FreeFocus();
                 if (IsNotInState(ChatState.WRITING))
@@ -54,7 +53,7 @@ public class ChatManager : MonoBehaviour {
                 break;
 
             case ChatState.WRITING:
-                Input.imeCompositionMode = IMECompositionMode.On;
+                
                 Game.Inst.keyFocusManager.FocusTo(InputKeyFocus.CHAT_WINDOW);
                 Game.Inst.mouseFocusManager.FocusTo(InputMouseFocus.CHAT_WINDOW);
                 StateUtil.SetState<ChatState>(out this.state, state);
@@ -129,7 +128,6 @@ public class ChatManager : MonoBehaviour {
 
     void OnGUI()
     {
-        
         Event e = Event.current;
 
         if (e.type == EventType.keyDown)
@@ -155,7 +153,7 @@ public class ChatManager : MonoBehaviour {
 
             e.Use();
         }
-
+        
         // don't draw chat window if state is none.
         if (IsInState(ChatState.NONE))
             return;
