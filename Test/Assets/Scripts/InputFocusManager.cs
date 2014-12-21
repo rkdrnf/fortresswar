@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Const;
+using UnityEngine;
 
 namespace FocusManager
 { 
@@ -27,11 +28,12 @@ namespace FocusManager
             if (oldFocuses.Count == 0)
                 return;
             
-            focus = oldFocuses.Last();
+            FocusTo(oldFocuses.Last());
+            oldFocuses.Pop();
             oldFocuses.Pop();
         }
     
-        public void FocusTo(T newFocus)
+        virtual public void FocusTo(T newFocus)
         {
             oldFocuses.Push(focus);
             focus = newFocus;
@@ -41,6 +43,22 @@ namespace FocusManager
     public class KeyFocusManager : InputFocusManager<InputKeyFocus>
     {
         public KeyFocusManager(InputKeyFocus focus) : base(focus) {}
+
+        public override void FocusTo(InputKeyFocus newFocus)
+        {
+            base.FocusTo(newFocus);
+
+            switch(newFocus)
+            {
+                case InputKeyFocus.CHAT_WINDOW:
+                    Input.imeCompositionMode = IMECompositionMode.On;
+                    break;
+
+                case InputKeyFocus.PLAYER:
+                    Input.imeCompositionMode = IMECompositionMode.Off;
+                    break;
+            }
+        }
     }
     
     public class MouseFocusManager : InputFocusManager<InputMouseFocus>
