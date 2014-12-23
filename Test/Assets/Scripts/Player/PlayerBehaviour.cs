@@ -32,7 +32,6 @@ public class PlayerBehaviour : MonoBehaviour {
 
 	float horMov;
 	float verMov;
-	//bool jumpMov;
 
 	float wallWalkTimer;
 
@@ -42,12 +41,14 @@ public class PlayerBehaviour : MonoBehaviour {
 
     public Vector2 lookingDirection;
     
-    public CharacterState state;
+   
 
     int envFlag;
 
     const float REVIVAL_TIME = 5f;
     double revivalTimer = 0f;
+
+    CharacterSM stateManager;
 
     ClientGame client
     {
@@ -58,25 +59,15 @@ public class PlayerBehaviour : MonoBehaviour {
         get { return ServerGame.Inst; }
     }
 
-    public bool IsInState(CharacterState state, params CharacterState[] stateList)
+    public CharacterState GetState()
     {
-        return StateUtil.IsInState<CharacterState>(this.state, state, stateList);
+        return stateManager.GetState();
     }
 
-    public bool IsNotInState(CharacterState state, params CharacterState[] stateList)
+    public void BroadcastState()
     {
-        return StateUtil.IsNotInState<CharacterState>(this.state, state, stateList);
-    }
-
-    public void SetState(CharacterState state)
-    {
-        StateUtil.SetState(ref this.state, state);
-
-        if (!Network.isServer) return;
-
-        S2C.CharacterChangeState pck = new S2C.CharacterChangeState(state);
+        S2C.CharacterChangeState pck = new S2C.CharacterChangeState(stateManager.GetState());
         networkView.RPC("ClientSetState", RPCMode.Others, pck.SerializeToBytes());
-        
     }
 
     [RPC]
@@ -87,10 +78,40 @@ public class PlayerBehaviour : MonoBehaviour {
 
         S2C.CharacterChangeState pck = S2C.CharacterChangeState.DeserializeFromBytes(pckData);
 
-        SetState(pck.state);
+        stateManager.SetState(pck.state);
     }
 
-    
+    public void OnTouchGround()
+    {
+        if (stateManager.IsInState(CharacterState.GROUNDED, CharacterState.JUMPING_UP))
+        {
+            //Maintain State;
+            return;
+        }
+
+        if (stateManager.IsInState(CharacterState.FALLING, CharacterState.WALL_JUMPING, CharacterState.WALL_WALKING))
+        {
+            Debug.Log("grounded!");
+            stateManager.SetState(CharacterState.GROUNDED);
+            return;
+        }
+    }
+
+    public void OnAwayFromGround()
+    {
+        if (stateManager.IsInState(CharacterState.GROUNDED))
+        {
+            stateManager.SetState(CharacterState.FALLING);
+            return;
+        }
+
+        if (stateManager.IsInState(CharacterState.JUMPING_UP, CharacterState.WALL_WALKING, CharacterState.WALL_JUMPING, CharacterState.FALLING))
+        {
+            //Maintain state;
+            return;
+        }
+    }
+
     public bool IsInEnv(CharacterEnv env, params CharacterEnv[] envList)
 	{
         bool result = (envFlag & (1 << (int)env)) != 0;
@@ -141,7 +162,7 @@ public class PlayerBehaviour : MonoBehaviour {
         //Server has valid value.
         if (Network.isServer)
         {
-            StateUtil.SetState(ref this.state, CharacterState.DEAD);
+            stateManager = new CharacterSM(CharacterState.DEAD, this);
         }
     }
 
@@ -362,7 +383,7 @@ public class PlayerBehaviour : MonoBehaviour {
         //Every client must do his own Animation Rendering.
 
         animator.SetBool("HorMoving", horMov != 0);
-        animator.SetBool("Dead", IsInState(CharacterState.DEAD));
+        animator.SetBool("Dead", stateManager.IsInState(CharacterState.DEAD));
 
 
         //Client Input Processing
@@ -421,31 +442,31 @@ public class PlayerBehaviour : MonoBehaviour {
 
 			do
 			{
-                if (state == CharacterState.GROUNDED)
+                if (stateManager.IsInState(CharacterState.GROUNDED))
                 {
                     WhenGrounded();
 					break;
 				}
 
-                if (state == CharacterState.FALLING)
+                if (stateManager.IsInState(CharacterState.FALLING))
                 {
                     WhenFalling();
                     break;
                 }
 
-                if (state == CharacterState.JUMPING_UP)
+                if (stateManager.IsInState(CharacterState.JUMPING_UP))
                 {
                     WhenJumping();
                     break;
                 }
 
-                if (state == CharacterState.WALL_JUMPING)
+                if (stateManager.IsInState(CharacterState.WALL_JUMPING))
                 {
                     WhenWallJumping();
                     break;
                 }
 
-                if (state == CharacterState.WALL_WALKING)
+                if (stateManager.IsInState(CharacterState.WALL_WALKING))
                 {
                     WhenWallWalking();
                     break;
@@ -522,7 +543,7 @@ public class PlayerBehaviour : MonoBehaviour {
 
         if (rigidbody2D.velocity.y <= 0f)
         {
-            SetState(CharacterState.FALLING);
+            stateManager.SetState(CharacterState.FALLING);
         }
     }
 
@@ -556,7 +577,7 @@ public class PlayerBehaviour : MonoBehaviour {
         //Fall to ground.
         if (horMov == 0)
         {
-            SetState(CharacterState.FALLING);
+            stateManager.SetState(CharacterState.FALLING);
             return;
         }
 
@@ -581,8 +602,8 @@ public class PlayerBehaviour : MonoBehaviour {
             {
                 rigidbody2D.velocity = new Vector2(horMov * jobStat.MovingSpeed, rigidbody2D.velocity.y);
 
-                
-                SetState(CharacterState.FALLING);
+
+                stateManager.SetState(CharacterState.FALLING);
                 return;
             }
 
@@ -607,17 +628,17 @@ public class PlayerBehaviour : MonoBehaviour {
 
 	void Jump()
 	{
-		SetState(CharacterState.JUMPING_UP);
+        stateManager.SetState(CharacterState.JUMPING_UP);
 		rigidbody2D.velocity = new Vector2 (rigidbody2D.velocity.x, jobStat.JumpingSpeed);
 	}
 
 	void WallWalk(Direction direction)
 	{
 		//Already wall walked same wall
-		if ((!(state == CharacterState.WALL_WALKING)) && WallWalked (direction))
+		if ((stateManager.IsNotInState(CharacterState.WALL_WALKING)) && WallWalked (direction))
 			return;
 
-        SetState(CharacterState.WALL_WALKING);
+        stateManager.SetState(CharacterState.WALL_WALKING);
 
 		SetEnv(GetWallWalkStateByDirection (direction), true);
         SetEnv(direction == Direction.RIGHT ? CharacterEnv.WALL_WALKED_LEFT : CharacterEnv.WALL_WALKED_RIGHT, false);
@@ -625,7 +646,7 @@ public class PlayerBehaviour : MonoBehaviour {
 
 		if (wallWalkTimer > jobStat.WallWalkingTime) {
 			EndWallWalk();
-            SetState(CharacterState.FALLING);
+            stateManager.SetState(CharacterState.FALLING);
 			return;
 		}
 
@@ -691,7 +712,7 @@ public class PlayerBehaviour : MonoBehaviour {
 		Debug.Log ("Wall Jump!!");
         EndWallWalk();
 
-        SetState(CharacterState.WALL_JUMPING);
+        stateManager.SetState(CharacterState.WALL_JUMPING);
         rigidbody2D.velocity = new Vector2(direction == Direction.RIGHT ? jobStat.WallJumpingSpeed.x : -jobStat.WallJumpingSpeed.x, jobStat.WallJumpingSpeed.y);
 	}
 
@@ -865,14 +886,14 @@ public class PlayerBehaviour : MonoBehaviour {
 
     void OnDie()
     {
-        SetState(CharacterState.DEAD);
+        stateManager.SetState(CharacterState.DEAD);
         
         revivalTimer = REVIVAL_TIME;
     }
 
     public bool IsDead()
     {
-        return IsInState(CharacterState.DEAD);
+        return stateManager.IsInState(CharacterState.DEAD);
     }
 
     void UpdateRevivalTimer(double deltaTime)
@@ -911,7 +932,7 @@ public class PlayerBehaviour : MonoBehaviour {
 
     void OnRevive()
     {
-        SetState(CharacterState.FALLING);
+        stateManager.SetState(CharacterState.FALLING);
         
         fireTimer = 0f;
         health = jobStat.MaxHealth;
@@ -937,6 +958,26 @@ public class PlayerBehaviour : MonoBehaviour {
         Network.RemoveRPCs(transformView.viewID);
         Network.RemoveRPCs(controllerView.viewID);
         Network.Destroy(gameObject);
+    }
+}
+
+class CharacterSM : StateManager<CharacterState>
+{
+    PlayerBehaviour player;
+
+    public CharacterSM(CharacterState initial, PlayerBehaviour owner)
+    {
+        state = initial;
+        player = owner;
+    }
+
+    public override void SetState(CharacterState newState)
+    {
+        base.SetState(newState);
+
+        if (!Network.isServer) return;
+
+        player.BroadcastState(); 
     }
 }
 

@@ -91,7 +91,7 @@ namespace Util
 
         public virtual void SetState(T newState)
         {
-            StateUtil.SetState<T>(ref this.state, state);
+            StateUtil.SetState<T>(ref this.state, newState);
         }
 
         public bool IsNotInState(T state, params T[] states)
