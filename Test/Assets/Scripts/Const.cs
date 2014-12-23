@@ -22,7 +22,8 @@ namespace Const
         CHAT_WINDOW,
         PLAYER,
         TEAM_SELECTOR,
-        JOB_SELECTOR
+        JOB_SELECTOR,
+        NAME_SELECTOR
     }
 
     public enum InputMouseFocus
@@ -30,7 +31,8 @@ namespace Const
         CHAT_WINDOW,
         PLAYER,
         TEAM_SELECTOR,
-        JOB_SELECTOR
+        JOB_SELECTOR,
+        NAME_SELECTOR
     }
 
     public enum ChatState
@@ -40,6 +42,11 @@ namespace Const
         NEW_MESSAGE
     }
 
+    public enum NameSelectorState
+    {
+        ON,
+        OFF
+    }
 
     public enum TeamSelectorState
     {

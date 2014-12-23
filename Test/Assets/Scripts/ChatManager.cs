@@ -16,73 +16,24 @@ public class ChatManager : MonoBehaviour {
 
     string writingMessage;
 
-    ChatState state = ChatState.NONE;
+    ChatSM stateManager;
 
     Vector2 scrollPos;
 
     public Texture2D ChatBackground;
 
-    bool IsInState(ChatState state, params ChatState[] stateList)
-    {
-        return StateUtil.IsInState<ChatState>(this.state, state, stateList);
-    }
-
-    bool IsNotInState(ChatState state, params ChatState[] stateList)
-    {
-        return StateUtil.IsNotInState<ChatState>(this.state, state, stateList);
-    }
-
-    void SetState(ChatState state)
-    {
-        switch (state)
-        {
-            case ChatState.NONE:
-                Game.Inst.keyFocusManager.FreeFocus();
-                Game.Inst.mouseFocusManager.FreeFocus();
-                StateUtil.SetState<ChatState>(out this.state, state);
-                break;
-
-            case ChatState.NEW_MESSAGE:
-                
-                Game.Inst.keyFocusManager.FreeFocus();
-                Game.Inst.mouseFocusManager.FreeFocus();
-                if (IsNotInState(ChatState.WRITING))
-                {
-                    StateUtil.SetState<ChatState>(out this.state, state);
-                }
-                break;
-
-            case ChatState.WRITING:
-                
-                Game.Inst.keyFocusManager.FocusTo(InputKeyFocus.CHAT_WINDOW);
-                Game.Inst.mouseFocusManager.FocusTo(InputMouseFocus.CHAT_WINDOW);
-                StateUtil.SetState<ChatState>(out this.state, state);
-                break;
-        }
-
-        if (state == ChatState.NEW_MESSAGE)
-        {
-            chatWindowTimer = CHAT_WINDOW_TIME;
-            scrollPos = new Vector2(0f, 99999999f);
-        }
-    }
-
-    void Awake()
-    {
+	// Use this for initialization
+	void Start () {
         scrollPos = Vector2.zero;
         chatList = new List<Chat>();
         writingMessage = "";
-    }
-
-	// Use this for initialization
-	void Start () {
-	
+        stateManager = new ChatSM(ChatState.NONE);
 	}
 	
 	// Update is called once per frame
 	void Update () {
         // Open for CHAT_WINDOW_TIME seconds.
-        if (IsInState(ChatState.NEW_MESSAGE))
+        if (stateManager.IsInState(ChatState.NEW_MESSAGE))
         {
             if (chatWindowTimer > 0f)
             {
@@ -91,19 +42,17 @@ public class ChatManager : MonoBehaviour {
                 // Change state to NONE when timer expired.
                 if (chatWindowTimer <= 0f)
                 {
-                    SetState(ChatState.NONE);
+                    stateManager.SetState(ChatState.NONE);
                 }
             }
         }
-
-        
 	}
 
     void Chat(string text)
     {
         if (text.Trim().Length > 0)
         {
-            networkView.RPC("BroadCastChat", RPCMode.All, Game.Inst.GetID(), text);
+            networkView.RPC("BroadCastChat", RPCMode.All, ClientGame.Inst.GetID(), text);
         }
         writingMessage = "";
     }
@@ -118,7 +67,9 @@ public class ChatManager : MonoBehaviour {
     void NewChat(int playerID, string text)
     {
         chatList.Add(new Chat(playerID, text));
-        SetState(ChatState.NEW_MESSAGE);
+        stateManager.SetState(ChatState.NEW_MESSAGE);
+        chatWindowTimer = CHAT_WINDOW_TIME;
+        scrollPos = new Vector2(0f, 99999999f);
     }
 
     void ShowChat()
@@ -138,15 +89,15 @@ public class ChatManager : MonoBehaviour {
 
         if (e.type == EventType.KeyDown && (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter))
         {
-            if (IsInState(ChatState.NONE, ChatState.NEW_MESSAGE))
+            if (stateManager.IsInState(ChatState.NONE, ChatState.NEW_MESSAGE))
             {
-                SetState(ChatState.WRITING);
+                stateManager.SetState(ChatState.WRITING);
                 return;
             }
 
-            if (IsInState(ChatState.WRITING))
+            if (stateManager.IsInState(ChatState.WRITING))
             {
-                SetState(ChatState.NONE);
+                stateManager.SetState(ChatState.NONE);
                 Chat(writingMessage);
                 return;
             }
@@ -155,7 +106,7 @@ public class ChatManager : MonoBehaviour {
         }
         
         // don't draw chat window if state is none.
-        if (IsInState(ChatState.NONE))
+        if (stateManager.IsInState(ChatState.NONE))
             return;
 
         // show in other states (NEW_MESSAGE, WRITING)
@@ -168,7 +119,7 @@ public class ChatManager : MonoBehaviour {
 
         GUIStyle scrollStyle = new GUIStyle(GUI.skin.verticalScrollbar);
         scrollStyle.padding = new RectOffset(0, 0, 0, 0);
-        scrollPos = GUILayout.BeginScrollView(scrollPos, GUIStyle.none, (IsInState(ChatState.WRITING) ? scrollStyle : GUIStyle.none), GUILayout.Width(300f), GUILayout.Height(190f));
+        scrollPos = GUILayout.BeginScrollView(scrollPos, GUIStyle.none, (stateManager.IsInState(ChatState.WRITING) ? scrollStyle : GUIStyle.none), GUILayout.Width(300f), GUILayout.Height(190f));
 
         GUIStyle textAreaStyle = new GUIStyle();
         textAreaStyle.normal.textColor = new Color(255f, 255f, 255f, 255f);
@@ -184,13 +135,50 @@ public class ChatManager : MonoBehaviour {
 
 
 
-        if (IsInState(ChatState.WRITING))
+        if (stateManager.IsInState(ChatState.WRITING))
         {
             GUI.SetNextControlName("ChatField");
             writingMessage = GUI.TextField(new Rect(20, Screen.height - 100, 300, 20), writingMessage);
 
             // Focus input field when WRITING.
             GUI.FocusControl("ChatField");
+        }
+    }
+}
+
+class ChatSM : StateManager<ChatState>
+{
+
+    public ChatSM(ChatState initial)
+    {
+        state = initial;
+    }
+
+    public override void SetState(ChatState newState)
+    {
+        switch (newState)
+        {
+            case ChatState.NONE:
+                ClientGame.Inst.keyFocusManager.FreeFocus(InputKeyFocus.CHAT_WINDOW);
+                ClientGame.Inst.mouseFocusManager.FreeFocus(InputMouseFocus.CHAT_WINDOW);
+                StateUtil.SetState<ChatState>(ref this.state, newState);
+                break;
+
+            case ChatState.NEW_MESSAGE:
+
+                ClientGame.Inst.keyFocusManager.FreeFocus(InputKeyFocus.CHAT_WINDOW);
+                ClientGame.Inst.mouseFocusManager.FreeFocus(InputMouseFocus.CHAT_WINDOW);
+                if (IsNotInState(ChatState.WRITING))
+                {
+                    StateUtil.SetState<ChatState>(ref this.state, newState);
+                }
+                break;
+
+            case ChatState.WRITING:
+                ClientGame.Inst.keyFocusManager.FocusTo(InputKeyFocus.CHAT_WINDOW);
+                ClientGame.Inst.mouseFocusManager.FocusTo(InputMouseFocus.CHAT_WINDOW);
+                StateUtil.SetState<ChatState>(ref this.state, newState);
+                break;
         }
     }
 }

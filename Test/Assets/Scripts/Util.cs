@@ -51,8 +51,11 @@ namespace Util
             return result;
         }
 
-        public static void SetState<T>(out T srcState, T trgState)
+        public static void SetState<T>(ref T srcState, T trgState)
         {
+            if (srcState.Equals(trgState))
+                return;
+
             srcState = trgState;
         }
 
@@ -88,7 +91,7 @@ namespace Util
 
         public virtual void SetState(T newState)
         {
-            StateUtil.SetState<T>(out this.state, state);
+            StateUtil.SetState<T>(ref this.state, state);
         }
 
         public bool IsNotInState(T state, params T[] states)

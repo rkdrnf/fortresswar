@@ -39,59 +39,22 @@ public class Game : MonoBehaviour
 
     public static bool IsInitialized() { return instance != null; }
 
-	public bool IsMapLoaded() { return map != null; }
-
 	public GameObject netManagerObject;
-	public Vector3 spawnPosition;
-	public GameObject playerPrefab;
     public ProjectileSet projectileSet;
     public JobSet jobSet;
     public MapData mapData;
-    public GameMenu gameMenu;
 
     public Map map;
 	NetworkManager netManager;
 	MapLoader mapLoader;
 
-
-    TeamSelector teamSelector;
-    JobSelector jobSelector;
-
-    public void OpenTeamSelector()
-    {
-        teamSelector.Open();
-    }
-
-    public void OpenJobSelector()
-    {
-        jobSelector.Open();
-    }
-
-    private int ID = -1;
-
-    public int GetID()
-    {
-        return ID;
-    }
-
-    public KeyFocusManager keyFocusManager;
-    public MouseFocusManager mouseFocusManager;
-    
-    public Vector2 RevivalLocation;
-
-    bool isQuitting = false;
-
     void Init()
     {
         instance = this;
-        RevivalLocation = new Vector2(0f, 3f);
-        keyFocusManager = new KeyFocusManager(InputKeyFocus.PLAYER);
-        mouseFocusManager = new MouseFocusManager(InputMouseFocus.PLAYER);
-        keyFocusManager.FreeFocus();
-        mouseFocusManager.FreeFocus();
-
+        /*
         RuntimeTypeModel.Default.Add(typeof(Vector3), true);
         RuntimeTypeModel.Default.Add(typeof(Vector2), true);
+         */
     }
 
 	void Awake()
@@ -99,9 +62,6 @@ public class Game : MonoBehaviour
         Init();
 		netManager = netManagerObject.GetComponent<NetworkManager> ();
 		mapLoader = GetComponent<MapLoader> ();
-        teamSelector = GetComponent<TeamSelector>();
-        jobSelector = GetComponent <JobSelector>();
-
 	}
 
 	public void LoadMap()
@@ -111,225 +71,17 @@ public class Game : MonoBehaviour
         GameObject mapObj = (GameObject)Network.Instantiate(mapPrefab, Vector3.zero, Quaternion.identity, 0);
 	}
 
+    public void ClearMap()
+    {
+        map = null;
+    }
+
     public void SetMap(Map map)
     {
         this.map = map;
     }
 
-	public void StartServerGame()
-	{
-		ClearGame ();
-
-		if (!IsMapLoaded())
-		{
-			LoadMap();
-		}
-
-        SetMyID(PlayerManager.Inst.SetID(PlayerManager.Inst.GetUniqueID(), Network.player));
-
-        OpenGameMenu();
-	}
-
-	void OnPlayerConnected(NetworkPlayer player)
-	{
-        if (PlayerManager.Inst.Exists(player))
-        {
-            //Clear previous connection;
-            return;
-        }
-
-        int ID = PlayerManager.Inst.SetID(PlayerManager.Inst.GetUniqueID(), player);
-        networkView.RPC("SetPlayerID", player, ID);
-	}
     
-    [RPC]
-    void SetPlayerID(int newID, NetworkMessageInfo info)
-    {
-        if (!Network.isClient)
-        { 
-            return;
-        }
-     
-        SetMyID(newID);
-
-        networkView.RPC("PlayerListRequest", RPCMode.Server, ID);
-        
-        OpenGameMenu();
-    }
-
-    void SetMyID(int newID)
-    {
-        ID = newID;
-    }
-
-    void OpenGameMenu()
-    {
-        gameMenu.gameObject.SetActive(true);
-    }
-
-    public void SelectTeam(Team team)
-    {
-        C2S.UpdatePlayerTeam selectTeam = new C2S.UpdatePlayerTeam(ID, team);
-
-        if (Network.isServer)
-            ServerSelectTeam(selectTeam.SerializeToBytes(), new NetworkMessageInfo());
-        else
-            networkView.RPC("ServerSelectTeam", RPCMode.Server, selectTeam.SerializeToBytes());
-    }
-
-    [RPC]
-    void ServerSelectTeam(byte[] updateData, NetworkMessageInfo info)
-    {
-        if (!Network.isServer) return;
-
-        C2S.UpdatePlayerTeam update = C2S.UpdatePlayerTeam.DeserializeFromBytes(updateData);
-        if (!PlayerManager.Inst.IsValidPlayer(update.playerID, info.sender)) return;
-
-        //TODO::TeamSelect Validation (team balance)
-
-        OnSelectTeam(update);
-
-        PlayerBehaviour player = PlayerManager.Inst.Get(update.playerID);
-
-        if (player != null)
-        {
-            player.BroadcastDie();
-            networkView.RPC("SetPlayerTeam", RPCMode.Others, updateData);
-        }
-        else
-        {
-            networkView.RPC("SetPlayerTeam", RPCMode.Others, updateData);
-            ReadyToEnterCharacter(PlayerManager.Inst.GetSetting(update.playerID));
-        }
-    }
-
-    [RPC]
-    void SetPlayerTeam(byte[] updateData, NetworkMessageInfo info)
-    {
-        if (!Network.isClient) return;
-        //ServerCheck
-
-        C2S.UpdatePlayerTeam update = C2S.UpdatePlayerTeam.DeserializeFromBytes(updateData);
-
-        OnSelectTeam(update);
-    }
-
-    void OnSelectTeam(C2S.UpdatePlayerTeam update)
-    {
-        PlayerManager.Inst.UpdatePlayer(update);
-
-        PlayerBehaviour player = PlayerManager.Inst.Get(update.playerID);
-        if (player != null)
-        {
-            player.ChangeTeam(update);
-        }
-    }
-
-    [RPC]
-    public void ServerSetPlayerName(byte[] updateData, NetworkMessageInfo info)
-    {
-        if (!Network.isServer) return;
-
-        C2S.UpdatePlayerName update = C2S.UpdatePlayerName.DeserializeFromBytes(updateData);
-        if (!PlayerManager.Inst.IsValidPlayer(update.playerID, info.sender)) return;
-
-        PlayerManager.Inst.UpdatePlayer(update);
-
-        networkView.RPC("ClientSetPlayerName", RPCMode.Others, update.SerializeToBytes());
-
-        ReadyToEnterCharacter(PlayerManager.Inst.GetSetting(update.playerID));
-    }
-
-    [RPC]
-    void ClientSetPlayerName(byte[] updateData)
-    {
-        if (!Network.isClient) return;
-        //ServerCheck
-
-        C2S.UpdatePlayerName update = C2S.UpdatePlayerName.DeserializeFromBytes(updateData);
-
-        PlayerManager.Inst.UpdatePlayer(update);
-    }
-
-    void ReadyToEnterCharacter(PlayerSetting setting)
-    {
-        if (!Network.isServer) return;
-
-        PlayerSettingError error = setting.IsSettingCompleted();
-        if (error == PlayerSettingError.NONE)
-        {
-            EnterCharacter(setting);
-            return;
-        }
-
-        S2C.PlayerNotReady notReady = new S2C.PlayerNotReady(error);
-        NetworkPlayer player = PlayerManager.Inst.GetPlayer(setting.playerID);
-
-        if (player == Network.player) // ServerPlayer
-            PlayerNotReadyToEnter(notReady.SerializeToBytes(), new NetworkMessageInfo());
-        else
-            networkView.RPC("PlayerNotReadyToEnter", player, notReady.SerializeToBytes());
-    }
-
-    [RPC]
-    void PlayerNotReadyToEnter(byte[] notReadyData, NetworkMessageInfo info)
-    {
-        S2C.PlayerNotReady notReady = S2C.PlayerNotReady.DeserializeFromBytes(notReadyData);
-
-        switch(notReady.error)
-        {
-            case PlayerSettingError.NAME:
-                OpenGameMenu();
-                break;
-
-            case PlayerSettingError.TEAM:
-                OpenTeamSelector();
-                break;
-        }
-    
-    }
-
-    public void EnterCharacter(PlayerSetting setting)
-    {
-        if (!Network.isServer) return;
-
-        Debug.Log(String.Format("Player Ready {0}", setting.playerID));
-
-        GameObject newPlayer = Game.Inst.MakeNetworkPlayer();
-        PlayerBehaviour character = newPlayer.GetComponent<PlayerBehaviour>();
-        character.OnSetOwner(setting.playerID);
-        newPlayer.networkView.RPC("SetOwner", RPCMode.OthersBuffered, setting.playerID);
-    }
-
-    [RPC]
-    void PlayerListRequest(int requestorID, NetworkMessageInfo info)
-    {
-        if (!Network.isServer) return;
-        if (!PlayerManager.Inst.IsValidPlayer(requestorID, info.sender)) return;
-            
-        S2C.PlayerList settings = new S2C.PlayerList(PlayerManager.Inst.GetSettings());
-
-        byte[] settingsData = settings.SerializeToBytes();
-
-        networkView.RPC("SetPlayerList", info.sender, settingsData);
-    }
-
-    [RPC]
-    void SetPlayerList(byte[] playersData, NetworkMessageInfo info)
-    {
-        if (!Network.isClient)
-            return;
-
-        List<PlayerSetting> settings = S2C.PlayerList.DeserializeFromBytes(playersData).settings;
-
-        foreach (PlayerSetting setting in settings)
-        {
-            PlayerManager.Inst.SetSetting(setting);
-            PlayerBehaviour character = PlayerManager.Inst.Get(setting.playerID);
-            character.OnSettingChange();
-        }
-    }
-
     void OnDisconnectedFromServer(NetworkDisconnection info)
     {
         if (Network.isServer)
@@ -343,64 +95,11 @@ public class Game : MonoBehaviour
         }
     }
 
-    void OnPlayerDisconnected(NetworkPlayer player)
-    {
-        Debug.Log(String.Format("Player Disconnected! {0}", player));
-
-        int playerID = PlayerManager.Inst.GetID(player);
-        PlayerBehaviour character = PlayerManager.Inst.Get(playerID);
-
-        character.RemoveCharacterFromNetwork();
-
-        networkView.RPC("OnPlayerRemoved", RPCMode.All, playerID);
-    }
-
-    [RPC]
-    void OnPlayerRemoved(int player)
-    {
-        PlayerManager.Inst.Remove(player);
-        PlayerManager.Inst.RemoveSetting(player);
-    }
-
     void OnServerDown()
     {
         PlayerManager.Inst.Clear();
         ProjectileManager.Inst.Clear();
 
-        map = null;
+        ClearMap();
     }
-
-
-	public GameObject MakeNetworkPlayer()
-	{
-		return (GameObject)Network.Instantiate (playerPrefab, spawnPosition, Quaternion.identity, 0);
-	}
-
-    public void ClearGame()
-    {
-        PlayerManager.Inst.Clear();
-        ProjectileManager.Inst.Clear();
-
-		map = null;
-		networkView.RPC ("ClientClearGame", RPCMode.Others);
-    }
-
-	[RPC]
-	public void ClientClearGame()
-	{
-        PlayerManager.Inst.Clear();
-        ProjectileManager.Inst.Clear();
-		map = null;
-	}
-
-    void OnApplicationQuit()
-    {
-        isQuitting = true;
-    }
-
-    public bool IsQuitting()
-    {
-        return isQuitting;
-    }
-
 }

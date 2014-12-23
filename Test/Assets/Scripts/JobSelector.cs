@@ -13,7 +13,7 @@ public class JobSelector : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-        stateManager = new JobSelectorSM();
+        stateManager = new JobSelectorSM(JobSelectorState.OFF);
         stateManager.SetState(JobSelectorState.OFF);
     }
 
@@ -52,11 +52,10 @@ public class JobSelector : MonoBehaviour
 
         if (GUILayout.Button("Scout", blueStyle))
         {
-            PlayerBehaviour player = PlayerManager.Inst.Get(Game.Inst.GetID());
+            Close();
+            PlayerBehaviour player = PlayerManager.Inst.Get(ClientGame.Inst.GetID());
             if (player != null)
                 player.ChangeJob(Job.SCOUT);
-
-            Close();
         }
 
         GUIStyle redStyle = new GUIStyle(GUI.skin.button);
@@ -64,7 +63,7 @@ public class JobSelector : MonoBehaviour
         redStyle.fixedHeight = 90f;
         if (GUILayout.Button("Heavy Gunner", redStyle))
         {
-            PlayerBehaviour player = PlayerManager.Inst.Get(Game.Inst.GetID());
+            PlayerBehaviour player = PlayerManager.Inst.Get(ClientGame.Inst.GetID());
             if (player != null)
                 player.ChangeJob(Job.HEAVY_GUNNER);
 
@@ -78,21 +77,28 @@ public class JobSelector : MonoBehaviour
 
 class JobSelectorSM : StateManager<JobSelectorState>
 {
+    public JobSelectorSM(JobSelectorState initial)
+    {
+        state = initial;
+    }
+
     public override void SetState(JobSelectorState newState)
     {
+        ClientGame client = ClientGame.Inst;
+
      	 switch(newState)
          {
              case JobSelectorState.ON:
-                 Game.Inst.keyFocusManager.FocusTo(InputKeyFocus.JOB_SELECTOR);
-                 Game.Inst.mouseFocusManager.FocusTo(InputMouseFocus.JOB_SELECTOR);
-                 StateUtil.SetState<JobSelectorState>(out state, newState);
+                 client.keyFocusManager.FocusTo(InputKeyFocus.JOB_SELECTOR);
+                 client.mouseFocusManager.FocusTo(InputMouseFocus.JOB_SELECTOR);
+                 StateUtil.SetState<JobSelectorState>(ref state, newState);
                  break;
 
              case JobSelectorState.OFF:
-             Game.Inst.keyFocusManager.FreeFocus();
-             Game.Inst.mouseFocusManager.FreeFocus();
-             StateUtil.SetState<JobSelectorState>(out state, newState);
-             break;
+                client.keyFocusManager.FreeFocus(InputKeyFocus.JOB_SELECTOR);
+                client.mouseFocusManager.FreeFocus(InputMouseFocus.JOB_SELECTOR);
+                StateUtil.SetState<JobSelectorState>(ref state, newState);
+                break;
          }
     }
 }

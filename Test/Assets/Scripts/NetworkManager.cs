@@ -39,13 +39,6 @@ public class NetworkManager : MonoBehaviour {
 			Debug.Log("Server Registered!");
 		}
 	}
-	
-	void OnServerInitialized()
-	{
-		Debug.Log ("Server Initialized!");
-
-		Game.Inst.StartServerGame();
-	}
 
 	public NetworkConnectionError Connect(HostData hostData)
 	{
