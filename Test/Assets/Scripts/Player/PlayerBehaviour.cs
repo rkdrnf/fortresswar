@@ -49,6 +49,15 @@ public class PlayerBehaviour : MonoBehaviour {
     const float REVIVAL_TIME = 5f;
     double revivalTimer = 0f;
 
+    ClientGame client
+    {
+        get { return ClientGame.Inst; }
+    }
+    ServerGame server
+    {
+        get { return ServerGame.Inst; }
+    }
+
     public bool IsInState(CharacterState state, params CharacterState[] stateList)
     {
         return StateUtil.IsInState<CharacterState>(this.state, state, stateList);
@@ -61,7 +70,7 @@ public class PlayerBehaviour : MonoBehaviour {
 
     public void SetState(CharacterState state)
     {
-        StateUtil.SetState(out this.state, state);
+        StateUtil.SetState(ref this.state, state);
 
         if (!Network.isServer) return;
 
@@ -123,7 +132,7 @@ public class PlayerBehaviour : MonoBehaviour {
                 controllerView = nView;
             }
 
-            if (nView.observed is Transform)
+            if (nView.observed is NetworkInterpolatedTransform)
             {
                 transformView = nView;
             }
@@ -132,14 +141,7 @@ public class PlayerBehaviour : MonoBehaviour {
         //Server has valid value.
         if (Network.isServer)
         {
-            StateUtil.SetState(out this.state, CharacterState.DEAD);
-        }
-        else
-        {
-            //Destroy(rigidbody2D);
-            //Destroy(collider2D);
-            //Destroy(GetComponent<EdgeCollider2D>());
-            //rigidbody2D.isKinematic = true;
+            StateUtil.SetState(ref this.state, CharacterState.DEAD);
         }
     }
 
@@ -196,7 +198,7 @@ public class PlayerBehaviour : MonoBehaviour {
     {
         PlayerManager.Inst.Set(playerID, this);
         owner = playerID;
-        isOwner = owner == Game.Inst.GetID();
+        isOwner = owner == client.GetID();
 
         if (isOwner) // Set Camera to own character.
         {
@@ -370,7 +372,7 @@ public class PlayerBehaviour : MonoBehaviour {
             if (!isOwner) break;
             if (IsDead()) break;
 
-            if (Game.Inst.keyFocusManager.IsFocused(InputKeyFocus.PLAYER))
+            if (client.keyFocusManager.IsFocused(InputKeyFocus.PLAYER))
             {
                 horMov = Input.GetAxisRaw("Horizontal");
                 verMov = Input.GetAxisRaw("Vertical");
@@ -379,17 +381,17 @@ public class PlayerBehaviour : MonoBehaviour {
                 //TeamSelector
                 if (Input.GetKey(KeyCode.M))
                 {
-                    Game.Inst.OpenTeamSelector();
+                    client.teamSelector.Open();
                 }
 
                 //JobSelector
                 if (Input.GetKey(KeyCode.N))
                 {
-                    Game.Inst.OpenJobSelector();
+                    client.jobSelector.Open();
                 }
             }
 
-            if (Game.Inst.mouseFocusManager.IsFocused(InputMouseFocus.PLAYER))
+            if (client.mouseFocusManager.IsFocused(InputMouseFocus.PLAYER))
             {
                 if (Input.GetButton("Fire1"))
                 {
@@ -893,7 +895,7 @@ public class PlayerBehaviour : MonoBehaviour {
     {
         if (!Network.isServer) return;
 
-        transform.position = Game.Inst.RevivalLocation;
+        transform.position = server.RevivalLocation;
         rigidbody2D.velocity = Vector2.zero;
         OnRevive();
     }

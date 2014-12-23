@@ -7,25 +7,24 @@ public class TeamSelector : MonoBehaviour {
 
     private TeamSelectorSM stateManager;
 
+    ClientGame client
+    {
+        get { return ClientGame.Inst; }
+    }
+
 	// Use this for initialization
 	void Start () {
-        stateManager = new TeamSelectorSM();
+        stateManager = new TeamSelectorSM(TeamSelectorState.OFF);
         stateManager.SetState(TeamSelectorState.OFF);
 	}
 	
     public void Open()
     {
-        if (stateManager.IsInState(TeamSelectorState.ON))
-            return;
-
         stateManager.SetState(TeamSelectorState.ON);
     }
 
     public void Close()
     {
-        if (stateManager.IsInState(TeamSelectorState.OFF))
-            return;
-
         stateManager.SetState(TeamSelectorState.OFF);
     }
 
@@ -48,12 +47,8 @@ public class TeamSelector : MonoBehaviour {
 
         if (GUILayout.Button("BLUE", blueStyle))
         {
-            if (Network.isServer)
-                Game.Inst.SelectTeam(Team.BLUE);
-            else
-                Game.Inst.SelectTeam(Team.BLUE);
-
             Close();
+            ClientGame.Inst.SelectTeam(Team.BLUE);
         }
 
         GUI.color = Color.red;
@@ -62,11 +57,8 @@ public class TeamSelector : MonoBehaviour {
         redStyle.fixedHeight = 90f;
         if (GUILayout.Button("RED", redStyle))
         {
-            if (Network.isServer)
-                Game.Inst.SelectTeam(Team.RED);
-            else
-                Game.Inst.SelectTeam(Team.RED);
             Close();
+            ClientGame.Inst.SelectTeam(Team.RED);
         }
 
         GUILayout.EndHorizontal();
@@ -76,20 +68,27 @@ public class TeamSelector : MonoBehaviour {
 
 class TeamSelectorSM : StateManager<TeamSelectorState>
 {
+    public TeamSelectorSM(TeamSelectorState initial)
+    {
+        state = initial;
+    }
+
     override public void SetState(TeamSelectorState newState)
     {
+        ClientGame client = ClientGame.Inst;
+
         switch(newState)
         {
             case TeamSelectorState.ON:
-                Game.Inst.keyFocusManager.FocusTo(InputKeyFocus.TEAM_SELECTOR);
-                Game.Inst.mouseFocusManager.FocusTo(InputMouseFocus.TEAM_SELECTOR);
-                StateUtil.SetState<TeamSelectorState>(out state, newState);
+                client.keyFocusManager.FocusTo(InputKeyFocus.TEAM_SELECTOR);
+                client.mouseFocusManager.FocusTo(InputMouseFocus.TEAM_SELECTOR);
+                StateUtil.SetState<TeamSelectorState>(ref state, newState);
                 break;
 
             case TeamSelectorState.OFF:
-                Game.Inst.keyFocusManager.FreeFocus();
-                Game.Inst.mouseFocusManager.FreeFocus();
-                StateUtil.SetState<TeamSelectorState>(out state, newState);
+                client.keyFocusManager.FreeFocus(InputKeyFocus.TEAM_SELECTOR);
+                client.mouseFocusManager.FreeFocus(InputMouseFocus.TEAM_SELECTOR);
+                StateUtil.SetState<TeamSelectorState>(ref state, newState);
                 break;
         }
     }

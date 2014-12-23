@@ -40,7 +40,8 @@ public abstract class MonoObjManager<K, V> where V : UnityEngine.MonoBehaviour
     {
         foreach(V val in objectDic.Values)
         {
-            UnityEngine.Object.Destroy(val.gameObject);
+            if (val != null && val.gameObject != null)
+                UnityEngine.Object.Destroy(val.gameObject);
         }
 
         objectDic.Clear();

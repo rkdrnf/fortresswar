@@ -21,7 +21,7 @@ public class Menu : MonoBehaviour {
 
     void SetState(MenuState state)
     {
-        Util.StateUtil.SetState(out this.state, state);
+        Util.StateUtil.SetState(ref this.state, state);
 
         Camera menuCamera = GameObject.Find("MenuCamera").camera;
 

@@ -23,18 +23,23 @@ namespace FocusManager
             return Util.StateUtil.IsInState<T>(this.focus, focus, focusList);
         }
     
-        public void FreeFocus()
+        public void FreeFocus(T freeFocus)
         {
             if (oldFocuses.Count == 0)
                 return;
+
+            if (focus.Equals(freeFocus) == false)
+                return;
             
-            FocusTo(oldFocuses.Last());
-            oldFocuses.Pop();
+            FocusTo(oldFocuses.Pop());
             oldFocuses.Pop();
         }
     
         virtual public void FocusTo(T newFocus)
         {
+            if (focus.Equals(newFocus))
+                return;
+
             oldFocuses.Push(focus);
             focus = newFocus;
         }
@@ -51,6 +56,10 @@ namespace FocusManager
             switch(newFocus)
             {
                 case InputKeyFocus.CHAT_WINDOW:
+                    Input.imeCompositionMode = IMECompositionMode.On;
+                    break;
+
+                case InputKeyFocus.NAME_SELECTOR:
                     Input.imeCompositionMode = IMECompositionMode.On;
                     break;
 
