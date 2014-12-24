@@ -19,13 +19,11 @@ namespace Client
         Job job;
         public JobStat jobStat;
 
-        public WeaponType weapon;
         public int health;
         Animator animator;
 
         double healthLastSet = 0f;
-        double weaponLastSet = 0f;
-
+        
         public float horMov;
         public float verMov;
 
@@ -34,7 +32,7 @@ namespace Client
 
         public Vector2 lookingDirection;
 
-
+        KeyCode[] weaponCodes = new KeyCode[4]{KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3, KeyCode.Alpha4};
 
         int envFlag;
 
@@ -42,6 +40,8 @@ namespace Client
         double revivalTimer = 0f;
 
         CharacterSM stateManager;
+
+        C_WeaponManager weaponManager;
 
         ClientGame client
         {
@@ -52,7 +52,7 @@ namespace Client
             get { return Server.ServerGame.Inst; }
         }
 
-        Server.ServerPlayer serverPlayer;
+        public Server.ServerPlayer serverPlayer;
 
         public CharacterState GetState()
         {
@@ -71,6 +71,8 @@ namespace Client
 
         void Awake()
         {
+            weaponManager = new C_WeaponManager(this);
+
             animator = GetComponent<Animator>();
 
             serverPlayer = GetComponent<Server.ServerPlayer>();
@@ -102,7 +104,7 @@ namespace Client
 
             LoadJob(pck.job);
             SetHealth(pck.health, info.timestamp);
-            SetWeapon(pck.weapon, info.timestamp);
+            weaponManager.ChangeWeapon(pck.weapon, info.timestamp);
 
             stateManager.SetState(pck.state);
         }
@@ -116,17 +118,6 @@ namespace Client
             healthLastSet = settingTime;
             this.health = health;
         }
-
-        void SetWeapon(WeaponType weapon, double settingTime)
-        {
-            //old status
-            if (weaponLastSet > settingTime)
-                return;
-
-            weaponLastSet = settingTime;
-            this.weapon = weapon;
-        }
-
 
         [RPC]
         public void SetOwner(int playerID, NetworkMessageInfo info)
@@ -184,13 +175,14 @@ namespace Client
             this.jobStat = newJobStat;
 
             this.health = newJobStat.MaxHealth;
-            this.weapon = newJobStat.Weapons[0];
             PlayerSetting setting = C_PlayerManager.Inst.GetSetting(owner);
 
             if (setting != null)
             {
                 LoadAnimation(setting.team, newJobStat);
             }
+
+            weaponManager.LoadWeapons(newJobStat.Weapons);
         }
 
         public void ChangeJob(Job newJob)
@@ -301,6 +293,15 @@ namespace Client
                     }
                 }
 
+                foreach(KeyCode code in weaponCodes)
+                {
+                    if (Input.GetKeyDown(code))
+                    {
+                        weaponManager.ChangeWeapon(code);
+                        break;
+                    }
+                }
+
                 Vector3 worldMousePosition = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0));
                 lookingDirection = (worldMousePosition - transform.position);
 
@@ -309,27 +310,7 @@ namespace Client
 
         void Fire()
         {
-            if (IsDead())
-                return;
-
-
-            Vector3 worldMousePosition = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0));
-            Vector2 direction = (worldMousePosition - transform.position);
-            direction.Normalize();
-
-            C2S.Fire fire = new C2S.Fire(owner, -1, weapon, Vector3.zero, direction);
-
-            Debug.Log(string.Format("Player {0} pressed Fire", Network.player));
-
-            if (Network.isServer)
-            {
-                serverPlayer.ServerFire(fire.SerializeToBytes(), new NetworkMessageInfo());
-            }
-            else
-            {
-                networkView.RPC("ServerFire", RPCMode.Server, fire.SerializeToBytes());
-            }
-
+            weaponManager.Fire();
         }
 
         [RPC]
