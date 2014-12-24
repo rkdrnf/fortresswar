@@ -150,5 +150,11 @@ namespace Const
 
         MAX
     }
+
+    public enum AmmoType
+    {
+        NORMAL,
+        INFINITE
+    }
 }
 

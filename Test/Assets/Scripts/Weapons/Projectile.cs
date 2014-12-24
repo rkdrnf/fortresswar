@@ -14,6 +14,7 @@ public abstract class Projectile : Weapon
     public int range;
 
     public bool friendlyFire;
+    public int power;
 
     protected Vector3 startPosition;
     public GameObject explosionAnimation;

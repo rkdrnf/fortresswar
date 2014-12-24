@@ -40,9 +40,9 @@ public class Game : MonoBehaviour
     public static bool IsInitialized() { return instance != null; }
 
 	public GameObject netManagerObject;
-    public ProjectileSet projectileSet;
     public JobSet jobSet;
     public MapData mapData;
+    public WeaponSet weaponSet;
 
     public Map map;
 	NetworkManager netManager;

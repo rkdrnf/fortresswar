@@ -98,13 +98,11 @@ namespace Server
 
 
 
-            if (info.sender == Network.player)
+            if (!isDedicatedServer)
                 networkView.RPC("SetPlayerTeam", RPCMode.All, updateData);
             else
                 networkView.RPC("SetPlayerTeam", RPCMode.Others, updateData);
         }
-
-
 
         [RPC]
         public void ServerSetPlayerName(byte[] updateData, NetworkMessageInfo info)
@@ -117,7 +115,7 @@ namespace Server
             PlayerManager.Inst.UpdatePlayer(update);
 
 
-            if (info.sender == Network.player)
+            if (!isDedicatedServer)
                 networkView.RPC("ClientSetPlayerName", RPCMode.All, update.SerializeToBytes());
             else
                 networkView.RPC("ClientSetPlayerName", RPCMode.Others, update.SerializeToBytes());
@@ -153,12 +151,12 @@ namespace Server
 
             GameObject newPlayer = (GameObject)Network.Instantiate(playerPrefab, spawnPosition, Quaternion.identity, 0);
             ServerPlayer serverPlayer = newPlayer.GetComponent<ServerPlayer>();
-
+            
+            PlayerManager.Inst.Set(setting.playerID, serverPlayer);
             serverPlayer.Init(setting.playerID);
-
-            if (setting.playerID == myClient.GetID()) // own player
+            
+            if (!isDedicatedServer) // own player
             {
-                serverPlayer.isServerPlayer = true;
                 newPlayer.networkView.RPC("SetOwner", RPCMode.AllBuffered, setting.playerID);
             }
             else

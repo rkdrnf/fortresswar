@@ -26,18 +26,8 @@ namespace Client
         double healthLastSet = 0f;
         double weaponLastSet = 0f;
 
-        float FIRE_RATE = 0.2f;
-        int FIRE_POWER = 20;
-
-        public bool facingRight = true;
-
-        float fireTimer;
-
         public float horMov;
         public float verMov;
-
-        float wallWalkTimer;
-
 
         NetworkView transformView;
         NetworkView controllerView;
@@ -81,8 +71,6 @@ namespace Client
 
         void Awake()
         {
-            fireTimer = 0f;
-            wallWalkTimer = 0f;
             animator = GetComponent<Animator>();
 
             serverPlayer = GetComponent<Server.ServerPlayer>();
@@ -115,6 +103,8 @@ namespace Client
             LoadJob(pck.job);
             SetHealth(pck.health, info.timestamp);
             SetWeapon(pck.weapon, info.timestamp);
+
+            stateManager.SetState(pck.state);
         }
 
         void SetHealth(int health, double settingTime)
@@ -167,8 +157,9 @@ namespace Client
                 camera.target = transform;
             }
 
-            if (!serverPlayer) // Allocating controller ID. When Network is server, ID is already allocated.
+            if (isOwner && !Network.isServer) // Allocating controller ID. When Network is server, ID is already allocated.
             {
+                Network.RemoveRPCs(controllerView.viewID);
                 NetworkViewID controllerID = Network.AllocateViewID();
                 controllerView.RPC("SetControllerNetworkView", RPCMode.Server, controllerID);
                 controllerView.viewID = controllerID;
@@ -348,11 +339,11 @@ namespace Client
 
             C2S.Fire fire = C2S.Fire.DeserializeFromBytes(fireData);
 
-            GameObject projObj = (GameObject)Instantiate(Game.Inst.projectileSet.projectiles[(int)fire.weaponType], fire.origin, Quaternion.identity);
-
-            projObj.rigidbody2D.AddForce(new Vector2(fire.direction.x * FIRE_POWER, fire.direction.y * FIRE_POWER), ForceMode2D.Impulse);
+            GameObject projObj = (GameObject)Instantiate(Game.Inst.weaponSet.weapons[(int)fire.weaponType].weaponPrefab, fire.origin, Quaternion.identity);
 
             Projectile proj = projObj.GetComponent<Projectile>();
+
+            projObj.rigidbody2D.AddForce(new Vector2(fire.direction.x * proj.power, fire.direction.y * proj.power), ForceMode2D.Impulse);
             proj.ID = fire.projectileID;
             ProjectileManager.Inst.Set(fire.projectileID, proj);
 
@@ -365,7 +356,6 @@ namespace Client
         [RPC]
         void ClientDamage(int damage, NetworkMessageInfo info)
         {
-            if (!Network.isClient) return;
             //ServerCheck
 
             //old damage;
@@ -381,17 +371,7 @@ namespace Client
         [RPC]
         void Die(NetworkMessageInfo info)
         {
-            if (!Network.isClient) return;
             //ServerCheck
-
-            OnDie();
-        }
-
-        void OnDie()
-        {
-            stateManager.SetState(CharacterState.DEAD);
-
-            revivalTimer = REVIVAL_TIME;
         }
 
         public bool IsDead()
@@ -417,7 +397,6 @@ namespace Client
 
             stateManager.SetState(CharacterState.FALLING);
 
-            fireTimer = 0f;
             if (jobStat != null)
                 health = jobStat.MaxHealth;
         }

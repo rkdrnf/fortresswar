@@ -205,7 +205,7 @@ namespace Packet
         public class CharacterStatus : Packet<CharacterStatus>
         {
             public CharacterStatus() { }
-            public CharacterStatus(Job job, WeaponType weapon, int health)
+            public CharacterStatus(Job job, WeaponType weapon, int health, CharacterState state)
             {
                 this.job = job;
                 this.weapon = weapon;
@@ -223,6 +223,9 @@ namespace Packet
 
             [ProtoMember(4)]
             public int health;
+
+            [ProtoMember(5)]
+            public CharacterState state;
         }
     }
 
