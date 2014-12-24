@@ -181,9 +181,9 @@ public class MapMakerEditor : Editor {
 	}
 
     [MenuItem("Assets/Create/WeaponSet")]
-    static void CreateWeaponSet()
+    static void CreateWeapon()
     {
-        ProjectileSet projSet = CreateInstance<ProjectileSet>();
+        WeaponSet projSet = CreateInstance<WeaponSet>();
         var path = AssetDatabase.GetAssetPath(Selection.activeObject);
 
         if (string.IsNullOrEmpty(path))
@@ -200,6 +200,32 @@ public class MapMakerEditor : Editor {
         }
 
         var assetPathAndName = AssetDatabase.GenerateUniqueAssetPath(path + "WeaponSet.asset");
+        AssetDatabase.CreateAsset(projSet, assetPathAndName);
+        AssetDatabase.SaveAssets();
+        Selection.activeObject = projSet;
+        EditorGUIUtility.PingObject(projSet);
+    }
+
+    [MenuItem("Assets/Create/Weapon")]
+    static void CreateWeaponSet()
+    {
+        WeaponInfo projSet = CreateInstance<WeaponInfo>();
+        var path = AssetDatabase.GetAssetPath(Selection.activeObject);
+
+        if (string.IsNullOrEmpty(path))
+        {
+            path = "Assets";
+        }
+        else if (Path.GetExtension(path) != "")
+        {
+            path.Replace(Path.GetFileName(path), "");
+        }
+        else
+        {
+            path += Path.DirectorySeparatorChar;
+        }
+
+        var assetPathAndName = AssetDatabase.GenerateUniqueAssetPath(path + "Weapon.asset");
         AssetDatabase.CreateAsset(projSet, assetPathAndName);
         AssetDatabase.SaveAssets();
         Selection.activeObject = projSet;

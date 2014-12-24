@@ -28,8 +28,6 @@ namespace Server
             return isOwner;
         }
 
-        public bool isServerPlayer = false;
-
         Job job;
         public JobStat jobStat;
 
@@ -37,15 +35,9 @@ namespace Server
         public int health;
         Animator animator;
 
-        double healthLastSet = 0f;
-        double weaponLastSet = 0f;
-
-        float FIRE_RATE = 0.2f;
-        int FIRE_POWER = 20;
-
         public bool facingRight = true;
 
-        float fireTimer;
+        WeaponManager weaponManager;
 
         float horMov
         {
@@ -85,9 +77,33 @@ namespace Server
             get { return ServerGame.Inst; }
         }
 
-        
-
         Client.PlayerBehaviour clientPlayer;
+
+        void Awake()
+        {
+            weaponManager = new WeaponManager(this);
+            wallWalkTimer = 0f;
+            animator = GetComponent<Animator>();
+
+            Component[] views = gameObject.GetComponents(typeof(NetworkView));
+            foreach (Component view in views)
+            {
+                NetworkView nView = (NetworkView)view;
+                if (nView.observed is Client.PlayerBehaviour)
+                {
+                    controllerView = nView;
+                }
+
+                if (nView.observed is NetworkInterpolatedTransform)
+                {
+                    transformView = nView;
+                }
+            }
+
+            clientPlayer = GetComponent<Client.PlayerBehaviour>();
+
+            stateManager = new CharacterSM(CharacterState.DEAD, this);
+        }
 
         public CharacterState GetState()
         {
@@ -97,7 +113,11 @@ namespace Server
         public void BroadcastState()
         {
             S2C.CharacterChangeState pck = new S2C.CharacterChangeState(stateManager.GetState());
-            networkView.RPC("ClientSetState", RPCMode.Others, pck.SerializeToBytes());
+
+            if (!ServerGame.Inst.isDedicatedServer)
+                networkView.RPC("ClientSetState", RPCMode.All, pck.SerializeToBytes());
+            else
+                networkView.RPC("ClientSetState", RPCMode.Others, pck.SerializeToBytes());
         }
 
         public void OnTouchGround()
@@ -159,36 +179,12 @@ namespace Server
             }
         }
 
-        void Awake()
-        {
-            fireTimer = 0f;
-            wallWalkTimer = 0f;
-            animator = GetComponent<Animator>();
-
-            Component[] views = gameObject.GetComponents(typeof(NetworkView));
-            foreach (Component view in views)
-            {
-                NetworkView nView = (NetworkView)view;
-                if (nView.observed is Client.PlayerBehaviour)
-                {
-                    controllerView = nView;
-                }
-
-                if (nView.observed is NetworkInterpolatedTransform)
-                {
-                    transformView = nView;
-                }
-            }
-
-            clientPlayer = GetComponent<Client.PlayerBehaviour>();
-
-            stateManager = new CharacterSM(CharacterState.DEAD, this);
-        }
+        
 
         [RPC]
         public void RequestCurrentStatus(NetworkMessageInfo info)
         {
-            S2C.CharacterStatus pck = new S2C.CharacterStatus(job, weapon, health);
+            S2C.CharacterStatus pck = new S2C.CharacterStatus(job, weapon, health, stateManager.GetState());
 
             if (info.sender == Network.player)
             {
@@ -210,6 +206,7 @@ namespace Server
         public void SetControllerNetworkView(NetworkViewID viewID)
         {
             controllerView.viewID = viewID;
+            controllerView.enabled = true;
         }
 
         void LoadJob(Job job)
@@ -221,6 +218,8 @@ namespace Server
 
             this.health = newJobStat.MaxHealth;
             this.weapon = newJobStat.Weapons[0];
+
+            weaponManager.LoadWeapons(newJobStat.Weapons);
         }
 
         [RPC]
@@ -233,12 +232,17 @@ namespace Server
 
             LoadJob(C2S.ChangeJob.DeserializeFromBytes(pckData).job);
 
-            networkView.RPC("ClientChangeJob", RPCMode.Others, pckData);
+            if (!ServerGame.Inst.isDedicatedServer)
+                networkView.RPC("ClientChangeJob", RPCMode.All, pckData);
+            else
+                networkView.RPC("ClientChangeJob", RPCMode.Others, pckData);
         }
 
         void FixedUpdate()
         {
             if (!Network.isServer) return;
+
+            weaponManager.RefreshFireRate(Time.fixedDeltaTime);
 
             if (IsDead())
             {
@@ -259,14 +263,14 @@ namespace Server
 
         void Update()
         {
-            fireTimer += Time.deltaTime;
-
             // Server Rendering. Rendering from input must be in Update()
             // Fixed Update refreshes in fixed period. 
             // When Update() Period is shorter than fixed period, Update() can be called multiple times between FixedUpdate().
             // Because Input Data is reset in Update(), FixedUpdate() Can't get input data properly.
             if (Network.isServer)
             {
+                
+
                 if (IsDead())
                 {
                     return;
@@ -572,44 +576,8 @@ namespace Server
             if (!PlayerManager.Inst.IsValidPlayer(owner, info.sender)) return;
 
             C2S.Fire fire = C2S.Fire.DeserializeFromBytes(fireData);
-            OnServerFire(fire);
 
-            return;
-        }
-
-        void OnServerFire(C2S.Fire fire)
-        {
-            if (!Network.isServer) return;
-
-            if (CanFire() == false)
-            {
-                return;
-            }
-
-            //ServerPlayer character = PlayerManager.Inst.Get(fire.playerID);
-
-            long projID = ProjectileManager.Inst.GetUniqueKeyForNewProjectile();
-
-            Debug.Log(string.Format("Fire of player {0}, fireID:{1}", fire.playerID, projID));
-
-            fire.projectileID = projID;
-            fire.origin = gameObject.transform.position;
-
-            networkView.RPC("BroadcastFire", RPCMode.All, fire.SerializeToBytes());
-        }
-
-        public bool CanFire()
-        {
-            if (IsDead())
-                return false;
-
-            if (fireTimer > FIRE_RATE)
-            {
-                fireTimer = 0;
-
-                return true;
-            }
-            return false;
+            weaponManager.Fire(fire);
         }
 
         public void Damage(int damage, NetworkMessageInfo info)
@@ -625,7 +593,10 @@ namespace Server
                 health = 0;
             }
 
-            networkView.RPC("ClientDamage", RPCMode.Others, damage);
+            if (!ServerGame.Inst.isDedicatedServer)
+                networkView.RPC("ClientDamage", RPCMode.All, damage);
+            else
+                networkView.RPC("ClientDamage", RPCMode.Others, damage);
 
             if (health <= 0)
             {
@@ -637,14 +608,13 @@ namespace Server
         {
             if (!Network.isServer) return;
 
-            networkView.RPC("Die", RPCMode.Others);
             OnDie();
+            networkView.RPC("Die", RPCMode.Others);
         }
 
         void OnDie()
         {
             stateManager.SetState(CharacterState.DEAD);
-
             revivalTimer = REVIVAL_TIME;
         }
 
@@ -669,7 +639,7 @@ namespace Server
 
             Revive();
 
-            if (isServerPlayer)
+            if (!ServerGame.Inst.isDedicatedServer)
                 networkView.RPC("ClientRevive", RPCMode.All);
             else
                 networkView.RPC("ClientRevive", RPCMode.Others);
@@ -684,7 +654,7 @@ namespace Server
 
             stateManager.SetState(CharacterState.FALLING);
 
-            fireTimer = 0f;
+            weaponManager.ReloadAll();
             health = jobStat.MaxHealth;
         }
 
@@ -709,8 +679,6 @@ namespace Server
         public override void SetState(CharacterState newState)
         {
             base.SetState(newState);
-
-            if (!Network.isServer) return;
 
             player.BroadcastState();
         }
