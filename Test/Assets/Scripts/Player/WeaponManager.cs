@@ -17,7 +17,6 @@ public class WeaponManager
     public WeaponManager(ServerPlayer owner)
     {
         player = owner;
-
         weapons = new Dictionary<WeaponType, WeaponInfo>();    
     }
 
