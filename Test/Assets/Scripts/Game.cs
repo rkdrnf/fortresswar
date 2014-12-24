@@ -80,26 +80,4 @@ public class Game : MonoBehaviour
     {
         this.map = map;
     }
-
-    
-    void OnDisconnectedFromServer(NetworkDisconnection info)
-    {
-        if (Network.isServer)
-        {
-            OnServerDown();
-        }
-
-        if (Network.isClient)
-        {
-            OnServerDown();
-        }
-    }
-
-    void OnServerDown()
-    {
-        PlayerManager.Inst.Clear();
-        ProjectileManager.Inst.Clear();
-
-        ClearMap();
-    }
 }

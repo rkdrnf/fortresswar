@@ -2,56 +2,50 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using UnityEngine;
-using System.Threading;
 using Const;
 using S2C = Packet.S2C;
 using C2S = Packet.C2S;
+using UnityEngine;
+using System.Threading;
 
-namespace Server
+namespace Client
 {
-    public class PlayerManager : MonoBehaviour
+    class C_PlayerManager
     {
         private PlayerObjManager playerObjManager;
 
         private Dictionary<int, PlayerSetting> settingDic;
 
-        private Dictionary<int, NetworkPlayer> playerIDDic;
-
         int idCount;
 
 
-        private static PlayerManager instance;
+        private static C_PlayerManager instance;
 
-        public static PlayerManager Inst
+        public static C_PlayerManager Inst
         {
             get
             {
                 if (instance == null)
                 {
-                    instance = new PlayerManager();
+                    instance = new C_PlayerManager();
                 }
                 return instance;
             }
         }
 
-        void Awake()
+        public C_PlayerManager()
         {
-            instance = this;
             playerObjManager = new PlayerObjManager();
             settingDic = new Dictionary<int, PlayerSetting>();
-            playerIDDic = new Dictionary<int, NetworkPlayer>();
         }
 
-
-
         // Dictionary Functions
-        public ServerPlayer Get(int player)
+        public PlayerBehaviour Get(int player)
         {
             return playerObjManager.Get(player);
         }
 
-        public void Set(int player, ServerPlayer character)
+        public void Set(int player, PlayerBehaviour character)
         {
             playerObjManager.Set(player, character);
         }
@@ -60,17 +54,7 @@ namespace Server
         {
             playerObjManager.Remove(player);
         }
-
-        public bool Exists(NetworkPlayer player)
-        {
-            foreach (var data in playerIDDic)
-            {
-                if (data.Value == player)
-                    return true;
-            }
-            return false;
-        }
-
+        
         public void Clear()
         {
             playerObjManager.Clear();
@@ -135,36 +119,10 @@ namespace Server
         {
             return Interlocked.Increment(ref idCount);
         }
-
-        public int SetID(int ID, NetworkPlayer player)
-        {
-            playerIDDic[ID] = player;
-            return ID;
-        }
-
-        public int GetID(NetworkPlayer player)
-        {
-            foreach (var data in playerIDDic)
-            {
-                if (data.Value == player)
-                    return data.Key;
-            }
-
-            return -1;
-        }
-
-        public bool IsValidPlayer(int ID, NetworkPlayer player)
-        {
-            return playerIDDic[ID] == player;
-        }
-
-        public NetworkPlayer GetPlayer(int ID)
-        {
-            return playerIDDic[ID];
-        }
     }
 
-    public class PlayerObjManager : MonoObjManager<int, ServerPlayer>
+    public class PlayerObjManager : MonoObjManager<int, PlayerBehaviour>
     { }
-}
 
+
+}

@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using Server;
 
 public class Missile : Projectile {
 
@@ -25,7 +26,7 @@ public class Missile : Projectile {
     protected override void OnCollideToPlayer(Collider2D targetCollider)
     {
         //When Hit My Player
-        PlayerBehaviour character = targetCollider.gameObject.GetComponent<PlayerBehaviour>();
+        ServerPlayer character = targetCollider.gameObject.GetComponent<ServerPlayer>();
         if (character)
         {
             if (owner == character.GetOwner())
@@ -54,7 +55,7 @@ public class Missile : Projectile {
             }
             else if (collidingObject.CompareTag("Player"))
             {
-                collidingObject.GetComponent<PlayerBehaviour>().Damage(DamageByDistance(collidingObject.transform.position), new NetworkMessageInfo());
+                collidingObject.GetComponent<ServerPlayer>().Damage(DamageByDistance(collidingObject.transform.position), new NetworkMessageInfo());
             }
         }
     }

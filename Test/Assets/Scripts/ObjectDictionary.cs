@@ -64,8 +64,6 @@ public abstract class MonoObjManager<K, V> where V : UnityEngine.MonoBehaviour
     }
 }
 
-public class PlayerObjManager : MonoObjManager<int, PlayerBehaviour>
-{ }
 
 public class ProjectileObjManager : MonoObjManager<long, Projectile>
 { }

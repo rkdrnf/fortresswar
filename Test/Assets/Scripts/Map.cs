@@ -6,6 +6,8 @@ using System.IO;
 using S2C = Packet.S2C;
 using C2S = Packet.C2S;
 
+using Server;
+
 public class Map : MonoBehaviour {
 
 
@@ -136,7 +138,7 @@ public class Map : MonoBehaviour {
             );
     }
 
-    public bool CheckInBorder(PlayerBehaviour player)
+    public bool CheckInBorder(ServerPlayer player)
     {
         return CheckInBorder(player.transform);
     }

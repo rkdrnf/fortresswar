@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Util;
 using Const;
+using Server;
 
 public class FrontBehaviour : MonoBehaviour {
 
@@ -12,7 +13,7 @@ public class FrontBehaviour : MonoBehaviour {
 
     public Transform[] detectionPoints;
 	
-	PlayerBehaviour player;
+	ServerPlayer player;
 	
 	HashSet<GameObject> contactingWalls;
 
@@ -24,7 +25,7 @@ public class FrontBehaviour : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		player = transform.parent.gameObject.GetComponent<PlayerBehaviour> ();
+		player = transform.parent.gameObject.GetComponent<ServerPlayer> ();
 		
 		contactingWalls = new HashSet<GameObject> ();
         walledEnv = facing == Facing.FRONT ? CharacterEnv.WALLED_FRONT : CharacterEnv.WALLED_BACK;

@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+using Server;
+
 public class GunBullet : Projectile {
 
 	
@@ -17,7 +19,7 @@ public class GunBullet : Projectile {
     protected override void OnCollideToPlayer(Collider2D targetCollider)
     {
         //When Hit My Player
-        PlayerBehaviour character = targetCollider.gameObject.GetComponent<PlayerBehaviour>();
+        ServerPlayer character = targetCollider.gameObject.GetComponent<ServerPlayer>();
         if (character)
         {
             if (owner == character.GetOwner())

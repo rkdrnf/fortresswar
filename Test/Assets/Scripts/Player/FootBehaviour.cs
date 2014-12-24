@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Const;
 using Util;
+using Server;
 
 public class FootBehaviour : MonoBehaviour {
 
@@ -10,7 +11,7 @@ public class FootBehaviour : MonoBehaviour {
 
 	public Transform[] detectionPoints;
 
-	PlayerBehaviour player;
+	ServerPlayer player;
 
 	HashSet<GameObject> contactingGrounds;
 
@@ -19,7 +20,9 @@ public class FootBehaviour : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		player = transform.parent.gameObject.GetComponent<PlayerBehaviour> ();
+        if (!Network.isServer) return;
+
+		player = transform.parent.gameObject.GetComponent<ServerPlayer> ();
 
 		contactingGrounds = new HashSet<GameObject> ();
 		rayDirections = new Vector2[detectionPoints.Length];
@@ -34,6 +37,7 @@ public class FootBehaviour : MonoBehaviour {
 	}
 
 	void FixedUpdate() {
+        if (!Network.isServer) return;
 
 		for(int i = 0; i < detectionPoints.Length; i++)
 		{
