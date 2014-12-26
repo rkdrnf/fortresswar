@@ -715,11 +715,18 @@ namespace Server
                 {
                     rope.Cut();
                     rope = null;
+                    oldRopeID = -1;
                 }
-                oldRopeID = -1;
-            }
 
-            stateManager.SetState(CharacterState.FALLING);
+                stateManager.SetState(CharacterState.FALLING);
+            }
+        }
+
+        public void BroadcastRopeStuck(S2C.RopeStuck pck)
+        {
+            if (!Network.isServer) return;
+
+            networkView.RPC("RopeStuck", RPCMode.Others, pck.SerializeToBytes());
         }
     }
 

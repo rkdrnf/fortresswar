@@ -10,6 +10,13 @@
 using System;
 namespace Const
 {
+    public enum ObjectType
+    {
+        PLAYER,
+        TILE,
+        PROJECTILE
+    };
+
     public enum GameState
     {
         IN_MENU,
