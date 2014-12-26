@@ -8,20 +8,53 @@ public class Rope : Projectile {
 
     private HingeJoint2D stickHJ;
     private SpringJoint2D ropeSJ;
-    private bool isSticked = false;
+
     private Client.PlayerBehaviour C_ropeSource;
 
     public GameObject ropeImagePrefab;
     private float imageWidth;
 
+    S2C.RopeStickInfo stickInfo;
+
+    [RPC]
+    protected override void RequestCurrentStatus(NetworkMessageInfo info)
+    {
+        S2C.RopeStatus pck = new S2C.RopeStatus(owner, transform.position, rigidbody2D.velocity, stickInfo);
+
+        networkView.RPC("SetStatus", info.sender, pck.SerializeToBytes());
+    }
+
+    [RPC]
+    protected override void SetStatus(byte[] pckData, NetworkMessageInfo info)
+    {
+        S2C.RopeStatus pck = S2C.RopeStatus.DeserializeFromBytes(pckData);
+
+        owner = pck.owner;
+        transform.position = pck.position;
+        rigidbody2D.velocity = pck.velocity;
+
+        OnSetRopeStuck(pck.stickInfo);
+    }
+
+    protected override void OnInit()
+    {
+        if (Network.isServer)
+        {
+            PlayerManager.Inst.Get(owner).OnFireRope(this);
+        }
+    }
+
     void Start()
     {
         imageWidth = ropeImagePrefab.GetComponent<SpriteRenderer>().sprite.texture.width / 8f;
+        stickInfo = new S2C.RopeStickInfo();
+        stickInfo.isSticked = false;
     }
+
 
     protected override void OnCollideToTile(Collider2D targetCollider)
     {
-        if (isSticked) return;
+        if (stickInfo.isSticked) return;
 
         Tile tile = targetCollider.gameObject.GetComponent<Tile>();
         if (tile)
@@ -32,7 +65,7 @@ public class Rope : Projectile {
 
     protected override void OnCollideToPlayer(Collider2D targetCollider)
     {
-        if (isSticked) return;
+        if (stickInfo.isSticked) return;
 
         //When Hit My Player
         ServerPlayer character = targetCollider.gameObject.GetComponent<ServerPlayer>();
@@ -50,7 +83,7 @@ public class Rope : Projectile {
 
     void Update()
     {
-        if (isSticked && C_ropeSource)
+        if (stickInfo.isSticked && C_ropeSource)
         {
             foreach(Transform prevChild in transform)
             {
@@ -80,7 +113,7 @@ public class Rope : Projectile {
 
     void ConnectRope(GameObject target, long targetID, ObjectType objType)
     {
-        if (isSticked) return;
+        if (stickInfo.isSticked) return;
 
         if (ServerGame.Inst.isDedicatedServer == false)
             C_ropeSource = Client.C_PlayerManager.Inst.Get(owner);
@@ -100,7 +133,6 @@ public class Rope : Projectile {
 
     void StickToTarget(GameObject target, long targetID, ObjectType objType)
     {
-        isSticked = true;
         RaycastHit2D hit = Physics2D.Raycast(transform.position, target.transform.position - transform.position, 5);
 
         stickHJ = gameObject.AddComponent<HingeJoint2D>();
@@ -110,14 +142,9 @@ public class Rope : Projectile {
         rigidbody2D.velocity = new Vector2(0f, 0f);
 
 
-        S2C.RopeStuck pck = new S2C.RopeStuck(targetID, objType, transform.position, stickHJ.anchor, stickHJ.connectedAnchor);
+        stickInfo = new S2C.RopeStickInfo(true, targetID, objType, transform.position, stickHJ.anchor, stickHJ.connectedAnchor);
 
-        BroadcastRopeStuck(pck);
-    }
-
-    void BroadcastRopeStuck(S2C.RopeStuck pck)
-    {
-        networkView.RPC("SetRopeStuck", RPCMode.Others, pck.SerializeToBytes());
+        networkView.RPC("SetRopeStuck", RPCMode.Others, stickInfo.SerializeToBytes());
     }
 
     [RPC]
@@ -125,37 +152,43 @@ public class Rope : Projectile {
     {
         //ServerCheck
 
-        S2C.RopeStuck pck = S2C.RopeStuck.DeserializeFromBytes(pckData);
+        OnSetRopeStuck(S2C.RopeStickInfo.DeserializeFromBytes(pckData));
+    }
+
+    void OnSetRopeStuck(S2C.RopeStickInfo info)
+    {
+        stickInfo = info;
+
+        if (stickInfo.isSticked == false)
+            return;
 
         GameObject targetObj;
 
-        switch(pck.objType)
+        switch(info.objType)
         {
             case ObjectType.PLAYER:
-                targetObj = Client.C_PlayerManager.Inst.Get((int)pck.targetID).gameObject;
+                targetObj = Client.C_PlayerManager.Inst.Get((int)info.targetID).gameObject;
                 break;
 
             case ObjectType.PROJECTILE:
-                targetObj = ProjectileManager.Inst.Get(pck.targetID).gameObject;
+                targetObj = ProjectileManager.Inst.Get(info.targetID).gameObject;
                 break;
 
             case ObjectType.TILE:
-                targetObj = Game.Inst.map.GetTile((int)pck.targetID).gameObject;
+                targetObj = Game.Inst.map.GetTile((int)info.targetID).gameObject;
                 break;
 
             default:
                 return;
         }
 
-        isSticked = true;
-
         C_ropeSource = Client.C_PlayerManager.Inst.Get(owner);
 
-        transform.position = pck.ropePos;
+        transform.position = info.position;
         stickHJ = gameObject.AddComponent<HingeJoint2D>();
         stickHJ.connectedBody = targetObj.rigidbody2D;
-        stickHJ.anchor = transform.InverseTransformPoint(pck.ropeAnchor);
-        stickHJ.connectedAnchor = targetObj.transform.InverseTransformPoint(pck.targetAnchor);
+        stickHJ.anchor = transform.InverseTransformPoint(info.anchor);
+        stickHJ.connectedAnchor = targetObj.transform.InverseTransformPoint(info.targetAnchor);
         rigidbody2D.velocity = new Vector2(0f, 0f);
     }
     
@@ -163,7 +196,7 @@ public class Rope : Projectile {
     public void Cut()
     {
         Unstick();
-        Destroy(gameObject);
+        Network.Destroy(gameObject);
     }
 
     void Unstick()

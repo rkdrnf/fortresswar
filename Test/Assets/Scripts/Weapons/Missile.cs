@@ -7,7 +7,7 @@ public class Missile : Projectile {
     public int splashRange;
     public int sqrSplashRange;
     public int distDamping;
-
+    
     void Awake()
     {
         sqrSplashRange = splashRange * splashRange;

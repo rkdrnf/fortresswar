@@ -677,7 +677,6 @@ namespace Server
         }
 
         Rope rope;
-        long oldRopeID = -1;
         object ropeLock = new object();
 
         public void Roped(Rope newRope)
@@ -686,24 +685,19 @@ namespace Server
             {
                 if (newRope != null)
                 { 
-                    rope = newRope;
                     stateManager.SetState(CharacterState.ROPING);
                 }
             }
         }
 
-        public void OnFireRope(long ropeID)
+        public void OnFireRope(Rope newRope)
         {
             lock (ropeLock)
             {
                 if (rope != null)
                     CutRope();
-                else if (oldRopeID != -1)
-                {
-                    ProjectileManager.Inst.DestroyProjectile(oldRopeID);
-                }
 
-                oldRopeID = ropeID;
+                rope = newRope;
             }
         }
         
@@ -715,18 +709,10 @@ namespace Server
                 {
                     rope.Cut();
                     rope = null;
-                    oldRopeID = -1;
                 }
 
                 stateManager.SetState(CharacterState.FALLING);
             }
-        }
-
-        public void BroadcastRopeStuck(S2C.RopeStuck pck)
-        {
-            if (!Network.isServer) return;
-
-            networkView.RPC("RopeStuck", RPCMode.Others, pck.SerializeToBytes());
         }
     }
 
