@@ -149,7 +149,7 @@ namespace Server
 
             Debug.Log(String.Format("Player Ready {0}", setting.playerID));
 
-            GameObject newPlayer = (GameObject)Network.Instantiate(playerPrefab, spawnPosition, Quaternion.identity, 0);
+            GameObject newPlayer = (GameObject)Network.Instantiate(playerPrefab, spawnPosition, Quaternion.identity, 1);
             ServerPlayer serverPlayer = newPlayer.GetComponent<ServerPlayer>();
             
             PlayerManager.Inst.Set(setting.playerID, serverPlayer);

@@ -228,39 +228,82 @@ namespace Packet
             public CharacterState state;
         }
 
+        
         [ProtoContract]
-        public class RopeStuck : Packet<RopeStuck>
+        public class ProjectileStatus : Packet<ProjectileStatus>
         {
-            public RopeStuck() { }
-            public RopeStuck(long targetID, ObjectType objType, Vector2 ropePos, Vector2 ropeAnchor, Vector2 targetAnchor)
+            public ProjectileStatus() { }
+            public ProjectileStatus(int owner, Vector2 position, Vector2 velocity)
             {
+                this.position = position;
+                this.velocity = velocity;
+            }
+            [ProtoMember(1)]
+            public int owner;
+
+            [ProtoMember(2)]
+            public PacketVector2 position;
+
+            [ProtoMember(3)]
+            public PacketVector2 velocity;
+        }
+
+        [ProtoContract]
+        public class RopeStatus : Packet<RopeStatus>
+        {
+            public RopeStatus() { }
+            public RopeStatus(int owner, Vector2 position, Vector2 velocity, RopeStickInfo info)
+            {
+                this.owner = owner;
+                this.position = position;
+                this.velocity = velocity;
+                this.stickInfo = info;
+            }
+            [ProtoMember(1)]
+            public int owner;
+
+            [ProtoMember(2)]
+            public PacketVector2 position;
+
+            [ProtoMember(3)]
+            public PacketVector2 velocity;
+
+            [ProtoMember(4)]
+            public RopeStickInfo stickInfo;
+        }
+
+        [ProtoContract]
+        public class RopeStickInfo: Packet<RopeStickInfo>
+        {
+            public RopeStickInfo() { }
+            public RopeStickInfo(bool sticked, long targetID, ObjectType objType, Vector2 pos, Vector2 anchor, Vector2 targetAnchor)
+            {
+                this.isSticked = sticked;
                 this.targetID = targetID;
                 this.objType = objType;
-                this.ropePos = ropePos;
-                this.ropeAnchor = ropeAnchor;
+                this.position = pos;
+                this.anchor = anchor;
                 this.targetAnchor = targetAnchor;
             }
 
             [ProtoMember(1)]
-            public int packetID = -1;
-
-            [ProtoMember(2)]
             public long targetID;
 
-            [ProtoMember(3)]
+            [ProtoMember(2)]
             public ObjectType objType;
 
+            [ProtoMember(3)]
+            public PacketVector2 position;
+
             [ProtoMember(4)]
-            public Vector2 ropePos;
+            public PacketVector2 anchor;
 
             [ProtoMember(5)]
-            public Vector2 ropeAnchor;
+            public PacketVector2 targetAnchor;
 
             [ProtoMember(6)]
-            public Vector2 targetAnchor;
+            public bool isSticked;
         }
-
-
     }
 
     namespace C2S

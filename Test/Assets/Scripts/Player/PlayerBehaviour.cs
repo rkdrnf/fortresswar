@@ -273,7 +273,7 @@ namespace Client
 
                     if (Input.GetKey(KeyCode.Space))
                     {
-                        Jump();
+                        ClientJump();
                     }
 
                     //TeamSelector
@@ -323,7 +323,7 @@ namespace Client
             } while (false);
         }
         
-        void Jump()
+        void ClientJump()
         {
             if (Network.isServer)
                 serverPlayer.Jump(new NetworkMessageInfo());

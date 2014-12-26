@@ -5,7 +5,9 @@ using System.Text;
 using UnityEngine;
 using Server;
 using C2S = Packet.C2S;
+using S2C = Packet.S2C;
 
+[RequireComponent(typeof(NetworkView))]
 public abstract class Projectile : Weapon
 {
     public long ID;
@@ -21,46 +23,45 @@ public abstract class Projectile : Weapon
     private Vector2 direction;
     public GameObject explosionAnimation;
 
-    bool InitFinished = false;
-
-    void OnNetworkInstantiate(NetworkMessageInfo info)
-    {
-        if (Network.isServer)
-            BroadcastStatus();
-
-        Projectile proj = GetComponent<Projectile>();
-
-        networkView.RPC("RequestStatus", RPCMode.Server);
-
-        projObj.rigidbody2D.AddForce(new Vector2(fire.direction.x * proj.power, fire.direction.y * proj.power), ForceMode2D.Impulse);
-        proj.ID = fire.projectileID;
-        ProjectileManager.Inst.Set(fire.projectileID, proj);
-
-        Debug.Log(string.Format("Fire ID :{0} registered", fire.projectileID));
-        proj.owner = fire.playerID;
-    }
-
-
-    virtual void BroadcastStatus();
-
-    [RPC]
-    virtual void SetStatus(byte[] pckData, NetworkMessageInfo info);
-
-
     void Awake()
     {
         startPosition = transform.position;
+
+        if (Network.isClient)
+            networkView.RPC("RequestCurrentStatus", RPCMode.Server);
     }
 
     public void Init(C2S.Fire fire)
     {
-        ID = fire.projectileID;
+        long projID = ProjectileManager.Inst.GetUniqueKeyForNewProjectile();
+        ProjectileManager.Inst.Set(projID, this);
         owner = fire.playerID;
         direction = fire.direction;
         rigidbody2D.AddForce(direction * power, ForceMode2D.Impulse);
 
-        InitFinished = true;
+        OnInit();
     }
+
+    [RPC]
+    protected virtual void RequestCurrentStatus(NetworkMessageInfo info)
+    {
+        S2C.ProjectileStatus pck = new S2C.ProjectileStatus(owner, transform.position, rigidbody2D.velocity);
+
+        networkView.RPC("SetStatus", info.sender, pck.SerializeToBytes());
+    }
+
+    [RPC]
+    protected virtual void SetStatus(byte[] pckData, NetworkMessageInfo info)
+    {
+        S2C.ProjectileStatus pck = S2C.ProjectileStatus.DeserializeFromBytes(pckData);
+
+        owner = pck.owner;
+        transform.position = pck.position;
+        rigidbody2D.velocity = pck.velocity;
+    }
+
+
+    protected virtual void OnInit() { }
 
     // Update is called once per frame
     void Update()
@@ -117,11 +118,14 @@ public abstract class Projectile : Weapon
     {
         if (Network.isServer)
         {
-            ProjectileManager.Inst.DestroyProjectile(ID);
+            Network.RemoveRPCs(networkView.viewID);
+            Network.Destroy(gameObject);
         }
     }
+
     void OnDestroy()
     {
+        ProjectileManager.Inst.Remove(ID);
         if (explosionAnimation != null)
         { 
             GameObject explosion = (GameObject)Instantiate(explosionAnimation, transform.position, transform.rotation);

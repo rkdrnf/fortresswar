@@ -2,10 +2,10 @@
 using System.Collections;
 
 using Server;
+using ProtoBuf;
 
 public class GunBullet : Projectile {
 
-	
     protected override void OnCollideToTile(Collider2D targetCollider)
     {
         Tile tile = targetCollider.gameObject.GetComponent<Tile>();
@@ -34,3 +34,4 @@ public class GunBullet : Projectile {
         }
     }
 }
+
