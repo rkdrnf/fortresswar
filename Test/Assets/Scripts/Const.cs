@@ -111,7 +111,8 @@ namespace Const
 		JUMPING_UP,
 		FALLING,
 		WALL_JUMPING,
-		WALL_WALKING
+		WALL_WALKING,
+        ROPING
 	};
 
     //Can have multiple state at the same time.
@@ -147,6 +148,7 @@ namespace Const
     {
         GUN,
         MISSLE,
+        ROPE,
 
         MAX
     }

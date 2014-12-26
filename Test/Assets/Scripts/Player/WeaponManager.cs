@@ -55,6 +55,11 @@ public class WeaponManager
 
         long projID = ProjectileManager.Inst.GetUniqueKeyForNewProjectile();
 
+        if (weapon.weaponType == WeaponType.ROPE)
+        {
+            player.OnFireRope(projID);
+        }
+
         Debug.Log(string.Format("Fire of player {0}, fireID:{1}", fire.playerID, projID));
 
         fire.projectileID = projID;

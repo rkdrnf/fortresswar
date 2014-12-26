@@ -9,6 +9,7 @@ using Util;
 using Packet;
 using S2C = Packet.S2C;
 using C2S = Packet.C2S;
+using System.Threading;
 
 namespace Server
 {
@@ -258,6 +259,16 @@ namespace Server
             if (IsDead() == false && Game.Inst.map.CheckInBorder(this) == false)
             {
                 BroadcastDie();
+            }
+        }
+
+        [RPC]
+        public void Jump(NetworkMessageInfo info)
+        {
+            if(!PlayerManager.Inst.IsValidPlayer(owner, info.sender)) return;
+            if (stateManager.IsInState(CharacterState.ROPING))
+            {
+                CutRope();
             }
         }
 
@@ -663,6 +674,52 @@ namespace Server
             Network.RemoveRPCs(transformView.viewID);
             Network.RemoveRPCs(controllerView.viewID);
             Network.Destroy(gameObject);
+        }
+
+        Rope rope;
+        long oldRopeID = -1;
+        object ropeLock = new object();
+
+        public void Roped(Rope newRope)
+        {
+            lock(ropeLock)
+            {
+                if (newRope != null)
+                { 
+                    rope = newRope;
+                    stateManager.SetState(CharacterState.ROPING);
+                }
+            }
+        }
+
+        public void OnFireRope(long ropeID)
+        {
+            lock (ropeLock)
+            {
+                if (rope != null)
+                    CutRope();
+                else if (oldRopeID != -1)
+                {
+                    ProjectileManager.Inst.DestroyProjectile(oldRopeID);
+                }
+
+                oldRopeID = ropeID;
+            }
+        }
+        
+        public void CutRope()
+        {
+            lock (ropeLock)
+            {
+                if (rope != null)
+                {
+                    rope.Cut();
+                    rope = null;
+                }
+                oldRopeID = -1;
+            }
+
+            stateManager.SetState(CharacterState.FALLING);
         }
     }
 

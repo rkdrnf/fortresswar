@@ -42,8 +42,12 @@ namespace Client
             currentWeapon = weapons.First().Value;
         }
 
-
         public void Fire()
+        {
+            Fire(currentWeapon.weaponType);
+        }
+
+        public void Fire(WeaponType weaponType)
         {
             if (player.IsDead())
                 return;
@@ -52,7 +56,7 @@ namespace Client
             Vector2 direction = (worldMousePosition - player.transform.position);
             direction.Normalize();
 
-            C2S.Fire fire = new C2S.Fire(player.GetOwner(), -1, currentWeapon.weaponType, Vector3.zero, direction);
+            C2S.Fire fire = new C2S.Fire(player.GetOwner(), -1, weaponType, Vector3.zero, direction);
 
             Debug.Log(string.Format("Player {0} pressed Fire", Network.player));
 
@@ -97,6 +101,11 @@ namespace Client
                 currentWeapon = weapons[type];
 
             return currentWeapon;
+        }
+
+        public void UseSkill(KeyCode code)
+        {
+            Fire(WeaponType.ROPE);
         }
 
         public WeaponInfo ChangeWeapon(WeaponType type, double time)
