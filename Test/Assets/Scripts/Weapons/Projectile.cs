@@ -84,7 +84,10 @@ public abstract class Projectile : Weapon
     }
     void OnDestroy()
     {
-        GameObject explosion = (GameObject)Instantiate(explosionAnimation, transform.position, transform.rotation);
-        Destroy(explosion, 0.4f);
+        if (explosionAnimation != null)
+        { 
+            GameObject explosion = (GameObject)Instantiate(explosionAnimation, transform.position, transform.rotation);
+            Destroy(explosion, 0.4f);
+        }
     }
 }

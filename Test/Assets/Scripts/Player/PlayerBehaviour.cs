@@ -34,6 +34,8 @@ namespace Client
 
         KeyCode[] weaponCodes = new KeyCode[4]{KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3, KeyCode.Alpha4};
 
+        KeyCode[] skillCodes = new KeyCode[] { KeyCode.R };
+
         int envFlag;
 
         const float REVIVAL_TIME = 5f;
@@ -269,6 +271,10 @@ namespace Client
                     horMov = Input.GetAxisRaw("Horizontal");
                     verMov = Input.GetAxisRaw("Vertical");
 
+                    if (Input.GetKey(KeyCode.Space))
+                    {
+                        Jump();
+                    }
 
                     //TeamSelector
                     if (Input.GetKey(KeyCode.M))
@@ -289,7 +295,6 @@ namespace Client
                     {
                         Debug.Log("fire button pressed");
                         Fire();
-
                     }
                 }
 
@@ -302,11 +307,30 @@ namespace Client
                     }
                 }
 
+                foreach (KeyCode code in skillCodes)
+                {
+                    if (Input.GetKeyDown(code))
+                    {
+                        weaponManager.UseSkill(code);
+                        break;
+                    }
+                }
+
+
                 Vector3 worldMousePosition = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0));
                 lookingDirection = (worldMousePosition - transform.position);
 
             } while (false);
         }
+        
+        void Jump()
+        {
+            if (Network.isServer)
+                serverPlayer.Jump(new NetworkMessageInfo());
+            else
+                networkView.RPC("Jump", RPCMode.Server);
+        }
+        
 
         void Fire()
         {
