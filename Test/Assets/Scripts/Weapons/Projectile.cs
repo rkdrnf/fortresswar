@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using Server;
+using C2S = Packet.C2S;
 
 public abstract class Projectile : Weapon
 {
@@ -17,11 +18,48 @@ public abstract class Projectile : Weapon
     public int power;
 
     protected Vector3 startPosition;
+    private Vector2 direction;
     public GameObject explosionAnimation;
+
+    bool InitFinished = false;
+
+    void OnNetworkInstantiate(NetworkMessageInfo info)
+    {
+        if (Network.isServer)
+            BroadcastStatus();
+
+        Projectile proj = GetComponent<Projectile>();
+
+        networkView.RPC("RequestStatus", RPCMode.Server);
+
+        projObj.rigidbody2D.AddForce(new Vector2(fire.direction.x * proj.power, fire.direction.y * proj.power), ForceMode2D.Impulse);
+        proj.ID = fire.projectileID;
+        ProjectileManager.Inst.Set(fire.projectileID, proj);
+
+        Debug.Log(string.Format("Fire ID :{0} registered", fire.projectileID));
+        proj.owner = fire.playerID;
+    }
+
+
+    virtual void BroadcastStatus();
+
+    [RPC]
+    virtual void SetStatus(byte[] pckData, NetworkMessageInfo info);
+
 
     void Awake()
     {
         startPosition = transform.position;
+    }
+
+    public void Init(C2S.Fire fire)
+    {
+        ID = fire.projectileID;
+        owner = fire.playerID;
+        direction = fire.direction;
+        rigidbody2D.AddForce(direction * power, ForceMode2D.Impulse);
+
+        InitFinished = true;
     }
 
     // Update is called once per frame

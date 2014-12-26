@@ -65,7 +65,11 @@ public class WeaponManager
         fire.projectileID = projID;
         fire.origin = player.transform.position;
 
-        player.networkView.RPC("BroadcastFire", RPCMode.All, fire.SerializeToBytes());
+
+        GameObject projObj = (GameObject)Network.Instantiate(Game.Inst.weaponSet.weapons[(int)fire.weaponType].weaponPrefab, fire.origin, Quaternion.identity, 2);
+        projObj.GetComponent<Projectile>().Init(fire);
+
+        //player.networkView.RPC("BroadcastFire", RPCMode.All, fire.SerializeToBytes());
     }
 
     public WeaponInfo ChangeWeapon(WeaponType type)

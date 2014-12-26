@@ -227,6 +227,40 @@ namespace Packet
             [ProtoMember(5)]
             public CharacterState state;
         }
+
+        [ProtoContract]
+        public class RopeStuck : Packet<RopeStuck>
+        {
+            public RopeStuck() { }
+            public RopeStuck(long targetID, ObjectType objType, Vector2 ropePos, Vector2 ropeAnchor, Vector2 targetAnchor)
+            {
+                this.targetID = targetID;
+                this.objType = objType;
+                this.ropePos = ropePos;
+                this.ropeAnchor = ropeAnchor;
+                this.targetAnchor = targetAnchor;
+            }
+
+            [ProtoMember(1)]
+            public int packetID = -1;
+
+            [ProtoMember(2)]
+            public long targetID;
+
+            [ProtoMember(3)]
+            public ObjectType objType;
+
+            [ProtoMember(4)]
+            public Vector2 ropePos;
+
+            [ProtoMember(5)]
+            public Vector2 ropeAnchor;
+
+            [ProtoMember(6)]
+            public Vector2 targetAnchor;
+        }
+
+
     }
 
     namespace C2S
