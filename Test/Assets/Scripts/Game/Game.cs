@@ -68,7 +68,7 @@ public class Game : MonoBehaviour
 	{
         GameObject mapPrefab = mapLoader.GetMap();
 
-        GameObject mapObj = (GameObject)Network.Instantiate(mapPrefab, Vector3.zero, Quaternion.identity, 0);
+        GameObject mapObj = (GameObject)Network.Instantiate(mapPrefab, Vector3.zero, Quaternion.identity, NetworkViewGroup.GAME);
 	}
 
     public void ClearMap()

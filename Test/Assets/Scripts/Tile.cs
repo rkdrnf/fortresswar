@@ -4,6 +4,7 @@ using System.Collections.Generic;
 
 using S2C = Packet.S2C;
 using C2S = Packet.C2S;
+using System;
 
 [System.Serializable]
 public struct spriteInfo
@@ -26,16 +27,11 @@ public class Tile : MonoBehaviour {
     public spriteInfo[] sprites;
     private SpriteRenderer spriteRenderer;
 
-	// Use this for initialization
-	void Start () {
+    void Awake()
+    {
         spriteRenderer = GetComponent<SpriteRenderer>();
         spriteRenderer.sprite = GetSprite(health);
-	}
-	
-	// Update is called once per frame
-	void Update () {
-	
-	}
+    }
 
     Sprite GetSprite(int health)
     {
@@ -70,7 +66,16 @@ public class Tile : MonoBehaviour {
                 //Destroy(gameObject);
             }
 
+
+            try
+            { 
+
             spriteRenderer.sprite = GetSprite(health);
+            }
+            catch(Exception e)
+            {
+                Debug.Log(e);
+            }
         }
     }
 

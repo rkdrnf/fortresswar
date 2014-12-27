@@ -6,6 +6,7 @@ using UnityEngine;
 using Server;
 using C2S = Packet.C2S;
 using S2C = Packet.S2C;
+using Const;
 
 [RequireComponent(typeof(NetworkView))]
 public abstract class Projectile : Weapon
@@ -25,8 +26,17 @@ public abstract class Projectile : Weapon
 
     void Awake()
     {
+        networkView.group = NetworkViewGroup.PROJECTILE;
         startPosition = transform.position;
 
+        if(Network.isClient && Client.ClientGame.Inst.IsPlayerMapLoaded())
+        {
+            OnPlayerMapLoaded();
+        }
+    }
+
+    void OnPlayerMapLoaded()
+    {
         if (Network.isClient)
             networkView.RPC("RequestCurrentStatus", RPCMode.Server);
     }

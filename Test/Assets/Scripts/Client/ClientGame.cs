@@ -40,6 +40,9 @@ namespace Client
     
         public KeyFocusManager keyFocusManager;
         public MouseFocusManager mouseFocusManager;
+
+        bool mapLoaded;
+        bool playerLoaded;
     
         void Awake()
         {
@@ -50,8 +53,6 @@ namespace Client
         {
             keyFocusManager = new KeyFocusManager(InputKeyFocus.PLAYER);
             mouseFocusManager = new MouseFocusManager(InputMouseFocus.PLAYER);
-    
-            
         }
     
         /// <summary>
@@ -74,32 +75,11 @@ namespace Client
         {
             //ServerCheck
     
-            
             SetMyID(newID);
-    
-            if (Network.isClient)
-            {
-                networkView.RPC("PlayerListRequest", RPCMode.Server, ID);
-            }
-    
             nameSelector.Open();
         }
     
-        [RPC]
-        void SetPlayerList(byte[] playersData, NetworkMessageInfo info)
-        {
-            if (!Network.isClient)
-                return;
-    
-            List<PlayerSetting> settings = S2C.PlayerList.DeserializeFromBytes(playersData).settings;
-    
-            foreach (PlayerSetting setting in settings)
-            {
-                C_PlayerManager.Inst.SetSetting(setting);
-                PlayerBehaviour character = C_PlayerManager.Inst.Get(setting.playerID);
-                character.OnSettingChange();
-            }
-        }
+        
     
         /// <summary>
         /// SELECT TEAM
@@ -194,6 +174,43 @@ namespace Client
             C_PlayerManager.Inst.Clear();
             ProjectileManager.Inst.Clear();
             Game.Inst.ClearMap();
+        }
+
+        void OnConnectedToServer()
+        {
+            Debug.Log("Connected To Server");
+            Debug.Log("MessgeQueue enabled");
+        }
+
+        public void OnMapLoadCompleted()
+        {
+            mapLoaded = true;
+
+            if (IsPlayerMapLoaded())
+            { 
+                foreach (var obj in FindObjectsOfType<Projectile>())
+                {
+                    obj.SendMessage("OnPlayerMapLoaded", SendMessageOptions.DontRequireReceiver);
+                }
+            }
+        }
+
+        public void OnPlayerLoadCompleted()
+        {
+            playerLoaded = true;
+
+            if (IsPlayerMapLoaded())
+            { 
+                foreach(var obj in FindObjectsOfType<Projectile>())
+                {
+                    obj.SendMessage("OnPlayerMapLoaded", SendMessageOptions.DontRequireReceiver);
+                }
+            }
+        }
+
+        public bool IsPlayerMapLoaded()
+        {
+            return mapLoaded && playerLoaded;
         }
 
         void OnDisconnectedFromServer(NetworkDisconnection info)

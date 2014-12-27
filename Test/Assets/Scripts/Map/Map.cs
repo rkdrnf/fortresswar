@@ -7,6 +7,7 @@ using S2C = Packet.S2C;
 using C2S = Packet.C2S;
 
 using Server;
+using Const;
 
 public class Map : MonoBehaviour {
 
@@ -17,6 +18,11 @@ public class Map : MonoBehaviour {
 
     double mapLoadTime;
 
+    void Awake()
+    {
+        networkView.group = NetworkViewGroup.GAME;
+    }
+
     void OnNetworkInstantiate(NetworkMessageInfo info)
     {
         if (Network.isServer)
@@ -24,8 +30,8 @@ public class Map : MonoBehaviour {
             Debug.Log("[Server] map instantiated by " + info.sender);
             //Send Clients MapInfo;
 
-            networkView.RPC("SetMapInfo", RPCMode.OthersBuffered, Game.Inst.mapData.name);
             OnSetMapInfo(Game.Inst.mapData.name);
+            networkView.RPC("SetMapInfo", RPCMode.OthersBuffered, Game.Inst.mapData.name);
         }
 
         mapLoadTime = 0f;
@@ -73,6 +79,8 @@ public class Map : MonoBehaviour {
             Tile tile = GetTile(tileStatus.ID);
             tile.DamageInternal(tile.maxHealth - tileStatus.health);
         }
+
+        Client.ClientGame.Inst.OnMapLoadCompleted();
     }
 
     public Tile GetTile(int ID)

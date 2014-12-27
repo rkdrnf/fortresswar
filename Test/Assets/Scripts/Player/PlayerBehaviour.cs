@@ -21,6 +21,7 @@ namespace Client
 
         public int health;
         Animator animator;
+        Team team;
 
         double healthLastSet = 0f;
         
@@ -73,6 +74,8 @@ namespace Client
 
         void Awake()
         {
+            C_PlayerManager.Inst.StartLoadUser(this);
+
             weaponManager = new C_WeaponManager(this);
 
             animator = GetComponent<Animator>();
@@ -97,20 +100,6 @@ namespace Client
             }
         }
 
-        [RPC]
-        public void SetPlayerStatus(byte[] data, NetworkMessageInfo info)
-        {
-            //ServerCheck
-
-            S2C.CharacterStatus pck = S2C.CharacterStatus.DeserializeFromBytes(data);
-
-            LoadJob(pck.job);
-            SetHealth(pck.health, info.timestamp);
-            weaponManager.ChangeWeapon(pck.weapon, info.timestamp);
-
-            stateManager.SetState(pck.state);
-        }
-
         void SetHealth(int health, double settingTime)
         {
             //old status
@@ -122,19 +111,40 @@ namespace Client
         }
 
         [RPC]
-        public void SetOwner(int playerID, NetworkMessageInfo info)
+        void InitFinished(NetworkMessageInfo info)
         {
             //ServerCheck
 
-            OnSetOwner(playerID);
-
             if (Network.isServer)
-            {
-                serverPlayer.RequestCurrentStatus(new NetworkMessageInfo());
-            }
+                serverPlayer.RequestCharacterStatus(new NetworkMessageInfo());
             else
+                networkView.RPC("RequestCharacterStatus", RPCMode.Server);
+        }
+
+        [RPC]
+        public void SetOwner(byte[] pckData, NetworkMessageInfo info)
+        {
+            //ServerCheck
+
+            S2C.CharacterStatus pck = S2C.CharacterStatus.DeserializeFromBytes(pckData);
+
+            OnSetOwner(pck.playerID);
+
+            C_PlayerManager.Inst.SetSetting(pck.setting);
+            OnSettingChange(pck.setting);
+
+            LoadJob(pck.info.job);
+
+            SetHealth(pck.info.health, info.timestamp);
+            stateManager.SetState(pck.info.state);
+
+            weaponManager.ChangeWeapon(pck.info.weapon, info.timestamp);
+
+            C_PlayerManager.Inst.CompleteLoad(this);
+
+            if (C_PlayerManager.Inst.IsLoadComplete())
             {
-                networkView.RPC("RequestCurrentStatus", RPCMode.Server);
+                ClientGame.Inst.OnPlayerLoadCompleted();
             }
         }
 
@@ -176,15 +186,9 @@ namespace Client
             this.job = job;
             this.jobStat = newJobStat;
 
-            this.health = newJobStat.MaxHealth;
-            PlayerSetting setting = C_PlayerManager.Inst.GetSetting(owner);
-
-            if (setting != null)
-            {
-                LoadAnimation(setting.team, newJobStat);
-            }
-
             weaponManager.LoadWeapons(newJobStat.Weapons);
+
+            LoadAnimation();
         }
 
         public void ChangeJob(Job newJob)
@@ -210,9 +214,10 @@ namespace Client
             LoadJob(C2S.ChangeJob.DeserializeFromBytes(pckData).job);
         }
 
-        public void OnChangeTeam(Team team)
+        public void OnChangeTeam(Team newTeam)
         {
-            LoadAnimation(team, jobStat);
+            this.team = newTeam;
+            LoadAnimation();
         }
 
         void OnSerializeNetworkView(BitStream stream, NetworkMessageInfo mnInfo)
@@ -406,19 +411,20 @@ namespace Client
                 health = jobStat.MaxHealth;
         }
 
-        void LoadAnimation(Team team, JobStat jobStat)
+        void LoadAnimation()
         {
+            if (jobStat == null) return;
+
             animator.runtimeAnimatorController = team == Team.BLUE ?
                 jobStat.BlueTeamAnimations :
                 jobStat.RedTeamAnimations;
         }
 
-        public void OnSettingChange()
+        public void OnSettingChange(PlayerSetting setting)
         {
-            PlayerSetting setting = C_PlayerManager.Inst.GetSetting(owner);
-            Team team = setting.team;
+            team = setting.team;
 
-            LoadAnimation(team, jobStat);
+            LoadAnimation();
         }
 
         

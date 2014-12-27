@@ -16,10 +16,11 @@ namespace Client
 
         private Dictionary<int, PlayerSetting> settingDic;
 
-        int idCount;
-
+        private Dictionary<PlayerBehaviour, bool> playerLoadDic;
 
         private static C_PlayerManager instance;
+
+        object managerLock = new object();
 
         public static C_PlayerManager Inst
         {
@@ -37,6 +38,7 @@ namespace Client
         {
             playerObjManager = new PlayerObjManager();
             settingDic = new Dictionary<int, PlayerSetting>();
+            playerLoadDic = new Dictionary<PlayerBehaviour, bool>();
         }
 
         // Dictionary Functions
@@ -52,6 +54,7 @@ namespace Client
 
         public void Remove(int player)
         {
+            playerLoadDic.Remove(Get(player));
             playerObjManager.Remove(player);
         }
         
@@ -115,9 +118,38 @@ namespace Client
             return settingDic.Values.ToList<PlayerSetting>();
         }
 
-        public int GetUniqueID()
+        public void StartLoadUser(PlayerBehaviour player)
         {
-            return Interlocked.Increment(ref idCount);
+            lock(managerLock)
+            { 
+                playerLoadDic.Add(player, false);
+            }
+        }
+
+        public void CompleteLoad(PlayerBehaviour player)
+        {
+            lock(managerLock)
+            {
+                playerLoadDic[player] = true;
+            }
+        }
+
+        public bool IsLoadComplete()
+        {
+            bool loadedAll = true;
+
+            lock(managerLock)
+            {
+                foreach (bool loaded in playerLoadDic.Values)
+                {
+                    loadedAll = loaded;
+
+                    if (loadedAll == false)
+                        break;
+                }
+            }
+
+            return loadedAll;
         }
     }
 
