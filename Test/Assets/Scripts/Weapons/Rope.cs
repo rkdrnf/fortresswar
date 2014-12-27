@@ -83,7 +83,7 @@ public class Rope : Projectile {
 
     void Update()
     {
-        if (stickInfo.isSticked && C_ropeSource)
+        if (C_ropeSource)
         {
             foreach(Transform prevChild in transform)
             {
@@ -187,8 +187,8 @@ public class Rope : Projectile {
         transform.position = info.position;
         stickHJ = gameObject.AddComponent<HingeJoint2D>();
         stickHJ.connectedBody = targetObj.rigidbody2D;
-        stickHJ.anchor = transform.InverseTransformPoint(info.anchor);
-        stickHJ.connectedAnchor = targetObj.transform.InverseTransformPoint(info.targetAnchor);
+        stickHJ.anchor = info.anchor;
+        stickHJ.connectedAnchor = info.targetAnchor;
         rigidbody2D.velocity = new Vector2(0f, 0f);
     }
     
@@ -196,6 +196,7 @@ public class Rope : Projectile {
     public void Cut()
     {
         Unstick();
+        Network.RemoveRPCs(networkView.viewID);
         Network.Destroy(gameObject);
     }
 

@@ -33,6 +33,8 @@ public class WeaponManager
             i++;
         }
 
+        currentWeapon = weapons.First().Value;
+
         ReloadAll();
     }
 
@@ -83,6 +85,11 @@ public class WeaponManager
         {
             weapon.ammo = weapon.MaxAmmo;
         }
+    }
+
+    public WeaponType GetCurrentWeapon()
+    {
+        return currentWeapon.weaponType;
     }
 
     bool CanFire(WeaponInfo weapon)

@@ -137,21 +137,6 @@ namespace Packet
         }
 
         [ProtoContract]
-        public class PlayerList : Packet<PlayerList>
-        {
-            public PlayerList() { }
-            public PlayerList(List<PlayerSetting> settings)
-            {
-                this.settings = settings;
-            }
-
-            [ProtoMember(1)]
-            public int packetID = -1;
-            [ProtoMember(2)]
-            public List<PlayerSetting> settings;
-        }
-
-        [ProtoContract]
         public class MapInfo : Packet<MapInfo>
         {
             public MapInfo() { }
@@ -202,30 +187,52 @@ namespace Packet
         }
 
         [ProtoContract]
-        public class CharacterStatus : Packet<CharacterStatus>
+        public class CharacterInfo: Packet<CharacterInfo>
         {
-            public CharacterStatus() { }
-            public CharacterStatus(Job job, WeaponType weapon, int health, CharacterState state)
+            public CharacterInfo() { }
+            public CharacterInfo(Job job, WeaponType weapon, int health, CharacterState state)
             {
                 this.job = job;
                 this.weapon = weapon;
                 this.health = health;
+                this.state = state;
             }
 
+            [ProtoMember(1)]
+            public Job job;
+
+            [ProtoMember(2)]
+            public WeaponType weapon;
+
+            [ProtoMember(3)]
+            public int health;
+
+            [ProtoMember(4)]
+            public CharacterState state;
+        }
+
+        [ProtoContract]
+        public class CharacterStatus : Packet<CharacterStatus>
+        {
+            public CharacterStatus() { }
+            public CharacterStatus(int playerID, PlayerSetting setting, CharacterInfo info)
+            {
+                this.playerID = playerID;
+                this.setting = setting;
+                this.info = info;
+            }
+            
             [ProtoMember(1)]
             public int packetID = -1;
 
             [ProtoMember(2)]
-            public Job job;
+            public int playerID;
 
             [ProtoMember(3)]
-            public WeaponType weapon;
+            public CharacterInfo info;
 
             [ProtoMember(4)]
-            public int health;
-
-            [ProtoMember(5)]
-            public CharacterState state;
+            public PlayerSetting setting;
         }
 
         

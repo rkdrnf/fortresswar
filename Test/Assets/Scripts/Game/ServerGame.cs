@@ -154,28 +154,17 @@ namespace Server
             
             PlayerManager.Inst.Set(setting.playerID, serverPlayer);
             serverPlayer.Init(setting.playerID);
-            
+
             if (!isDedicatedServer) // own player
             {
-                newPlayer.networkView.RPC("SetOwner", RPCMode.AllBuffered, setting.playerID);
+                newPlayer.networkView.RPC("InitFinished", RPCMode.AllBuffered);
+                //newPlayer.networkView.RPC("SetOwner", RPCMode.AllBuffered, pck.SerializeToBytes());
             }
             else
             { 
-                newPlayer.networkView.RPC("SetOwner", RPCMode.OthersBuffered, setting.playerID);
+                newPlayer.networkView.RPC("InitFinished", RPCMode.Others);
+                //newPlayer.networkView.RPC("SetOwner", RPCMode.OthersBuffered, pck.SerializeToBytes());
             }
-        }
-
-        [RPC]
-        void PlayerListRequest(int requestorID, NetworkMessageInfo info)
-        {
-            if (!Network.isServer) return;
-            if (!PlayerManager.Inst.IsValidPlayer(requestorID, info.sender)) return;
-
-            S2C.PlayerList settings = new S2C.PlayerList(PlayerManager.Inst.GetSettings());
-
-            byte[] settingsData = settings.SerializeToBytes();
-
-            networkView.RPC("SetPlayerList", info.sender, settingsData);
         }
 
         /// <summary>

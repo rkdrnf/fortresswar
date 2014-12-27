@@ -32,8 +32,7 @@ namespace Server
         Job job;
         public JobStat jobStat;
 
-        public WeaponType weapon;
-        public int health;
+        int health;
         Animator animator;
 
         public bool facingRight = true;
@@ -61,7 +60,6 @@ namespace Server
         }
 
 
-
         int envFlag;
 
         const float REVIVAL_TIME = 5f;
@@ -82,6 +80,7 @@ namespace Server
 
         void Awake()
         {
+            networkView.group = NetworkViewGroup.PLAYER;
             weaponManager = new WeaponManager(this);
             wallWalkTimer = 0f;
             animator = GetComponent<Animator>();
@@ -180,23 +179,23 @@ namespace Server
             }
         }
 
-        
-
         [RPC]
-        public void RequestCurrentStatus(NetworkMessageInfo info)
+        public void RequestCharacterStatus(NetworkMessageInfo info)
         {
-            S2C.CharacterStatus pck = new S2C.CharacterStatus(job, weapon, health, stateManager.GetState());
+            PlayerSetting setting = PlayerManager.Inst.GetSetting(owner);
+            S2C.CharacterStatus pck = new S2C.CharacterStatus(setting.playerID, setting, GetInfo());
 
             if (info.sender == Network.player)
-            {
-                clientPlayer.SetPlayerStatus(pck.SerializeToBytes(), new NetworkMessageInfo());
-            }
+                clientPlayer.SetOwner(pck.SerializeToBytes(), new NetworkMessageInfo());
             else
-            {
-                networkView.RPC("SetPlayerStatus", info.sender, pck.SerializeToBytes());
-            }
+                networkView.RPC("SetOwner", info.sender, pck.SerializeToBytes());
         }
 
+        public S2C.CharacterInfo GetInfo()
+        {
+            return new S2C.CharacterInfo(job, weaponManager.GetCurrentWeapon(), health, stateManager.GetState());
+        }
+        
         public void Init(int playerID)
         {
             owner = playerID;
@@ -218,7 +217,6 @@ namespace Server
             this.jobStat = newJobStat;
 
             this.health = newJobStat.MaxHealth;
-            this.weapon = newJobStat.Weapons[0];
 
             weaponManager.LoadWeapons(newJobStat.Weapons);
         }

@@ -10,6 +10,12 @@
 using System;
 namespace Const
 {
+    public static class NetworkViewGroup
+    {
+        public const int GAME       = 0;
+        public const int PLAYER     = 1;
+        public const int PROJECTILE = 2;
+    }
     public enum ObjectType
     {
         PLAYER,

@@ -50,8 +50,5 @@ public class NetworkManager : MonoBehaviour {
 		hostList = new HostData[]{};
 	}
 
-	void OnConnectedToServer()
-	{
-		Debug.Log("Connected To Server");
-	}
+	
 }
