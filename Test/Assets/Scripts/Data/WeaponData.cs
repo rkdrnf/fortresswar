@@ -18,5 +18,7 @@ public class WeaponData : ScriptableObject
     public WeaponType weaponType;
     public GameObject weaponPrefab;
 
+    public Texture2D UIImage;
+
     
 }

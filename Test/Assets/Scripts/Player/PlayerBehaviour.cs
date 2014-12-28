@@ -46,6 +46,8 @@ namespace Client
 
         C_WeaponManager weaponManager;
 
+        WeaponUI weaponUI;
+
         ClientGame client
         {
             get { return ClientGame.Inst; }
@@ -159,6 +161,10 @@ namespace Client
             {
                 CameraBehaviour camera = GameObject.Find("Main Camera").GetComponent<CameraBehaviour>();
                 camera.target = transform;
+
+                GameObject weaponUIObj = new GameObject();
+                weaponUIObj.transform.parent = this.transform;
+                weaponUI = weaponUIObj.AddComponent<WeaponUI>();
             }
 
             if (isOwner && !Network.isServer) // Allocating controller ID. When Network is server, ID is already allocated.
