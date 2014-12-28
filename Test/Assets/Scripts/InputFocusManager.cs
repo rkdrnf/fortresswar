@@ -10,12 +10,12 @@ namespace FocusManager
     public abstract class InputFocusManager<T> where T : IComparable
     {
         protected T focus;
-        protected Stack<T> oldFocuses;
+        protected List<T> oldFocuses;
 
         public InputFocusManager(T defaultFocus)
         {
             focus = defaultFocus;
-            oldFocuses = new Stack<T>();
+            oldFocuses = new List<T>();
         }
     
         public bool IsFocused(T focus, params T[] focusList)
@@ -28,11 +28,14 @@ namespace FocusManager
             if (oldFocuses.Count == 0)
                 return;
 
-            if (focus.Equals(freeFocus) == false)
-                return;
-            
-            FocusTo(oldFocuses.Pop());
-            oldFocuses.Pop();
+            oldFocuses.Remove(freeFocus);
+
+            if (focus.Equals(freeFocus))
+            {
+                FocusTo(oldFocuses.Last());
+                oldFocuses.Remove(focus);
+                oldFocuses.Remove(freeFocus);
+            }
         }
     
         virtual public void FocusTo(T newFocus)
@@ -40,7 +43,7 @@ namespace FocusManager
             if (focus.Equals(newFocus))
                 return;
 
-            oldFocuses.Push(focus);
+            oldFocuses.Add(focus);
             focus = newFocus;
         }
     }
