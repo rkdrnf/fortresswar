@@ -8,7 +8,7 @@ using C2S = Packet.C2S;
 using S2C = Packet.S2C;
 using Const;
 
-[RequireComponent(typeof(NetworkView))]
+[RequireComponent(typeof(NetworkView), typeof(Rigidbody2D), typeof(SpriteRenderer))]
 public abstract class Projectile : Weapon
 {
     public long ID;
@@ -18,7 +18,6 @@ public abstract class Projectile : Weapon
     public int range;
 
     public bool friendlyFire;
-    public int power;
 
     protected Vector3 startPosition;
     private Vector2 direction;
@@ -33,7 +32,11 @@ public abstract class Projectile : Weapon
         {
             OnPlayerMapLoaded();
         }
+
+        OnAwake();
     }
+
+    virtual protected void OnAwake() { }
 
     void OnPlayerMapLoaded()
     {
@@ -41,15 +44,20 @@ public abstract class Projectile : Weapon
             networkView.RPC("RequestCurrentStatus", RPCMode.Server);
     }
 
-    public void Init(C2S.Fire fire)
+    public virtual void Init(WeaponInfo weapon, FireInfo info)
     {
         long projID = ProjectileManager.Inst.GetUniqueKeyForNewProjectile();
         ProjectileManager.Inst.Set(projID, this);
-        owner = fire.playerID;
-        direction = fire.direction;
-        rigidbody2D.AddForce(direction * power, ForceMode2D.Impulse);
+        owner = info.owner;
+        direction = info.direction;
+        rigidbody2D.AddForce(direction * GetPower(weapon), ForceMode2D.Impulse);
 
         OnInit();
+    }
+
+    protected virtual float GetPower(WeaponInfo weapon)
+    {
+        return weapon.power;
     }
 
     [RPC]
@@ -139,7 +147,7 @@ public abstract class Projectile : Weapon
         if (explosionAnimation != null)
         { 
             GameObject explosion = (GameObject)Instantiate(explosionAnimation, transform.position, transform.rotation);
-            Destroy(explosion, 0.4f);
+            
         }
     }
 }

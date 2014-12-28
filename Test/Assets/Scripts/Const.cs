@@ -162,6 +162,7 @@ namespace Const
         GUN,
         MISSLE,
         ROPE,
+        GRENADE,
 
         MAX
     }
@@ -170,6 +171,12 @@ namespace Const
     {
         NORMAL,
         INFINITE
+    }
+
+    public enum FireType
+    {
+        INSTANT,
+        CHARGE
     }
 }
 

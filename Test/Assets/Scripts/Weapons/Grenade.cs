@@ -2,12 +2,18 @@
 using System.Collections;
 using Server;
 
-public class Missile : Projectile {
+public class Grenade : Projectile {
+
+    protected override float GetPower(WeaponInfo weapon)
+    {
+        float multiplier = (float)(weapon.chargeTimer / weapon.maxChargeTime);
+        if (multiplier > 1 ) multiplier = 1f;
+        return weapon.power * multiplier;
+    }
 
     public int splashRange;
     public int sqrSplashRange;
     public int distDamping;
-    
 
     protected override void OnAwake()
     {
@@ -76,6 +82,4 @@ public class Missile : Projectile {
 
         return finalDamage;
     }
-
-    
 }

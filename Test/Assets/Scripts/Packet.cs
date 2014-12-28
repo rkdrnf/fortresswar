@@ -319,11 +319,10 @@ namespace Packet
         public class Fire : Packet<Fire>
         {
             public Fire() { }
-            public Fire(int playerID, long projectileID, WeaponType weapon, Vector3 origin, Vector3 direction)
+            public Fire(int playerID, long projectileID, WeaponType weapon, Vector3 direction)
             {
                 this.playerID = playerID;
                 this.weaponType = weapon;
-                this.origin = origin;
                 this.direction = direction;
                 this.projectileID = projectileID;
             }
@@ -337,9 +336,25 @@ namespace Packet
             [ProtoMember(4)]
             public WeaponType weaponType;
             [ProtoMember(5)]
-            public PacketVector2 origin;
-            [ProtoMember(6)]
             public PacketVector2 direction;
+        }
+
+        [ProtoContract]
+        public class ChargeWeapon : Packet<ChargeWeapon>
+        {
+            public ChargeWeapon() { }
+            public ChargeWeapon(int playerID, WeaponType weapon)
+            {
+                this.playerID = playerID;
+                this.weaponType = weapon;
+            }
+
+            [ProtoMember(1)]
+            public int packetID = -1;
+            [ProtoMember(2)]
+            public int playerID;
+            [ProtoMember(3)]
+            public WeaponType weaponType;
         }
 
         [ProtoContract]

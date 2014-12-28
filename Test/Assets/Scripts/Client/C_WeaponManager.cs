@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace Client
 {
-    public class C_WeaponManager
+    public class C_WeaponManager : MonoBehaviour
     {
         PlayerBehaviour player;
         Dictionary<WeaponType, WeaponInfo> weapons;
@@ -18,8 +18,16 @@ namespace Client
 
         double weaponLastSet = 0f;
 
-        public C_WeaponManager(PlayerBehaviour owner)
+        bool isCharging = false;
+
+        object weaponLock = new object();
+
+        WeaponManager s_weaponManager;
+
+        public void Init(PlayerBehaviour owner)
         {
+            s_weaponManager = GetComponent<WeaponManager>();
+
             player = owner;
             weapons = new Dictionary<WeaponType, WeaponInfo>();
         }
@@ -31,7 +39,7 @@ namespace Client
             int i = 0;
             foreach (WeaponType weaponType in weaponSet)
             {
-                WeaponInfo weapon = Game.Inst.weaponSet.weapons[(int)weaponType];
+                WeaponInfo weapon = new WeaponInfo(Game.Inst.weaponSet.weapons[(int)weaponType]);
 
                 weapons.Add(weapon.weaponType, weapon);
                 i++;
@@ -44,61 +52,123 @@ namespace Client
 
         public void Fire()
         {
-            Fire(currentWeapon.weaponType);
+            //if (!CanFire(currentWeapon)) return;
+
+            switch(currentWeapon.fireType)
+            {
+                case FireType.INSTANT:
+                    Fire(currentWeapon.weaponType);
+                    break;
+
+                case FireType.CHARGE:
+                    Charge(currentWeapon.weaponType);
+                    break;
+            }
+            
+        }
+
+        public void FireCharged()
+        {
+            lock(weaponLock)
+            { 
+                if (isCharging && currentWeapon.fireType == FireType.CHARGE)
+                {
+                    isCharging = false;
+                    Fire(currentWeapon.weaponType);
+                }
+            }
+        }
+
+        public void Charge(WeaponType weaponType)
+        {
+            if (player.IsDead()) return;
+
+            lock (weaponLock)
+            { 
+                if (isCharging) return;
+
+                isCharging = true;
+
+                C2S.ChargeWeapon charge = new C2S.ChargeWeapon(player.GetOwner(), weaponType);
+
+                if (Network.isServer)
+                {
+                    s_weaponManager.ServerCharge(charge.SerializeToBytes(), new NetworkMessageInfo());
+                }
+                else
+                {
+                    player.networkView.RPC("ServerCharge", RPCMode.Server, charge.SerializeToBytes());
+                }
+            }
         }
 
         public void Fire(WeaponType weaponType)
         {
-            if (player.IsDead())
-                return;
+            if (player.IsDead()) return;
 
             Vector3 worldMousePosition = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0));
             Vector2 direction = (worldMousePosition - player.transform.position);
             direction.Normalize();
 
-            C2S.Fire fire = new C2S.Fire(player.GetOwner(), -1, weaponType, Vector3.zero, direction);
+            C2S.Fire fire = new C2S.Fire(player.GetOwner(), -1, weaponType, direction);
 
             Debug.Log(string.Format("Player {0} pressed Fire", Network.player));
 
             if (Network.isServer)
             {
-                player.serverPlayer.ServerFire(fire.SerializeToBytes(), new NetworkMessageInfo());
+                s_weaponManager.ServerFire(fire.SerializeToBytes(), new NetworkMessageInfo());
             }
             else
             {
-                player.networkView.RPC("ServerFire", RPCMode.Server, fire.SerializeToBytes());
+                networkView.RPC("ServerFire", RPCMode.Server, fire.SerializeToBytes());
+            }
+        }
+
+        public void EndCharge()
+        {
+            lock (weaponLock)
+            {
+                isCharging = false;
             }
         }
 
         public WeaponInfo ChangeWeapon(KeyCode code)
         {
-            WeaponType type;
+            EndCharge();
+
+            int index;
 
             switch (code)
             {
                 case KeyCode.Alpha1:
-                    type = (WeaponType)Enum.Parse(typeof(WeaponType), "0");
+                    index = 0;
                     break;
 
                 case KeyCode.Alpha2:
-                    type = (WeaponType)Enum.Parse(typeof(WeaponType), "1");
+                    index = 1;
                     break;
 
                 case KeyCode.Alpha3:
-                    type = (WeaponType)Enum.Parse(typeof(WeaponType), "2");
+                    index = 2;
                     break;
 
                 case KeyCode.Alpha4:
-                    type = (WeaponType)Enum.Parse(typeof(WeaponType), "3");
+                    index = 3;
                     break;
 
                 default:
-                    type = WeaponType.MAX;
+                    index = -1;
                     break;
             }
 
-            if (weapons.ContainsKey(type))
-                currentWeapon = weapons[type];
+            try
+            {
+                currentWeapon = weapons[player.jobStat.Weapons.ElementAt(index)];
+            }
+            catch(ArgumentOutOfRangeException e) // No weapon at index
+            {
+                return currentWeapon;
+            }
 
             return currentWeapon;
         }
@@ -131,7 +201,7 @@ namespace Client
         {
             foreach (WeaponInfo weapon in weapons.Values)
             {
-                weapon.ammo = weapon.MaxAmmo;
+                weapon.ammo = weapon.maxAmmo;
             }
         }
 
