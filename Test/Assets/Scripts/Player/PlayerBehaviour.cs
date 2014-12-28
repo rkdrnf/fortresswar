@@ -282,6 +282,7 @@ namespace Client
                 if (client.keyFocusManager.IsFocused(InputKeyFocus.PLAYER))
                 {
                     horMov = Input.GetAxisRaw("Horizontal");
+                    Debug.Log("HOR: " + horMov);
                     verMov = Input.GetAxisRaw("Vertical");
 
                     if (Input.GetKey(KeyCode.Space))
@@ -300,6 +301,30 @@ namespace Client
                     {
                         client.jobSelector.Open();
                     }
+
+                    foreach (KeyCode code in weaponCodes)
+                    {
+                        if (Input.GetKeyDown(code))
+                        {
+                            weaponManager.ChangeWeapon(code);
+                            break;
+                        }
+                    }
+
+                    foreach (KeyCode code in skillCodes)
+                    {
+                        if (Input.GetKeyDown(code))
+                        {
+                            weaponManager.UseSkill(code);
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    Input.ResetInputAxes();
+                    horMov = 0f;
+                    verMov = 0f;
                 }
 
                 if (client.mouseFocusManager.IsFocused(InputMouseFocus.PLAYER))
@@ -315,24 +340,7 @@ namespace Client
                     }
                 }
 
-                foreach(KeyCode code in weaponCodes)
-                {
-                    if (Input.GetKeyDown(code))
-                    {
-                        weaponManager.ChangeWeapon(code);
-                        break;
-                    }
-                }
-
-                foreach (KeyCode code in skillCodes)
-                {
-                    if (Input.GetKeyDown(code))
-                    {
-                        weaponManager.UseSkill(code);
-                        break;
-                    }
-                }
-
+                
 
                 Vector3 worldMousePosition = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0));
                 lookingDirection = (worldMousePosition - transform.position);
