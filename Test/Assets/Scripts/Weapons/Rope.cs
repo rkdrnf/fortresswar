@@ -124,9 +124,9 @@ public class Rope : Projectile {
 
         ropeSJ = gameObject.AddComponent<SpringJoint2D>();
         ropeSJ.connectedBody = player.rigidbody2D;
-        ropeSJ.distance = 2f;
-        ropeSJ.frequency = 3;
-        ropeSJ.dampingRatio = 2;
+        ropeSJ.distance = 5f;
+        ropeSJ.frequency = 2;
+        ropeSJ.dampingRatio = 1;
 
         player.Roped(this);
     }

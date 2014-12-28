@@ -171,10 +171,10 @@ namespace Client
 
                 case ChatState.NEW_MESSAGE:
 
-                    ClientGame.Inst.keyFocusManager.FreeFocus(InputKeyFocus.CHAT_WINDOW);
-                    ClientGame.Inst.mouseFocusManager.FreeFocus(InputMouseFocus.CHAT_WINDOW);
                     if (IsNotInState(ChatState.WRITING))
                     {
+                        ClientGame.Inst.keyFocusManager.FreeFocus(InputKeyFocus.CHAT_WINDOW);
+                        ClientGame.Inst.mouseFocusManager.FreeFocus(InputMouseFocus.CHAT_WINDOW);
                         StateUtil.SetState<ChatState>(ref this.state, newState);
                     }
                     break;
