@@ -32,7 +32,7 @@ public class CameraBehaviour : MonoBehaviour {
             // Set the position of the camera on the x-z plane to:
             // Set the height of the camera
             currentHeight = Mathf.Lerp(currentHeight, wantedHeight, heightDamping * Time.deltaTime);
-            transform.position = new Vector3(transform.position.x, currentHeight, -20);
+            transform.position = new Vector3(target.transform.position.x, currentHeight, -20);
 
 
             // Always look at the target
