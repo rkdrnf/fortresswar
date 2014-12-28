@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using Const;
 
 public class WeaponSet : ScriptableObject
 {
-    public WeaponInfo[] weapons = new WeaponInfo[]{};
+    public WeaponData[] weapons = new WeaponData[] { };
 }
 
 

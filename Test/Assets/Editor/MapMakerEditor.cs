@@ -209,7 +209,7 @@ public class MapMakerEditor : Editor {
     [MenuItem("Assets/Create/Weapon")]
     static void CreateWeaponSet()
     {
-        WeaponInfo projSet = CreateInstance<WeaponInfo>();
+        WeaponData projSet = CreateInstance<WeaponData>();
         var path = AssetDatabase.GetAssetPath(Selection.activeObject);
 
         if (string.IsNullOrEmpty(path))

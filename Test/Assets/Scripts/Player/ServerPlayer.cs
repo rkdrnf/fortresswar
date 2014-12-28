@@ -81,7 +81,9 @@ namespace Server
         void Awake()
         {
             networkView.group = NetworkViewGroup.PLAYER;
-            weaponManager = new WeaponManager(this);
+            weaponManager = GetComponent<WeaponManager>();
+            weaponManager.Init(this);
+
             wallWalkTimer = 0f;
             animator = GetComponent<Animator>();
 
@@ -215,9 +217,7 @@ namespace Server
 
             this.job = job;
             this.jobStat = newJobStat;
-
-            this.health = newJobStat.MaxHealth;
-
+            
             weaponManager.LoadWeapons(newJobStat.Weapons);
         }
 
@@ -240,8 +240,6 @@ namespace Server
         void FixedUpdate()
         {
             if (!Network.isServer) return;
-
-            weaponManager.RefreshFireRate(Time.fixedDeltaTime);
 
             if (IsDead())
             {
@@ -576,17 +574,6 @@ namespace Server
             Vector3 scale = transform.localScale;
             scale.x = -scale.x;
             transform.localScale = scale;
-        }
-
-        [RPC]
-        public void ServerFire(byte[] fireData, NetworkMessageInfo info)
-        {
-            if (!Network.isServer) return;
-            if (!PlayerManager.Inst.IsValidPlayer(owner, info.sender)) return;
-
-            C2S.Fire fire = C2S.Fire.DeserializeFromBytes(fireData);
-
-            weaponManager.Fire(fire);
         }
 
         public void Damage(int damage, NetworkMessageInfo info)

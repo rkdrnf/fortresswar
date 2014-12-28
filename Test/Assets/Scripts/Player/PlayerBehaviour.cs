@@ -76,7 +76,8 @@ namespace Client
         {
             C_PlayerManager.Inst.StartLoadUser(this);
 
-            weaponManager = new C_WeaponManager(this);
+            weaponManager = GetComponent<C_WeaponManager>();
+            weaponManager.Init(this);
 
             animator = GetComponent<Animator>();
 
@@ -229,6 +230,7 @@ namespace Client
                 {
                     float horMoveVal = horMov;
                     float verMoveVal = verMov;
+                    
                     Vector3 lookingDirectionVal = lookingDirection;
 
                     stream.Serialize(ref horMoveVal);
@@ -298,8 +300,12 @@ namespace Client
                 {
                     if (Input.GetButton("Fire1"))
                     {
-                        Debug.Log("fire button pressed");
-                        Fire();
+                        weaponManager.Fire();
+                    }
+
+                    if (Input.GetButtonUp("Fire1"))
+                    {
+                        weaponManager.FireCharged();
                     }
                 }
 
@@ -336,30 +342,7 @@ namespace Client
                 networkView.RPC("Jump", RPCMode.Server);
         }
         
-
-        void Fire()
-        {
-            weaponManager.Fire();
-        }
-
-        [RPC]
-        public void BroadcastFire(byte[] fireData, NetworkMessageInfo info)
-        {
-            //ServerCheck
-
-            C2S.Fire fire = C2S.Fire.DeserializeFromBytes(fireData);
-
-            GameObject projObj = (GameObject)Instantiate(Game.Inst.weaponSet.weapons[(int)fire.weaponType].weaponPrefab, fire.origin, Quaternion.identity);
-
-            Projectile proj = projObj.GetComponent<Projectile>();
-
-            projObj.rigidbody2D.AddForce(new Vector2(fire.direction.x * proj.power, fire.direction.y * proj.power), ForceMode2D.Impulse);
-            proj.ID = fire.projectileID;
-            ProjectileManager.Inst.Set(fire.projectileID, proj);
-
-            Debug.Log(string.Format("Fire ID :{0} registered", fire.projectileID));
-            proj.owner = fire.playerID;
-        }
+        
 
 
 
