@@ -12,7 +12,7 @@ namespace Client
     public class C_WeaponManager : MonoBehaviour
     {
         PlayerBehaviour player;
-        Dictionary<WeaponType, WeaponInfo> weapons;
+        Dictionary<int, WeaponInfo> weapons;
 
         WeaponInfo currentWeapon;
 
@@ -24,12 +24,14 @@ namespace Client
 
         WeaponManager s_weaponManager;
 
+        WeaponUI ui;
+
         public void Init(PlayerBehaviour owner)
         {
             s_weaponManager = GetComponent<WeaponManager>();
 
             player = owner;
-            weapons = new Dictionary<WeaponType, WeaponInfo>();
+            weapons = new Dictionary<int, WeaponInfo>();
         }
 
         public void LoadWeapons(IEnumerable<WeaponType> weaponSet)
@@ -41,13 +43,23 @@ namespace Client
             {
                 WeaponInfo weapon = new WeaponInfo(Game.Inst.weaponSet.weapons[(int)weaponType]);
 
-                weapons.Add(weapon.weaponType, weapon);
+                weapons.Add(i, weapon);
                 i++;
             }
 
             ReloadAll();
 
             currentWeapon = weapons.First().Value;
+        }
+
+        void FixedUpdate()
+        {
+            RefreshFireRate(Time.fixedDeltaTime);
+
+            if (currentWeapon != null && currentWeapon.fireType == FireType.CHARGE && currentWeapon.isCharging)
+            {
+                currentWeapon.chargeTimer += Time.fixedDeltaTime;
+            }
         }
 
         public void Fire()
@@ -161,14 +173,8 @@ namespace Client
                     break;
             }
 
-            try
-            {
-                currentWeapon = weapons[player.jobStat.Weapons.ElementAt(index)];
-            }
-            catch(ArgumentOutOfRangeException e) // No weapon at index
-            {
-                return currentWeapon;
-            }
+            if (weapons.ContainsKey(index))
+                currentWeapon = weapons[index];
 
             return currentWeapon;
         }
@@ -183,8 +189,15 @@ namespace Client
             if (weaponLastSet > time)
                 return currentWeapon;
 
-            weaponLastSet = time;
-            currentWeapon = weapons[type];
+            foreach(WeaponInfo weapon in weapons.Values)
+            {
+                if (weapon.weaponType == type)
+                {
+                    currentWeapon = weapon;
+                    weaponLastSet = time;
+                    break;
+                }
+            }
             
             return currentWeapon;
         }
@@ -211,6 +224,16 @@ namespace Client
                 return false;
 
             return weapon.fireTimer < 0 && (weapon.ammo > 0 || weapon.ammoType == AmmoType.INFINITE);
+        }
+
+        public WeaponInfo GetCurrentWeapon()
+        {
+            return currentWeapon;
+        }
+
+        public WeaponInfo[] GetWeapons()
+        {
+            return weapons.Values.ToArray();
         }
     }
 }
