@@ -132,7 +132,7 @@ namespace Client
             textAreaStyle.stretchHeight = true;
             textAreaStyle.padding = new RectOffset(5, 5, 5, 5);
 
-            string chatLog = String.Join("\n", chatList.Select(c => string.Format("{0}: {1}", C_PlayerManager.Inst.GetSetting(c.playerID).name, c.text)).ToArray<string>());
+            string chatLog = String.Join("\n", chatList.Select(c => string.Format("{0}: {1}", c.writer, c.text)).ToArray<string>());
             GUILayout.TextArea(chatLog, textAreaStyle);
             GUI.color = Color.gray;
             GUILayout.EndScrollView();
