@@ -345,6 +345,7 @@ namespace Server
             if (horMov != 0)
             {
                 rigidbody2D.velocity = new Vector2(horMov * jobStat.MovingSpeed, rigidbody2D.velocity.y);
+                Debug.Log("MaxSpeed: " + rigidbody2D.velocity);
             }
 
             //
@@ -356,13 +357,55 @@ namespace Server
             }
         }
 
+        void MoveInAir()
+        {
+            const int multiplier = 200;
+            if (horMov != 0)
+            {
+                if (horMov * rigidbody2D.velocity.x < 0) // 다른방향
+                {
+                    rigidbody2D.AddForce(new Vector2(horMov * jobStat.MovingSpeed * multiplier, 0));
+                }
+                else // 같은 방향
+                {
+                    rigidbody2D.AddForce(new Vector2(horMov * jobStat.MovingSpeed * multiplier, 0));
+                    if (rigidbody2D.velocity.x > jobStat.MovingSpeed || rigidbody2D.velocity.x < -jobStat.MovingSpeed) //초과시 최대스피드로
+                    {
+                        rigidbody2D.velocity = new Vector2(horMov * jobStat.MovingSpeed, rigidbody2D.velocity.y);
+                        Debug.Log("MaxSpeed: " + rigidbody2D.velocity);
+                    }
+                }
+            }
+            else
+            {
+                rigidbody2D.velocity = Vector2.Lerp(rigidbody2D.velocity, new Vector2(0, rigidbody2D.velocity.y), Time.deltaTime * 4);
+            }
+        }
+
+        void MoveInAirDirection(float maxSpeed)
+        {
+            const int multiplier = 200;
+            if (horMov != 0)
+            {
+                if (horMov * rigidbody2D.velocity.x < 0) // 다른방향
+                {
+                    rigidbody2D.AddForce(new Vector2(horMov * jobStat.MovingSpeed * multiplier, 0));
+                }
+                else // 같은 방향
+                {
+                    rigidbody2D.AddForce(new Vector2(horMov * jobStat.MovingSpeed * multiplier, 0));
+                    if (rigidbody2D.velocity.x > maxSpeed || rigidbody2D.velocity.x < -maxSpeed) //초과시 최대스피드로
+                    {
+                        rigidbody2D.velocity = new Vector2(horMov * maxSpeed, rigidbody2D.velocity.y);
+                        Debug.Log("MaxSpeed: " + rigidbody2D.velocity);
+                    }
+                }
+            }
+        }
+
         void WhenFalling()
         {
-            // Fall to ground;
-            if (horMov == 0)
-            {
-                return;
-            }
+            MoveInAir();
 
             if (horMov != 0)
             {
@@ -374,39 +417,29 @@ namespace Server
 
                     return;
                 }
+            }
+        }
 
-                //Fall to ground.
-                if (verMov <= 0f)
-                {
-                    rigidbody2D.velocity = new Vector2(horMov * jobStat.MovingSpeed, rigidbody2D.velocity.y);
-
-                    return;
-                }
+        void StopJumping()
+        {
+            if(rigidbody2D.velocity.y > 0)
+            { 
+                rigidbody2D.velocity = Vector2.Lerp(rigidbody2D.velocity, new Vector2(rigidbody2D.velocity.x, 0), Time.deltaTime * 4);
             }
         }
 
         void WhenJumping()
         {
-            if (horMov != 0)
+            MoveInAir();
+
+            if (horMov != 0 && verMov > 0)
             {
-                if (horMov * rigidbody2D.velocity.x < 0) // 다른방향
-                { 
-                    rigidbody2D.AddForce(new Vector2(horMov * jobStat.MovingSpeed * 30f, 0));
-                }
-                else // 같은 방향
-                {
-                    rigidbody2D.AddForce(new Vector2(horMov * jobStat.MovingSpeed * 30f, 0));
-                    if (rigidbody2D.velocity.x > jobStat.MovingSpeed || rigidbody2D.velocity.x < -jobStat.MovingSpeed) //초과시 최대스피드로
-                    {
-                        rigidbody2D.velocity = new Vector2(horMov * jobStat.MovingSpeed, rigidbody2D.velocity.y);
-                    }
-                }
-                
-                //rigidbody2D.velocity = new Vector2(horMov * jobStat.MovingSpeed, rigidbody2D.velocity.y);
+                CheckWallJump();
             }
-            else
+
+            if (verMov <= 0)
             {
-                rigidbody2D.velocity = Vector2.Lerp(rigidbody2D.velocity, new Vector2(0, rigidbody2D.velocity.y), Time.deltaTime * 4);
+                StopJumping();
             }
 
             if (rigidbody2D.velocity.y <= 0f)
@@ -417,26 +450,16 @@ namespace Server
 
         void WhenWallJumping()
         {
-            if (horMov != 0)
+            MoveInAirDirection(jobStat.WallJumpingSpeed.x);
+
+            if (horMov != 0 && verMov > 0)
             {
-                rigidbody2D.AddForce(new Vector2(horMov * jobStat.MovingSpeed, 2f));
+                CheckWallJump();
+            }
 
-                //WallJump Or Climb more.
-                if (verMov > 0)
-                {
-                    //Debug.Log("CheckWallJump");
-                    CheckWallJump();
-
-                    return;
-                }
-
-                //Fall to ground.
-                if (verMov <= 0f)
-                {
-                    rigidbody2D.velocity = new Vector2(horMov * jobStat.MovingSpeed, rigidbody2D.velocity.y);
-
-                    return;
-                }
+            if (verMov <= 0)
+            {
+                StopJumping();
             }
         }
 
