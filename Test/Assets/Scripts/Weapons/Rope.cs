@@ -16,6 +16,10 @@ public class Rope : Projectile {
 
     S2C.RopeStickInfo stickInfo;
 
+    const int maxGap = 5;
+
+    public LayerMask groundLayer;
+
     [RPC]
     protected override void RequestCurrentStatus(NetworkMessageInfo info)
     {
@@ -86,6 +90,10 @@ public class Rope : Projectile {
 
     void Update()
     {
+        Rotate();
+
+        base.RangeCheck();
+
         if (C_ropeSource)
         {
             foreach(Transform prevChild in transform)
@@ -213,7 +221,40 @@ public class Rope : Projectile {
 
     public void ModifyLength(float speed)
     {
-        ropeSJ.distance -= speed;
+        if (ropeSJ != null)
+        {
+            float dist = Vector2.Distance(transform.position, C_ropeSource.transform.position);
+
+            //거리보다 로프가 짧으면 로프쪽, 아니면 캐릭터쪽 방향
+            float ropeCharDist = (ropeSJ.distance - dist);
+            Vector2 direction = (ropeSJ.distance - dist) * (C_ropeSource.transform.position - transform.position);
+
+            RaycastHit2D hit = Physics2D.Raycast(C_ropeSource.transform.position, direction, range, groundLayer);
+
+            //장애물이 있고, 캐릭터와 장애물 간 거리보다 캐릭터와 로프 길이가 
+            float hitDist = Vector2.Distance(C_ropeSource.transform.position, hit.point);
+            if (hit.collider != null && hitDist < 1.5)
+            {
+                if (ropeCharDist > hitDist)
+                {
+                    ropeSJ.distance = dist + hitDist;
+                    return;
+                }
+                else if (ropeCharDist < -hit.distance)
+                {
+                    ropeSJ.distance = dist - hitDist;
+                    return;
+                }
+            }
+
+            ropeSJ.distance -= speed;
+
+            if (ropeSJ.distance > range)
+                ropeSJ.distance = range;
+
+            if (ropeSJ.distance < 3)
+                ropeSJ.distance = 3;
+        }
     }
 
     public Vector2 GetNormalVector()

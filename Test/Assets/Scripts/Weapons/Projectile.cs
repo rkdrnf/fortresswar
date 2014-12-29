@@ -87,9 +87,20 @@ public abstract class Projectile : Weapon
         // Draw in Client, Collide in Server
         //Client
 
+        Rotate();
+
+        RangeCheck();
+        
+    }
+
+    protected void Rotate()
+    {
         Quaternion rot = Quaternion.FromToRotation(Vector3.right, new Vector3(rigidbody2D.velocity.x, rigidbody2D.velocity.y));
         transform.rotation = rot;
+    }
 
+    protected void RangeCheck()
+    {
         if (!Network.isServer) return;
 
         if ((transform.position - startPosition).sqrMagnitude > range * range)

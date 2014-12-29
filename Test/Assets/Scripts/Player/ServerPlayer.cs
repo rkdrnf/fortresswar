@@ -54,6 +54,13 @@ namespace Server
         NetworkView controllerView;
         NetworkView transformView;
 
+        public PhysicsMaterial2D bodyMaterial;
+        public PhysicsMaterial2D onAirMaterial;
+
+        CircleCollider2D bodyCollider;
+        CircleCollider2D footCollider;
+
+
         public Vector2 lookingDirection
         {
             get { return clientPlayer.lookingDirection; }
@@ -83,6 +90,10 @@ namespace Server
             networkView.group = NetworkViewGroup.PLAYER;
             weaponManager = GetComponent<WeaponManager>();
             weaponManager.Init(this);
+
+            var colliders = GetComponents<CircleCollider2D>();
+            bodyCollider = colliders[0];
+            footCollider = colliders[1];
 
             wallWalkTimer = 0f;
             animator = GetComponent<Animator>();
@@ -346,6 +357,10 @@ namespace Server
             {
                 rigidbody2D.velocity = new Vector2(horMov * jobStat.MovingSpeed, rigidbody2D.velocity.y);
                 Debug.Log("MaxSpeed: " + rigidbody2D.velocity);
+            }
+            else
+            {
+                rigidbody2D.velocity = Vector2.Lerp(rigidbody2D.velocity, new Vector2(0, rigidbody2D.velocity.y), Time.deltaTime * 6);
             }
 
             //
@@ -737,6 +752,7 @@ namespace Server
                 if (newRope != null)
                 { 
                     stateManager.SetState(CharacterState.ROPING);
+                    ToAirMaterial();
                 }
             }
         }
@@ -763,7 +779,28 @@ namespace Server
                 }
 
                 stateManager.SetState(CharacterState.FALLING);
+                ToGroundMaterial();
             }
+        }
+
+        public void ToAirMaterial()
+        {
+            bodyCollider.enabled = false;
+            bodyCollider.sharedMaterial = onAirMaterial;
+            bodyCollider.enabled = true;
+            footCollider.enabled = false;
+            footCollider.sharedMaterial = onAirMaterial;
+            footCollider.enabled = true;
+        }
+
+        public void ToGroundMaterial()
+        {
+            bodyCollider.enabled = false;
+            bodyCollider.sharedMaterial = bodyMaterial;
+            bodyCollider.enabled = true;
+            footCollider.enabled = false;
+            footCollider.sharedMaterial = bodyMaterial;
+            footCollider.enabled = true;
         }
     }
 
@@ -780,6 +817,7 @@ namespace Server
         public override void SetState(CharacterState newState)
         {
             base.SetState(newState);
+
 
             player.BroadcastState();
         }
