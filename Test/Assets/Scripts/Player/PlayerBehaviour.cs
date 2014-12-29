@@ -282,7 +282,6 @@ namespace Client
                 if (client.keyFocusManager.IsFocused(InputKeyFocus.PLAYER))
                 {
                     horMov = Input.GetAxisRaw("Horizontal");
-                    Debug.Log("HOR: " + horMov);
                     verMov = Input.GetAxisRaw("Vertical");
 
                     if (Input.GetKey(KeyCode.Space))
