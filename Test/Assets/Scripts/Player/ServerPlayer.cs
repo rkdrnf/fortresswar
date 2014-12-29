@@ -314,6 +314,12 @@ namespace Server
                         WhenWallWalking();
                         break;
                     }
+
+                    if (stateManager.IsInState(CharacterState.ROPING))
+                    {
+                        WhenRoping();
+                        break;
+                    }
                 }
                 while (false);
 
@@ -383,7 +389,24 @@ namespace Server
         {
             if (horMov != 0)
             {
-                rigidbody2D.velocity = new Vector2(horMov * jobStat.MovingSpeed, rigidbody2D.velocity.y);
+                if (horMov * rigidbody2D.velocity.x < 0) // 다른방향
+                { 
+                    rigidbody2D.AddForce(new Vector2(horMov * jobStat.MovingSpeed * 30f, 0));
+                }
+                else // 같은 방향
+                {
+                    rigidbody2D.AddForce(new Vector2(horMov * jobStat.MovingSpeed * 30f, 0));
+                    if (rigidbody2D.velocity.x > jobStat.MovingSpeed || rigidbody2D.velocity.x < -jobStat.MovingSpeed) //초과시 최대스피드로
+                    {
+                        rigidbody2D.velocity = new Vector2(horMov * jobStat.MovingSpeed, rigidbody2D.velocity.y);
+                    }
+                }
+                
+                //rigidbody2D.velocity = new Vector2(horMov * jobStat.MovingSpeed, rigidbody2D.velocity.y);
+            }
+            else
+            {
+                rigidbody2D.velocity = Vector2.Lerp(rigidbody2D.velocity, new Vector2(0, rigidbody2D.velocity.y), Time.deltaTime * 4);
             }
 
             if (rigidbody2D.velocity.y <= 0f)
@@ -563,6 +586,26 @@ namespace Server
 
             stateManager.SetState(CharacterState.WALL_JUMPING);
             rigidbody2D.velocity = new Vector2(direction == Direction.RIGHT ? jobStat.WallJumpingSpeed.x : -jobStat.WallJumpingSpeed.x, jobStat.WallJumpingSpeed.y);
+        }
+
+        void WhenRoping()
+        {
+            if (verMov != 0)
+            {
+                rope.ModifyLength(verMov * jobStat.RopingSpeed * Time.deltaTime);
+            }
+
+            if (horMov != 0)
+            {
+                Vector2 normalVector = rope.GetNormalVector();
+                Vector2 perpendicular = (horMov == 1) ? 
+                    new Vector2(normalVector.y, -normalVector.x)
+                    : new Vector2(-normalVector.y, normalVector.x);
+
+                perpendicular.Normalize();
+
+                rigidbody2D.AddForce(perpendicular * jobStat.RopeMovingSpeed * 70);
+            }
         }
 
         void Flip()

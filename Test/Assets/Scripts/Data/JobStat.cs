@@ -10,6 +10,8 @@ public class JobStat : ScriptableObject
     public int MaxHealth;
     public float MovingSpeed;
     public float JumpingSpeed;
+    public float RopingSpeed;
+    public float RopeMovingSpeed;
     public bool CanWallWalk;
     public bool CanWallJump;
     public float WallWalkingSpeed;

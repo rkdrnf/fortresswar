@@ -33,6 +33,8 @@ public class Rope : Projectile {
         transform.position = pck.position;
         rigidbody2D.velocity = pck.velocity;
 
+        C_ropeSource = Client.C_PlayerManager.Inst.Get(owner);
+
         OnSetRopeStuck(pck.stickInfo);
     }
 
@@ -41,6 +43,7 @@ public class Rope : Projectile {
         if (Network.isServer)
         {
             PlayerManager.Inst.Get(owner).OnFireRope(this);
+            C_ropeSource = Client.C_PlayerManager.Inst.Get(owner);
         }
     }
 
@@ -206,5 +209,15 @@ public class Rope : Projectile {
             Destroy(stickHJ);
 
         rigidbody2D.mass = 1;
+    }
+
+    public void ModifyLength(float speed)
+    {
+        ropeSJ.distance -= speed;
+    }
+
+    public Vector2 GetNormalVector()
+    {
+        return transform.position - C_ropeSource.transform.position;
     }
 }
