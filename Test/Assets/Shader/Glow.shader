@@ -67,6 +67,8 @@
 			sampler2D _MainTex;
 			float _Bound;
 			fixed4 _GlowColor;
+			
+			const float pi = 3.14159f;
 
 			fixed4 frag(v2f IN) : SV_Target
 			{
@@ -75,22 +77,22 @@
 
 				if(c.a == 0)
 				{
+					int i = 0;
+					float divideCount = 100.0f;
 					float alphaSum = 0.0f;
-					alphaSum += tex2D(_MainTex, IN.texcoord + half2(-_Bound, -_Bound)).a;
-					alphaSum += tex2D(_MainTex, IN.texcoord + half2(-_Bound, 0.0f)).a;
-					alphaSum += tex2D(_MainTex, IN.texcoord + half2(-_Bound, _Bound)).a;
-					alphaSum += tex2D(_MainTex, IN.texcoord + half2(0.0f, -_Bound)).a;
-					alphaSum += tex2D(_MainTex, IN.texcoord + half2(0.0f, _Bound)).a;
-					alphaSum += tex2D(_MainTex, IN.texcoord + half2(_Bound, -_Bound)).a;
-					alphaSum += tex2D(_MainTex, IN.texcoord + half2(_Bound, 0.0f)).a;
-					alphaSum += tex2D(_MainTex, IN.texcoord + half2(_Bound, _Bound)).a;
+					float deltaAngle = 360.0f / divideCount;
+					float angle = 0.0f;
+					for(i=0; i<divideCount; i++)
+					{
+						alphaSum += tex2D(_MainTex, IN.texcoord + _Bound * half2(cos(angle), sin(angle))).a;
+						angle += deltaAngle;
+					}
 
 					if(alphaSum > 0.0f)
 					{
 						c = _GlowColor;
 					}
 				}
-
 				return c;
 			}
 		ENDCG
