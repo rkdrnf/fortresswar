@@ -182,6 +182,12 @@ namespace Server
 
         public void SetEnv(CharacterEnv env, bool value)
         {
+            if (IsInEnv(env) != value)
+            {
+                Debug.Log("EnvSet : " + env + "   " + value);
+            }
+
+
             if (value)
             {
                 envFlag = envFlag | (1 << (int)env);
@@ -818,6 +824,8 @@ namespace Server
 
 
             player.BroadcastState();
+
+            Debug.Log(newState);
         }
     }
 }
