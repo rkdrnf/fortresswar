@@ -6,6 +6,8 @@ public class CameraBehaviour : MonoBehaviour {
     float height = 0.3f;
     float heightDamping = 8f;
 
+    float horizontalDamping = 3f;
+
     public Transform target;
 
 	// Use this for initialization
@@ -23,8 +25,10 @@ public class CameraBehaviour : MonoBehaviour {
         if (target != null)
         {
             float wantedHeight = target.position.y + height;
-
             float currentHeight = transform.position.y;
+
+            float wantedHorPoint = target.position.x + (target.localScale.x * 2);
+            float currentHorPoint = transform.position.x;
 
             // Damp the height
             //
@@ -32,7 +36,8 @@ public class CameraBehaviour : MonoBehaviour {
             // Set the position of the camera on the x-z plane to:
             // Set the height of the camera
             currentHeight = Mathf.Lerp(currentHeight, wantedHeight, heightDamping * Time.deltaTime);
-            transform.position = new Vector3(target.transform.position.x, currentHeight, -20);
+            currentHorPoint = Mathf.Lerp(currentHorPoint, wantedHorPoint, horizontalDamping * Time.deltaTime);
+            transform.position = new Vector3(currentHorPoint, currentHeight, -20);
 
 
             // Always look at the target

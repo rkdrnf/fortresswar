@@ -49,13 +49,13 @@ public class FrontBehaviour : MonoBehaviour {
 
             if (hit.collider != null && hit.normal.x == GetNormal(facing) && hit.normal.y == 0)
             {
-                Debug.Log(walledEnv.ToString() + "Walled!");
                 player.SetEnv(walledEnv, true);
                 return;
             }
             else if (hit.collider != null)
             {
-                Debug.Log(hit.normal);
+                
+                //Debug.Log(hit.normal);
             }
         }
 
