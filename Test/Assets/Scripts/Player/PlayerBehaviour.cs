@@ -27,11 +27,18 @@ namespace Client
         
         public float horMov;
         public float verMov;
+        public Vector2 lookingDirection;
 
         NetworkView transformView;
         NetworkView controllerView;
 
-        public Vector2 lookingDirection;
+        public Material outlineMaterial;
+        public Material normalMaterial;
+
+        public double highlightTime;
+        double highlightTimer;
+
+        SpriteRenderer characterRenderer;
 
         KeyCode[] weaponCodes = new KeyCode[4]{KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3, KeyCode.Alpha4};
 
@@ -82,6 +89,8 @@ namespace Client
             weaponManager.Init(this);
 
             animator = GetComponent<Animator>();
+
+            characterRenderer = GetComponent<SpriteRenderer>();
 
             serverPlayer = GetComponent<Server.ServerPlayer>();
 
@@ -268,6 +277,13 @@ namespace Client
             //Animation Rendering.
             //Every client must do his own Animation Rendering.
 
+            if (highlightTimer > 0)
+                highlightTimer -= Time.deltaTime;
+            if (highlightTimer <= 0)
+            {
+                ChangeMaterial(normalMaterial);
+            }
+
             animator.SetBool("HorMoving", horMov != 0);
             animator.SetBool("Dead", stateManager.IsInState(CharacterState.DEAD));
 
@@ -372,7 +388,19 @@ namespace Client
             {
                 health = 0;
             }
+
+            if(damage > 0)
+            { 
+                ChangeMaterial(outlineMaterial);
+                highlightTimer = highlightTime;
+            }
         }
+
+        void ChangeMaterial(Material material)
+        {
+            characterRenderer.material = material;
+        }
+
 
         [RPC]
         void Die(NetworkMessageInfo info)

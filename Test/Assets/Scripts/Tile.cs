@@ -27,6 +27,8 @@ public class Tile : MonoBehaviour {
     public spriteInfo[] sprites;
     private SpriteRenderer spriteRenderer;
 
+    public Sprite tileBack;
+
     void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
@@ -60,23 +62,25 @@ public class Tile : MonoBehaviour {
         if (destroyable)
         {
             health -= damage;
+
             if (health < 1)
             {
-                gameObject.SetActive(false);
-                //Destroy(gameObject);
+                DestroyTile();
+                return;
             }
 
-
-            try
-            { 
 
             spriteRenderer.sprite = GetSprite(health);
-            }
-            catch(Exception e)
-            {
-                Debug.Log(e);
-            }
         }
+    }
+
+    public void DestroyTile()
+    {
+        spriteRenderer.sprite = tileBack;
+        if (GetComponent<Collider2D>() != null)
+            Destroy(GetComponent<Collider2D>());
+        if (GetComponent<Rigidbody2D>())
+            Destroy(GetComponent<Rigidbody2D>());
     }
 
     public override string ToString()

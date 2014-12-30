@@ -57,8 +57,8 @@ namespace Server
         public PhysicsMaterial2D bodyMaterial;
         public PhysicsMaterial2D onAirMaterial;
 
-        CircleCollider2D bodyCollider;
-        CircleCollider2D footCollider;
+        Collider2D bodyCollider;
+        Collider2D footCollider;
 
 
         public Vector2 lookingDirection
@@ -91,7 +91,7 @@ namespace Server
             weaponManager = GetComponent<WeaponManager>();
             weaponManager.Init(this);
 
-            var colliders = GetComponents<CircleCollider2D>();
+            var colliders = GetComponents<Collider2D>();
             bodyCollider = colliders[0];
             footCollider = colliders[1];
 
@@ -681,6 +681,8 @@ namespace Server
         public void Damage(int damage, NetworkMessageInfo info)
         {
             if (!Network.isServer) return;
+
+            if (damage == 0) return;
 
             if (IsDead())
                 return;
