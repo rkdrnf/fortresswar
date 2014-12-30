@@ -11,12 +11,16 @@ using Const;
 
 public class Map : MonoBehaviour {
 
+    string mapName;
 
-    private Dictionary<int, Tile> tileList = new Dictionary<int,Tile>();
-    
-    MapData mapData;
+    int mapWidth;
+    int mapHeight;
+
+    Dictionary<int, Tile> tileList = new Dictionary<int,Tile>();
 
     double mapLoadTime;
+
+    Parallax backgroundPar;
 
     void Awake()
     {
@@ -50,8 +54,8 @@ public class Map : MonoBehaviour {
 
     void OnSetMapInfo(string mapName)
     {
-        this.mapData = Resources.Load("Maps/" + mapName, typeof(MapData)) as MapData;
-        this.Load(mapData);
+        MapData mapData = Resources.Load("Maps/" + mapName, typeof(MapData)) as MapData;
+        Load(mapData);
     }
 
     [RPC]
@@ -102,12 +106,15 @@ public class Map : MonoBehaviour {
     public void Clear()
     {
         tileList.Clear();
-        mapData = null;
     }
 
     public void Load(MapData mapData)
     {
-        this.mapData = mapData;
+        mapWidth = mapData.mapWidth;
+        mapHeight = mapData.mapHeight;
+        mapName = mapData.mapName;
+
+        LoadBackground(mapData.backgroundImage);
 
         foreach (TileData tileData in mapData.tiles)
         {
@@ -120,6 +127,20 @@ public class Map : MonoBehaviour {
 
             AddTile(tile);
         }
+    }
+
+    public void LoadBackground(Sprite image)
+    {
+        backgroundPar = GetComponentInChildren<Parallax>();
+        backgroundPar.SetImage(image, mapWidth, mapHeight);
+    }
+
+    public void OnApply(Sprite backgroundImage, int width, int height)
+    {
+        mapWidth = width;
+        mapHeight = height;
+
+        LoadBackground(backgroundImage);
     }
 
     [RPC]
@@ -139,10 +160,10 @@ public class Map : MonoBehaviour {
 
     public bool CheckInBorder(Transform obj)
     {
-        return (obj.position.x > -mapData.mapWidth / 2f
-            && obj.position.x < mapData.mapWidth / 2f
-            && obj.position.y > -mapData.mapHeight / 2f
-            && obj.position.y < mapData.mapHeight / 2f
+        return (obj.position.x > -mapWidth / 2f
+            && obj.position.x < mapWidth / 2f
+            && obj.position.y > -mapHeight / 2f
+            && obj.position.y < mapHeight / 2f
             );
     }
 
