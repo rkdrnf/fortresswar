@@ -12,6 +12,7 @@ public class GunBullet : Projectile {
         if (tile)
         {
             tile.Damage(damage);
+            ImpactTarget(targetCollider.rigidbody2D, impact);
             DestroyFromNetwork();
         }
     }
@@ -29,6 +30,7 @@ public class GunBullet : Projectile {
                 return;
             
             character.Damage(damage, new NetworkMessageInfo());
+            ImpactTarget(targetCollider.rigidbody2D, impact);
 
             DestroyFromNetwork();
         }
