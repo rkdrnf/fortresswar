@@ -33,7 +33,7 @@ public class Parallax : MonoBehaviour {
 
         displacement += (moveDistance * multiplier);
         transform.position = moveDistance - displacement;
-        Debug.Log("MoveDist: " + moveDistance);
+
         targetPosOld = targetPosNew;
 	}
 

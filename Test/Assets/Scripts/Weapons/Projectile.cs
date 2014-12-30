@@ -16,6 +16,7 @@ public abstract class Projectile : Weapon
 
     public int damage;
     public int range;
+    public int impact;
 
     public bool friendlyFire;
 
@@ -129,7 +130,7 @@ public abstract class Projectile : Weapon
 
                     return;
             }
-
+            
             OnCollideToPlayer(targetCollider);
         }
     }
@@ -137,6 +138,18 @@ public abstract class Projectile : Weapon
     protected abstract void OnCollideToTile(Collider2D targetCollider);
 
     protected abstract void OnCollideToPlayer(Collider2D targetCollider);
+
+    protected void ImpactTarget(Rigidbody2D targetBody, int impact)
+    {
+        const int multiplier = 100;
+        targetBody.AddForce(rigidbody2D.velocity.normalized * impact * multiplier, ForceMode2D.Impulse);
+    }
+
+    protected void ImpactTargetAway(Rigidbody2D targetBody, int impact)
+    {
+        const int multiplier = 100;
+        targetBody.AddForce((targetBody.position - (Vector2)transform.position).normalized * impact * multiplier, ForceMode2D.Impulse);
+    }
 
     void OnApplicationQuit()
     {

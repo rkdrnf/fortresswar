@@ -57,8 +57,25 @@ public class Missile : Projectile {
             else if (collidingObject.CompareTag("Player"))
             {
                 collidingObject.GetComponent<ServerPlayer>().Damage(DamageByDistance(collidingObject.transform.position), new NetworkMessageInfo());
+                ImpactTargetAway(collidingObject.rigidbody2D, ImpactByDistance(collidingObject.transform.position));
             }
         }
+    }
+
+    int ImpactByDistance(Vector3 targetPoint)
+    {
+        if (splashRange <= 0)
+        {
+            return impact;
+        }
+
+        Vector2 dist2D = transform.position - targetPoint;
+        int finalImpact = impact - (int)((impact * (dist2D.sqrMagnitude / sqrSplashRange)) * distDamping);
+
+        if (impact < 0)
+            return 0;
+
+        return impact;
     }
 
     int DamageByDistance(Vector3 targetPoint)
