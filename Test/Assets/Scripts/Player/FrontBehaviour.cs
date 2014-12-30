@@ -57,10 +57,6 @@ public class FrontBehaviour : MonoBehaviour {
                 
                 //Debug.Log(hit.normal);
             }
-
-            if (facing == Facing.FRONT)
-                Debug.Log("NOTHIT : " + i);
-
         }
 
         player.SetEnv(walledEnv, false);

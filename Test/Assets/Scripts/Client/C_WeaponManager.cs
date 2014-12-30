@@ -124,8 +124,6 @@ namespace Client
 
             C2S.Fire fire = new C2S.Fire(player.GetOwner(), -1, weaponType, direction);
 
-            Debug.Log(string.Format("Player {0} pressed Fire", Network.player));
-
             if (Network.isServer)
             {
                 s_weaponManager.ServerFire(fire.SerializeToBytes(), new NetworkMessageInfo());

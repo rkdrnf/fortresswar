@@ -359,14 +359,7 @@ namespace Server
             SetEnv(CharacterEnv.WALL_WALKED_LEFT, false);
             SetEnv(CharacterEnv.WALL_WALKED_RIGHT, false);
 
-            if (horMov != 0)
-            {
-                rigidbody2D.velocity = new Vector2(horMov * jobStat.MovingSpeed, rigidbody2D.velocity.y);
-            }
-            else
-            {
-                rigidbody2D.velocity = Vector2.Lerp(rigidbody2D.velocity, new Vector2(0, rigidbody2D.velocity.y), Time.deltaTime * 6);
-            }
+            MoveInGround();
 
             //
             if (verMov > 0)
@@ -374,6 +367,30 @@ namespace Server
                 Debug.Log("jump!!!");
                 Jump();
 
+            }
+        }
+
+        void MoveInGround()
+        {
+            const int multiplier = 300;
+            if (horMov != 0)
+            {
+                if (horMov * rigidbody2D.velocity.x < 0) // 다른방향
+                {
+                    rigidbody2D.AddForce(new Vector2(horMov * jobStat.MovingSpeed * multiplier, 0));
+                }
+                else // 같은 방향
+                {
+                    rigidbody2D.AddForce(new Vector2(horMov * jobStat.MovingSpeed * multiplier, 0));
+                    if (rigidbody2D.velocity.x > jobStat.MovingSpeed || rigidbody2D.velocity.x < -jobStat.MovingSpeed) //초과시 최대스피드로
+                    {
+                        rigidbody2D.velocity = new Vector2(horMov * jobStat.MovingSpeed, rigidbody2D.velocity.y);
+                    }
+                }
+            }
+            else
+            {
+                rigidbody2D.velocity = Vector2.Lerp(rigidbody2D.velocity, new Vector2(0, rigidbody2D.velocity.y), Time.deltaTime * 4);
             }
         }
 
