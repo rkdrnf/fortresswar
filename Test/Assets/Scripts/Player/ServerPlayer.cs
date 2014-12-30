@@ -356,7 +356,6 @@ namespace Server
             if (horMov != 0)
             {
                 rigidbody2D.velocity = new Vector2(horMov * jobStat.MovingSpeed, rigidbody2D.velocity.y);
-                Debug.Log("MaxSpeed: " + rigidbody2D.velocity);
             }
             else
             {
@@ -387,7 +386,6 @@ namespace Server
                     if (rigidbody2D.velocity.x > jobStat.MovingSpeed || rigidbody2D.velocity.x < -jobStat.MovingSpeed) //초과시 최대스피드로
                     {
                         rigidbody2D.velocity = new Vector2(horMov * jobStat.MovingSpeed, rigidbody2D.velocity.y);
-                        Debug.Log("MaxSpeed: " + rigidbody2D.velocity);
                     }
                 }
             }

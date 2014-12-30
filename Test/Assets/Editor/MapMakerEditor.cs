@@ -23,6 +23,7 @@ public class MapMakerEditor : Editor {
 
 	void OnSceneGUI()
 	{
+        
 		Event e = Event.current;
 
 		Vector3 worldMousePos = Camera.current.ScreenToWorldPoint (new Vector3(e.mousePosition.x, -e.mousePosition.y + Camera.current.pixelHeight, 0f));
@@ -30,6 +31,7 @@ public class MapMakerEditor : Editor {
 		Vector2 mousePos = new Vector2(worldMousePos.x, worldMousePos.y);
 		RaycastHit2D hit = Physics2D.Raycast(mousePos, Vector2.zero);
 
+        
 		
 		if (e.isKey && e.character == 'a') {
 			
@@ -58,6 +60,11 @@ public class MapMakerEditor : Editor {
                 }
 			}
 		}
+
+        if (e.isKey && e.character == 'g')
+        {
+            maker.ToggleGrid();
+        }
 	}
 
 
@@ -115,6 +122,12 @@ public class MapMakerEditor : Editor {
 		}
 
         GUILayout.BeginHorizontal();
+        GUILayout.Label("Background");
+        maker.backgroundImage = (Sprite)EditorGUILayout.ObjectField(maker.backgroundImage, typeof(Sprite), false, GUILayout.Width(150f));
+        
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
         GUILayout.BeginVertical();
         mapFileAsset = (MapData)EditorGUILayout.ObjectField(mapFileAsset, typeof(MapData), false, GUILayout.Width(100));
         GUILayout.EndVertical();
@@ -143,12 +156,13 @@ public class MapMakerEditor : Editor {
         {
             Clear();
         }
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
         if (GUILayout.Button("Fix Map", GUILayout.MinWidth(100)))
         {
             Fix();
+        }
+        if (GUILayout.Button("Apply", GUILayout.MinWidth(100)))
+        {
+            Apply();
         }
         GUILayout.EndHorizontal();
 
@@ -291,12 +305,14 @@ public class MapMakerEditor : Editor {
 
     public void SaveMap()
     {
+        Apply();
+
         string filePath = AssetDatabase.GenerateUniqueAssetPath(string.Format("Assets/Resources/Maps/{0}.asset", mapFileName));
 
         MapData mapAsset = CreateInstance<MapData>();
-        mapAsset.init(mapFileName, maker.mapWidth, maker.mapHeight, maker.tileSize, maker.tileSet, map.GetTileList());
+        mapAsset.init(mapFileName, maker.mapWidth, maker.mapHeight, maker.tileSize, maker.tileSet, map.GetTileList(), maker.backgroundImage);
 
-        mapAsset.hideFlags = HideFlags.NotEditable;
+        //mapAsset.hideFlags = HideFlags.NotEditable;
 
         AssetDatabase.CreateAsset(mapAsset, filePath);
         AssetDatabase.SaveAssets();
@@ -326,6 +342,11 @@ public class MapMakerEditor : Editor {
         {
             map.GetTileList().Add(GetTileIndex(tiles[i]), tiles[i]);
         }
+    }
+
+    public void Apply()
+    {
+        map.OnApply(maker.backgroundImage, maker.mapWidth, maker.mapHeight);
     }
 
     public int GetTileIndex(Tile tile)

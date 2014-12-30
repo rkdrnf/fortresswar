@@ -86,12 +86,6 @@ namespace Client
         {
             Event e = Event.current;
 
-            if (e.type == EventType.keyDown)
-            {
-                Debug.Log(e.keyCode);
-                Debug.Log(e.character);
-            }
-
             if (e.type == EventType.KeyDown && (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter))
             {
                 if (stateManager.IsInState(ChatState.NONE, ChatState.NEW_MESSAGE))

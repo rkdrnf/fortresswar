@@ -11,8 +11,9 @@ public class MapData : ScriptableObject
     public float tileSize = 1;
     public TileSet tileSet;
     public TileData[] tiles = new TileData[0];
+    public Sprite backgroundImage;
 
-    public void init(string mapName, int mapWidth, int mapHeight, float tileSize, TileSet tileSet, Dictionary<int, Tile> tileList)
+    public void init(string mapName, int mapWidth, int mapHeight, float tileSize, TileSet tileSet, Dictionary<int, Tile> tileList, Sprite background)
     {
         this.mapName = mapName;
         this.mapWidth = mapWidth;
@@ -20,6 +21,7 @@ public class MapData : ScriptableObject
         this.tileSize = tileSize;
         this.tileSet = tileSet;
         this.tiles = ImportTiles(tileList);
+        this.backgroundImage = background;
     }
 
     private TileData[] ImportTiles(Dictionary<int, Tile> tileList)
