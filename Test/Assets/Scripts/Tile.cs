@@ -35,10 +35,10 @@ public class Tile : MonoBehaviour {
         spriteRenderer = GetComponent<SpriteRenderer>();
         spriteRenderer.sprite = GetSprite(health);
 
+        splashAnimator = GetComponentInChildren<Animator>();
+
         if (splashAnimator != null)
-        {
-            splashAnimator.animation.Stop();
-        }
+            splashAnimator.enabled = false;
     }
 
     Sprite GetSprite(int health)
@@ -60,17 +60,16 @@ public class Tile : MonoBehaviour {
         if (destroyable)
         {
             health -= damage;
-
-            if (health < 1)
-            {
-                DestroyTile();
-                return;
-            }
         }
 
         S2C.DamageTile pck = new S2C.DamageTile(this.ID, damage, point);
-
         BroadcastDamage(pck);
+
+        if (health < 1)
+        {
+            DestroyTile();
+            return;
+        }
     }
 
     public void BroadcastDamage(S2C.DamageTile pck)
@@ -89,6 +88,8 @@ public class Tile : MonoBehaviour {
     {
         if (destroyable)
         {
+            PlaySplash(point);
+
             health -= damage;
 
             if (health < 1)
@@ -99,15 +100,17 @@ public class Tile : MonoBehaviour {
 
             spriteRenderer.sprite = GetSprite(health);
         }
-        PlaySplash();
     }
 
-    public void PlaySplash()
+    public void PlaySplash(Vector2 point)
     {
         if (splashAnimator != null)
         {
+            if (splashAnimator.enabled == false) { splashAnimator.enabled = true; }
+
+            splashAnimator.transform.position = point;
             splashAnimator.SetInteger("Index", 0);
-            splashAnimator.animation.Play();
+            splashAnimator.SetTrigger("CanChange");
         }
     }
 
@@ -125,3 +128,4 @@ public class Tile : MonoBehaviour {
         return transform.position.x.ToString() + "\t" + transform.position.y.ToString() + "\t" + ((int)tileType).ToString() + "\t" + health.ToString();
     }
 }
+

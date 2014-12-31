@@ -6,21 +6,19 @@ using ProtoBuf;
 
 public class GunBullet : Projectile {
 
-    protected override void OnCollideToTile(Collider2D targetCollider)
+    protected override void OnCollideToTile(Tile tile, Vector2 point)
     {
-        Tile tile = targetCollider.gameObject.GetComponent<Tile>();
         if (tile)
         {
-            tile.Damage(damage);
-            ImpactTarget(targetCollider.rigidbody2D, impact);
+            tile.Damage(damage, point);
+            ImpactTarget(tile.rigidbody2D, impact);
             DestroyFromNetwork();
         }
     }
 
-    protected override void OnCollideToPlayer(Collider2D targetCollider)
+    protected override void OnCollideToPlayer(ServerPlayer character, Vector2 point)
     {
         //When Hit My Player
-        ServerPlayer character = targetCollider.gameObject.GetComponent<ServerPlayer>();
         if (character)
         {
             if (owner == character.GetOwner())
@@ -30,7 +28,7 @@ public class GunBullet : Projectile {
                 return;
             
             character.Damage(damage, new NetworkMessageInfo());
-            ImpactTarget(targetCollider.rigidbody2D, impact);
+            ImpactTarget(character.rigidbody2D, impact);
 
             DestroyFromNetwork();
         }

@@ -24,8 +24,11 @@ public abstract class Projectile : Weapon
     private Vector2 direction;
     public GameObject explosionAnimation;
 
+    LayerMask tileMask;
+
     void Awake()
     {
+        tileMask = LayerMask.GetMask("Tile");
         networkView.group = NetworkViewGroup.PROJECTILE;
         startPosition = transform.position;
 
@@ -35,6 +38,7 @@ public abstract class Projectile : Weapon
         }
 
         OnAwake();
+
     }
 
     virtual protected void OnAwake() { }
@@ -114,15 +118,18 @@ public abstract class Projectile : Weapon
     {
         if (!Network.isServer) return;
 
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, rigidbody2D.velocity, 2f, tileMask);
+
         if (targetCollider.gameObject.CompareTag("Tile"))
         {
-            OnCollideToTile(targetCollider);
+            OnCollideToTile(targetCollider.GetComponent<Tile>(), hit.point);
         }
         else if (targetCollider.gameObject.CompareTag("Player"))
         {
+            ServerPlayer character = targetCollider.gameObject.GetComponent<ServerPlayer>();
+
             if (friendlyFire == false)
             {
-                ServerPlayer character = targetCollider.gameObject.GetComponent<ServerPlayer>();
                 PlayerSetting myPlayerSetting = PlayerManager.Inst.GetSetting(owner);
                 PlayerSetting targetPlayerSetting = PlayerManager.Inst.GetSetting(character.GetOwner());
 
@@ -131,13 +138,13 @@ public abstract class Projectile : Weapon
                     return;
             }
             
-            OnCollideToPlayer(targetCollider);
+            OnCollideToPlayer(character, hit.point);
         }
     }
 
-    protected abstract void OnCollideToTile(Collider2D targetCollider);
+    protected abstract void OnCollideToTile(Tile tile, Vector2 point);
 
-    protected abstract void OnCollideToPlayer(Collider2D targetCollider);
+    protected abstract void OnCollideToPlayer(ServerPlayer character, Vector2 point);
 
     protected void ImpactTarget(Rigidbody2D targetBody, int impact)
     {
