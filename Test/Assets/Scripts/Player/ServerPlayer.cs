@@ -98,6 +98,8 @@ namespace Server
             wallWalkTimer = 0f;
             animator = GetComponent<Animator>();
 
+            InfectingRopes = new List<Rope>();
+
             Component[] views = gameObject.GetComponents(typeof(NetworkView));
             foreach (Component view in views)
             {
@@ -234,6 +236,8 @@ namespace Server
 
             this.job = job;
             this.jobStat = newJobStat;
+            this.health = Mathf.Min(health, newJobStat.MaxHealth);
+            BroadcastHealth(this.health);
             
             weaponManager.LoadWeapons(newJobStat.Weapons);
         }
@@ -264,8 +268,8 @@ namespace Server
 
                 if (CanRevive())
                 {
-                    BroadcastRevive();
-
+                    Revive();
+                    
                 }
             }
 
@@ -693,15 +697,26 @@ namespace Server
                 health = 0;
             }
 
+            BroadcastDamage(damage);
+
+            if (health <= 0)
+                BroadcastDie();
+        }
+
+        void BroadcastHealth(int health)
+        {
+            if (!ServerGame.Inst.isDedicatedServer)
+                networkView.RPC("ClientSetHealth", RPCMode.All, health);
+            else
+                networkView.RPC("ClientSetHealth", RPCMode.Others, health);
+        }
+        
+        void BroadcastDamage(int damage)
+        {
             if (!ServerGame.Inst.isDedicatedServer)
                 networkView.RPC("ClientDamage", RPCMode.All, damage);
             else
                 networkView.RPC("ClientDamage", RPCMode.Others, damage);
-
-            if (health <= 0)
-            {
-                BroadcastDie();
-            }
         }
 
         public void BroadcastDie()
@@ -709,7 +724,11 @@ namespace Server
             if (!Network.isServer) return;
 
             OnDie();
-            networkView.RPC("Die", RPCMode.Others);
+
+            if (!ServerGame.Inst.isDedicatedServer)
+                networkView.RPC("Die", RPCMode.All);
+            else
+                networkView.RPC("Die", RPCMode.Others);
         }
 
         void OnDie()
@@ -735,10 +754,6 @@ namespace Server
 
         void BroadcastRevive()
         {
-            if (!Network.isServer) return;
-
-            Revive();
-
             if (!ServerGame.Inst.isDedicatedServer)
                 networkView.RPC("ClientRevive", RPCMode.All);
             else
@@ -756,10 +771,17 @@ namespace Server
 
             weaponManager.ReloadAll();
             health = jobStat.MaxHealth;
+
+            CutRopeAll();
+
+            BroadcastRevive();
         }
 
         public void RemoveCharacterFromNetwork()
         {
+            if (rope != null)
+                CutRope();
+
             Network.RemoveRPCs(transformView.viewID);
             Network.RemoveRPCs(controllerView.viewID);
             Network.Destroy(gameObject);
@@ -767,6 +789,8 @@ namespace Server
 
         Rope rope;
         object ropeLock = new object();
+
+        List<Rope> InfectingRopes;
 
         public void Roped(Rope newRope)
         {
@@ -778,6 +802,26 @@ namespace Server
                     ToAirMaterial();
                 }
             }
+        }
+
+        public void RopedToMe(Rope newRope)
+        {
+            InfectingRopes.Add(newRope);
+        }
+
+        public void CutInfectingRope(Rope rope)
+        {
+            InfectingRopes.Remove(rope);
+        }
+
+        public void CutRopeAll()
+        {
+            foreach(Rope rope in InfectingRopes)
+            {
+                rope.Cut();
+            }
+
+            CutRope();
         }
 
         public void OnFireRope(Rope newRope)
@@ -800,10 +844,14 @@ namespace Server
                     rope.Cut();
                     rope = null;
                 }
-
-                stateManager.SetState(CharacterState.FALLING);
-                ToGroundMaterial();
             }
+        }
+
+        public void StopRoping()
+        {
+            rope = null;
+            stateManager.SetState(CharacterState.FALLING);
+            ToGroundMaterial();
         }
 
         public void ToAirMaterial()
