@@ -20,9 +20,8 @@ public class Grenade : Projectile {
         sqrSplashRange = splashRange * splashRange;
     }
 
-    protected override void OnCollideToTile(Collider2D targetCollider)
+    protected override void OnCollideToTile(Tile tile, Vector2 point)
     {
-        Tile tile = targetCollider.gameObject.GetComponent<Tile>();
         if (tile)
         {
             DamageAround(new Vector2(transform.position.x, transform.position.y));
@@ -30,10 +29,9 @@ public class Grenade : Projectile {
         }
     }
 
-    protected override void OnCollideToPlayer(Collider2D targetCollider)
+    protected override void OnCollideToPlayer(ServerPlayer character, Vector2 point)
     {
         //When Hit My Player
-        ServerPlayer character = targetCollider.gameObject.GetComponent<ServerPlayer>();
         if (character)
         {
             if (owner == character.GetOwner())
@@ -57,9 +55,12 @@ public class Grenade : Projectile {
         for (int i = 0; i < colliders.Length; ++i)
         {
             GameObject collidingObject = colliders[i].gameObject;
+
+            LayerMask tileLayer = LayerMask.GetMask("Tile");
             if (collidingObject.CompareTag("Tile"))
             {
-                collidingObject.GetComponent<Tile>().Damage(DamageByDistance(collidingObject.transform.position));
+                RaycastHit2D hit = Physics2D.Linecast(collidingObject.transform.position, origin, tileLayer);
+                collidingObject.GetComponent<Tile>().Damage(DamageByDistance(collidingObject.transform.position), hit.point);
             }
             else if (collidingObject.CompareTag("Player"))
             {

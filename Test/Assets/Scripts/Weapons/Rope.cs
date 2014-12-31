@@ -63,23 +63,21 @@ public class Rope : Projectile {
     }
 
 
-    protected override void OnCollideToTile(Collider2D targetCollider)
+    protected override void OnCollideToTile(Tile tile, Vector2 point)
     {
         if (stickInfo.isSticked) return;
 
-        Tile tile = targetCollider.gameObject.GetComponent<Tile>();
         if (tile)
         {
             ConnectRope(tile.gameObject, tile.ID, ObjectType.TILE);
         }
     }
 
-    protected override void OnCollideToPlayer(Collider2D targetCollider)
+    protected override void OnCollideToPlayer(ServerPlayer character, Vector2 point)
     {
         if (stickInfo.isSticked) return;
 
         //When Hit My Player
-        ServerPlayer character = targetCollider.gameObject.GetComponent<ServerPlayer>();
         if (character)
         {
             if (owner == character.GetOwner())

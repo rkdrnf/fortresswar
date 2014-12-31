@@ -29,6 +29,9 @@ public class Map : MonoBehaviour {
 
     void OnNetworkInstantiate(NetworkMessageInfo info)
     {
+        mapLoadTime = 0f;
+        Game.Inst.SetMap(this);
+
         if (Network.isServer)
         {
             Debug.Log("[Server] map instantiated by " + info.sender);
@@ -37,9 +40,6 @@ public class Map : MonoBehaviour {
             OnSetMapInfo(Game.Inst.mapData.name);
             networkView.RPC("SetMapInfo", RPCMode.OthersBuffered, Game.Inst.mapData.name);
         }
-
-        mapLoadTime = 0f;
-        Game.Inst.SetMap(this);
     }
 
     [RPC]
@@ -56,6 +56,9 @@ public class Map : MonoBehaviour {
     {
         MapData mapData = Resources.Load("Maps/" + mapName, typeof(MapData)) as MapData;
         Load(mapData);
+
+        if (Network.isServer)
+            mapLoadTime = Network.time;
     }
 
     [RPC]
@@ -146,7 +149,7 @@ public class Map : MonoBehaviour {
     [RPC]
     public void ClientDamageTile(byte[] damageTileData, NetworkMessageInfo info)
     {
-        if (!Network.isClient) return;
+        // (!Network.isClient) return;
         //ServerCheck
 
         //old Info
