@@ -29,10 +29,16 @@ public class Tile : MonoBehaviour {
 
     public Sprite tileBack;
 
+    public Animator splashAnimator;
     void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
         spriteRenderer.sprite = GetSprite(health);
+
+        if (splashAnimator != null)
+        {
+            splashAnimator.animation.Stop();
+        }
     }
 
     Sprite GetSprite(int health)
@@ -47,17 +53,39 @@ public class Tile : MonoBehaviour {
         return sprites[index].sprite;
     }
 
-    public void Damage(int damage)
+    public void Damage(int damage, Vector2 point)
     {
         if (!Network.isServer) return;
 
-        DamageInternal(damage);
-        S2C.DamageTile pck = new S2C.DamageTile(this.ID, damage);
+        if (destroyable)
+        {
+            health -= damage;
 
-        map.networkView.RPC("ClientDamageTile", RPCMode.Others, pck.SerializeToBytes());
+            if (health < 1)
+            {
+                DestroyTile();
+                return;
+            }
+        }
+
+        S2C.DamageTile pck = new S2C.DamageTile(this.ID, damage, point);
+
+        BroadcastDamage(pck);
     }
 
-    public void DamageInternal(int damage)
+    public void BroadcastDamage(S2C.DamageTile pck)
+    {
+        if (!Server.ServerGame.Inst.isDedicatedServer)
+        {
+            map.networkView.RPC("ClientDamageTile", RPCMode.All, pck.SerializeToBytes());
+        }
+        else
+        {
+            map.networkView.RPC("ClientDamageTile", RPCMode.Others, pck.SerializeToBytes());
+        }
+    }
+
+    public void DamageInternal(int damage, Vector2 point)
     {
         if (destroyable)
         {
@@ -69,8 +97,17 @@ public class Tile : MonoBehaviour {
                 return;
             }
 
-
             spriteRenderer.sprite = GetSprite(health);
+        }
+        PlaySplash();
+    }
+
+    public void PlaySplash()
+    {
+        if (splashAnimator != null)
+        {
+            splashAnimator.SetInteger("Index", 0);
+            splashAnimator.animation.Play();
         }
     }
 

@@ -81,7 +81,7 @@ public class Map : MonoBehaviour {
         foreach(var tileStatus in mapInfo.tileStatusList)
         {
             Tile tile = GetTile(tileStatus.ID);
-            tile.DamageInternal(tile.maxHealth - tileStatus.health);
+            tile.DamageInternal(tile.maxHealth - tileStatus.health, Vector2.zero);
         }
 
         Client.ClientGame.Inst.OnMapLoadCompleted();
@@ -155,7 +155,7 @@ public class Map : MonoBehaviour {
 
         S2C.DamageTile pck = S2C.DamageTile.DeserializeFromBytes(damageTileData);
         Tile tile = GetTile(pck.tileID);
-        tile.DamageInternal(pck.damage);
+        tile.DamageInternal(pck.damage, pck.point);
     }
 
     public bool CheckInBorder(Transform obj)

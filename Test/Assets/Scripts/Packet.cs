@@ -93,10 +93,11 @@ namespace Packet
         public class DamageTile : Packet<DamageTile>
         {
             public DamageTile() { }
-            public DamageTile(int tileID, int damage)
+            public DamageTile(int tileID, int damage, Vector2 point)
             {
                 this.tileID = tileID;
                 this.damage = damage;
+                this.point = point;
             }
             [ProtoMember(1)]
             public int packetID = -1;
@@ -104,6 +105,8 @@ namespace Packet
             public int tileID;
             [ProtoMember(3)]
             public int damage;
+            [ProtoMember(4)]
+            public PacketVector2 point;
         }
 
         [ProtoContract]
