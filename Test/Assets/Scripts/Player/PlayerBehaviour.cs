@@ -110,6 +110,11 @@ namespace Client
                     transformView = nView;
                 }
             }
+
+            if (Network.isClient)
+            {
+                GetComponent<Rigidbody2D>().isKinematic = true;
+            }
         }
 
         void SetHealth(int health, double settingTime)
@@ -120,6 +125,12 @@ namespace Client
 
             healthLastSet = settingTime;
             this.health = health;
+
+            if (health < 0)
+            {
+                health = 0;
+            }
+            
         }
 
         [RPC]
@@ -287,7 +298,6 @@ namespace Client
             animator.SetBool("HorMoving", horMov != 0);
             animator.SetBool("Dead", stateManager.IsInState(CharacterState.DEAD));
 
-
             //Client Input Processing
 
             do
@@ -373,27 +383,26 @@ namespace Client
         
         
 
+        [RPC]
+        void ClientSetHealth(int health, NetworkMessageInfo info)
+        {
+            //ServerCheck
 
+            SetHealth(health, info.timestamp);
+        }
 
         [RPC]
         void ClientDamage(int damage, NetworkMessageInfo info)
         {
             //ServerCheck
 
+            if (damage == 0) return;
+
             //old damage;
-            if (healthLastSet > info.timestamp) return;
+            SetHealth(health - damage, info.timestamp);
 
-            health -= damage;
-            if (health < 0)
-            {
-                health = 0;
-            }
-
-            if(damage > 0)
-            { 
-                ChangeMaterial(outlineMaterial);
-                highlightTimer = highlightTime;
-            }
+            ChangeMaterial(outlineMaterial);
+            highlightTimer = highlightTime;
         }
 
         void ChangeMaterial(Material material)
@@ -406,6 +415,8 @@ namespace Client
         void Die(NetworkMessageInfo info)
         {
             //ServerCheck
+
+            SetHealth(0, info.timestamp);
         }
 
         public bool IsDead()

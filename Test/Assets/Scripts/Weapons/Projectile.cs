@@ -173,5 +173,9 @@ public abstract class Projectile : Weapon
             GameObject explosion = (GameObject)Instantiate(explosionAnimation, transform.position, transform.rotation);
             
         }
+
+        OnDestroyInternal();
     }
+
+    protected virtual void OnDestroyInternal() { }
 }
