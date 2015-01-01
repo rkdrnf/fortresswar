@@ -29,16 +29,13 @@ public class Tile : MonoBehaviour {
 
     public Sprite tileBack;
 
-    public Animator splashAnimator;
+    public ParticleSystem2D splashMaker;
     void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
         spriteRenderer.sprite = GetSprite(health);
 
-        splashAnimator = GetComponentInChildren<Animator>();
-
-        if (splashAnimator != null)
-            splashAnimator.enabled = false;
+        splashMaker = GetComponentInChildren<ParticleSystem2D>();
     }
 
     Sprite GetSprite(int health)
@@ -88,7 +85,7 @@ public class Tile : MonoBehaviour {
     {
         if (destroyable)
         {
-            PlaySplash(point);
+            PlaySplash();
 
             health -= damage;
 
@@ -102,15 +99,11 @@ public class Tile : MonoBehaviour {
         }
     }
 
-    public void PlaySplash(Vector2 point)
+    public void PlaySplash()
     {
-        if (splashAnimator != null)
-        {
-            if (splashAnimator.enabled == false) { splashAnimator.enabled = true; }
-
-            splashAnimator.transform.position = point;
-            splashAnimator.SetInteger("Index", 0);
-            splashAnimator.SetTrigger("CanChange");
+        if(splashMaker != null)
+        { 
+            splashMaker.Play();
         }
     }
 
