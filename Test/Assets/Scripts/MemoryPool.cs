@@ -18,7 +18,10 @@ public abstract class MemoryPool<T>
 
         for (int i = 0; i < size; i++)
         {
-            prefabs.Add((GameObject)MonoBehaviour.Instantiate(prefab));
+            GameObject obj = (GameObject)MonoBehaviour.Instantiate(prefab);
+            prefabs.Add(obj);
+            obj.SetActive(false);
+            
         }
     }
 
@@ -33,6 +36,7 @@ public abstract class MemoryPool<T>
                 continue;
             else
             {
+                currentIndex = i;
                 lock (poolLock)
                 {
                     obj.SetActive(true);
