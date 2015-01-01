@@ -62,7 +62,7 @@ public class ParticleSystem2D : MonoBehaviour {
         totalSpawningCount = 0;
         durationTimer = duration;
 
-        InvokeRepeating("CreateParticle", 0f, 2);
+        //InvokeRepeating("CreateParticle", 0f, 2);
     }
 
     public void Stop()
@@ -105,12 +105,9 @@ public class ParticleSystem2D : MonoBehaviour {
             size, bounds, lifeTime, transform.position);
     }
 
-	
-    /*
-	// Update is called once per frame
-	void Update () {
-        return;
 
+    // Update is called once per frame
+    void Update () {
         if (!isPlaying) return;
 
         if (durationTimer < 0)
@@ -143,39 +140,12 @@ public class ParticleSystem2D : MonoBehaviour {
 
         for(int i = 0; i < spawningCount; i++)
         {
-            GameObject particleObj = new GameObject();
-            Rigidbody2D pBody = particleObj.AddComponent<Rigidbody2D>();
-            float randomX = Random.value - 0.5f;
-            float randomY = Random.value - 0.5f;
-            Vector3 randomDirection = new Vector3(randomX, randomY, 0);
-            
-            pBody.velocity = (randomDirection * Random.Range(minVelocity, maxVelocity)) + (Vector3)gravityModifier;
-            pBody.gravityScale = gravityScale;
-            pBody.fixedAngle = true;
-
-            if (collide)
-            {
-                BoxCollider2D pColl = particleObj.AddComponent<BoxCollider2D>();
-                pColl.size = sprite.bounds.size;
-                pColl.sharedMaterial = collidingMaterial;
-            }
-
-            SpriteRenderer pRenderer = particleObj.AddComponent<SpriteRenderer>();
-
-            pRenderer.sprite = sprite;
-            pRenderer.material = material;
-            pRenderer.color = colors[(int)(Random.value * colors.Length)];
-
-            particleObj.transform.localScale = Vector3.one * (size / sprite.bounds.size.x);
-            particleObj.layer = particleLayer;
-            //particleObj.transform.parent = this.transform;
-
-            particleObj.transform.position = this.transform.position + (Vector3)FindBorder(randomX, randomY);
-
-            Destroy(particleObj, lifeTime);
+            Particle2D particleObj = Client.ClientGame.Inst.particlePool.Borrow();
+        particleObj.Init(minVelocity, maxVelocity, gravityModifier, gravityScale,
+            collide, sprite, collidingMaterial, material, colors,
+            size, bounds, lifeTime, transform.position);
         }
-	}
-     * */
+    }
 
-    
+
 }

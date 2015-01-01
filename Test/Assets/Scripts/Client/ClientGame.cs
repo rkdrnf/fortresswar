@@ -61,7 +61,7 @@ namespace Client
             int particleLayer = LayerMask.NameToLayer("Particle");
             Physics2D.IgnoreLayerCollision(particleLayer, LayerMask.NameToLayer("Default"));
 
-            particlePool = new ParticlePool(particlePrefab, 300);
+            particlePool = new ParticlePool(particlePrefab, 800);
         }
     
         /// <summary>
