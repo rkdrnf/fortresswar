@@ -44,6 +44,8 @@ namespace Client
         bool mapLoaded;
         bool playerLoaded;
 
+        public Map map;
+
         public ParticlePool particlePool;
 
         public GameObject particlePrefab;
@@ -60,6 +62,7 @@ namespace Client
 
             int particleLayer = LayerMask.NameToLayer("Particle");
             Physics2D.IgnoreLayerCollision(particleLayer, LayerMask.NameToLayer("Default"));
+            Physics2D.IgnoreLayerCollision(particleLayer, particleLayer);
 
             particlePool = new ParticlePool(particlePrefab, 800);
         }
@@ -191,8 +194,9 @@ namespace Client
             Debug.Log("MessgeQueue enabled");
         }
 
-        public void OnMapLoadCompleted()
+        public void OnMapLoadCompleted(Map map)
         {
+            this.map = map;
             mapLoaded = true;
 
             if (IsPlayerMapLoaded())
