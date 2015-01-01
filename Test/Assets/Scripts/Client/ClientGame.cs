@@ -43,7 +43,11 @@ namespace Client
 
         bool mapLoaded;
         bool playerLoaded;
-    
+
+        public ParticlePool particlePool;
+
+        public GameObject particlePrefab;
+
         void Awake()
         {
             instance = this;
@@ -53,6 +57,11 @@ namespace Client
         {
             keyFocusManager = new KeyFocusManager(InputKeyFocus.PLAYER);
             mouseFocusManager = new MouseFocusManager(InputMouseFocus.PLAYER);
+
+            int particleLayer = LayerMask.NameToLayer("Particle");
+            Physics2D.IgnoreLayerCollision(particleLayer, LayerMask.NameToLayer("Default"));
+
+            particlePool = new ParticlePool(particlePrefab, 300);
         }
     
         /// <summary>
