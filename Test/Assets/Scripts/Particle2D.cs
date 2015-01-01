@@ -5,6 +5,8 @@ using UnityEngine;
 
 public class Particle2D : MonoBehaviour
 {
+    public LayerMask collidingMask;
+
     float lifeTime;
     float inclination;
     Bounds bounds;
@@ -12,6 +14,16 @@ public class Particle2D : MonoBehaviour
     Rigidbody2D pBody;
     BoxCollider2D pColl;
     SpriteRenderer pRenderer;
+
+    enum OutDirection
+    {
+        LEFT, 
+        RIGHT, 
+        UP, 
+        DOWN
+    }
+
+    int collisionCount;
     
     public void Awake()
     {
@@ -26,6 +38,7 @@ public class Particle2D : MonoBehaviour
         bool collide, Sprite sprite, PhysicsMaterial2D collidingMaterial, Material material, Color[] colors,
         float size, Bounds bounds, float lifeTime, Vector3 position)
     {
+        collisionCount = 0;
         this.lifeTime = lifeTime;
         this.bounds = bounds;
         inclination = bounds.size.y / bounds.size.x;
@@ -33,6 +46,20 @@ public class Particle2D : MonoBehaviour
         float randomX = Random.value - 0.5f;
         float randomY = Random.value - 0.5f;
         Vector3 randomDirection = new Vector3(randomX, randomY, 0);
+
+        transform.position = position + (Vector3)FindBorder(randomX, randomY); 
+        
+        //낀 입자 체크
+        RaycastHit2D[] hits = Physics2D.RaycastAll(position, randomDirection, 1.2f, collidingMask);
+        
+        if (hits.Length > 1)
+        {
+            Disable();
+            return;
+        }
+
+        Map map = Client.ClientGame.Inst.map;
+
 
         pBody.velocity = (randomDirection * Random.Range(minVelocity, maxVelocity)) + (Vector3)gravityModifier;
         pBody.gravityScale = gravityScale;
@@ -57,7 +84,7 @@ public class Particle2D : MonoBehaviour
 
         //particleObj.transform.parent = this.transform;
 
-        transform.position = position + (Vector3)FindBorder(randomX, randomY);
+        
 
         Invoke("Disable", lifeTime);
     }
