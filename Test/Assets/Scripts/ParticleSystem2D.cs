@@ -3,52 +3,39 @@ using System.Collections;
 
 public class ParticleSystem2D : MonoBehaviour {
 
-    public Sprite sprite;
-    public Bounds bounds;
-    public Material material;
-    public Color[] colors;
-    
-
-    public float size;
-    
-    public bool collide;
     public LayerMask collidingMask;
-    public PhysicsMaterial2D collidingMaterial;
-
-    public double duration;
-    public float rate;
-    public bool loop;
-
-    public float lifeTime;
-    public int maxCount;
-
-    public float minVelocity;
-    public float maxVelocity;
-
-    public int gravityScale;
-    public Vector2 gravityModifier;
-
-    public bool playAutomatically;
-
+    ParticleSystem2DData pSystemData;
 
     double durationTimer;
     double spawnTimer;
     int spawningCount;
     int totalSpawningCount;
 
-    
+    float inclination;
 
     bool isPlaying;
 
-	// Use this for initialization
-	void Start () {
+    // Use this for initialization
+    void Awake()
+    {
+        
+    }
+
+	
+	public void Init (ParticleSystem2DData setting) {
         spawnTimer = 0;
         spawningCount = 0;
         totalSpawningCount = 0;
         isPlaying = false;
-        
 
-        if (playAutomatically)
+        pSystemData = setting;
+
+        if (pSystemData.bounds.size.x != 0)
+        {
+            inclination = pSystemData.bounds.size.y / pSystemData.bounds.size.x;
+        }
+
+        if (pSystemData.playAutomatically)
         {
             Play();
         }
@@ -60,30 +47,29 @@ public class ParticleSystem2D : MonoBehaviour {
         spawnTimer = 0;
         spawningCount = 0;
         totalSpawningCount = 0;
-        durationTimer = duration;
-
-        //InvokeRepeating("CreateParticle", 0f, 2);
+        durationTimer = pSystemData.duration;
     }
 
     public void Stop()
     {
         isPlaying = false;
-        CancelInvoke("CreateParticle");
+        Disable();
     }
 
-    void CreateParticle()
+    public void Disable()
     {
-        if (!isPlaying)
-        {
-            Stop();
-            return;
-        }
+        gameObject.SetActive(false);
+    }
+
+    // Update is called once per frame
+    void Update () {
+        if (!isPlaying) return;
 
         if (durationTimer < 0)
         {
-            if (loop)
+            if (pSystemData.loop)
             {
-                durationTimer = duration;
+                durationTimer = pSystemData.duration;
                 totalSpawningCount = 0;
             }
             else
@@ -93,59 +79,127 @@ public class ParticleSystem2D : MonoBehaviour {
             }
         }
 
-        if (totalSpawningCount > maxCount) { Stop(); return; }
-
-        durationTimer -= rate;
-
-        totalSpawningCount += 1;
-
-        Particle2D particleObj = Client.ClientGame.Inst.particlePool.Borrow();
-        particleObj.Init(minVelocity, maxVelocity, gravityModifier, gravityScale,
-            collide, sprite, collidingMaterial, material, colors,
-            size, bounds, lifeTime, transform.position);
-    }
-
-
-    // Update is called once per frame
-    void Update () {
-        if (!isPlaying) return;
-
-        if (durationTimer < 0)
-        {
-            if (loop)
-            { 
-                durationTimer = duration;
-                totalSpawningCount = 0;
-            }
-            else
-            {
-                isPlaying = false;
-                return;
-            }
-        }
-
-        if (totalSpawningCount > maxCount) return;
+        if (totalSpawningCount > pSystemData.maxCount) { Stop(); return; }
 
         durationTimer -= Time.deltaTime;
             
         spawnTimer += Time.deltaTime;
-        spawningCount = (int)(spawnTimer / rate);
+        spawningCount = (int)(spawnTimer / pSystemData.rate);
 
         totalSpawningCount += spawningCount;
 
-        if (spawnTimer > rate)
+        if (spawnTimer > pSystemData.rate)
         {
-            spawnTimer -= spawningCount * rate;
+            spawnTimer -= spawningCount * pSystemData.rate;
         }
 
         for(int i = 0; i < spawningCount; i++)
         {
-            Particle2D particleObj = Client.ClientGame.Inst.particlePool.Borrow();
-        particleObj.Init(minVelocity, maxVelocity, gravityModifier, gravityScale,
-            collide, sprite, collidingMaterial, material, colors,
-            size, bounds, lifeTime, transform.position);
+            Particle2DData randomParticle = MakeRandomParticle();
+            if (randomParticle == null)
+                continue;
+
+            Particle2D particleObj = Client.ParticleManager.Inst.particlePool.Borrow();
+            particleObj.Init(randomParticle);
         }
     }
 
+    Particle2DData MakeRandomParticle()
+    {
+        Particle2DData p = new Particle2DData();
+        p.lifeTime = pSystemData.lifeTime;
 
+        float randomX = Random.value - 0.5f;
+        float randomY = Random.value - 0.5f;
+
+        Vector3 randomDirection = new Vector3(randomX, randomY, 0);
+        
+        if (pSystemData.bounds.size.x == 0)
+        {
+            p.position = transform.position;
+        }
+        else
+        {
+            p.position = transform.position + (Vector3)FindBorder(randomX, randomY);
+        }
+        
+
+        RaycastHit2D[] hits = Physics2D.RaycastAll(transform.position, randomDirection, 1.2f, collidingMask);
+
+        if (hits.Length > 1)
+        {
+            return null;
+        }
+
+        p.velocity = (randomDirection * Random.Range(pSystemData.minVelocity, pSystemData.maxVelocity)) + (Vector3)(pSystemData.gravityModifier);
+        p.gravityScale = pSystemData.gravityScale;
+
+        p.collide = pSystemData.collide;
+        p.sprite = pSystemData.sprite;
+        p.collidingMaterial = pSystemData.collidingMaterial;
+
+        p.material = pSystemData.material;
+        p.color = pSystemData.colors[(int)(Random.value * pSystemData.colors.Length)];
+
+        p.scale = Vector3.one * (pSystemData.size / pSystemData.sprite.bounds.size.x);
+
+        return p;
+    }
+
+    Vector2 FindBorder(float x, float y)
+    {
+        Bounds bounds = pSystemData.bounds;
+
+        float particleInc = y / x;
+
+        if (x >= 0 && y >= 0) //1사분면
+        {
+            if (inclination > particleInc)
+            {
+                return new Vector2(bounds.size.x / 2, y * bounds.size.y);
+            }
+            else
+            {
+                return new Vector2(x * bounds.size.x, bounds.size.y / 2);
+            }
+        }
+
+        if (x < 0 && y >= 0) //2사분면
+        {
+            if (-inclination < particleInc)
+            {
+                return new Vector2(-bounds.size.x / 2, y * bounds.size.y);
+            }
+            else
+            {
+                return new Vector2(x * bounds.size.x, bounds.size.y / 2);
+            }
+        }
+
+        if (x < 0 && y < 0) //3사분면
+        {
+            if (inclination > particleInc)
+            {
+                return new Vector2(-bounds.size.x / 2, y * bounds.size.y);
+            }
+            else
+            {
+                return new Vector2(x * bounds.size.x, -bounds.size.y / 2);
+            }
+        }
+
+        if (x >= 0 && y < 0)
+        {
+            if (-inclination < particleInc)
+            {
+                return new Vector2(bounds.size.x / 2, y * bounds.size.y);
+            }
+            else
+            {
+                return new Vector2(x * bounds.size.x, bounds.size.y / 2);
+            }
+        }
+
+        return Vector2.zero;
+    }
 }

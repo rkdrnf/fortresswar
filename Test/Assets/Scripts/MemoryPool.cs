@@ -47,7 +47,7 @@ public abstract class MemoryPool<T>
 
         Debug.Log("pool exceeded!!");
 
-        throw new System.Exception("Pool Exceeded");
+        throw new System.Exception(string.Format("Pool Exceeded {0}", typeof(T)));
     }
 
     public abstract T GetObject(GameObject obj);
@@ -65,5 +65,18 @@ public class ParticlePool : MemoryPool<Particle2D>
     public override Particle2D GetObject(GameObject obj)
     {
         return obj.GetComponent<Particle2D>();
+    }
+}
+
+public class ParticleSystem2DPool : MemoryPool<ParticleSystem2D>
+{
+    public ParticleSystem2DPool(GameObject prefab, int size)
+    {
+        Init (prefab, size);
+    }
+
+    public override ParticleSystem2D GetObject(GameObject obj)
+    {
+        return obj.GetComponent<ParticleSystem2D>();
     }
 }
