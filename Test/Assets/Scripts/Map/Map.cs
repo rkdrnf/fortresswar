@@ -180,5 +180,13 @@ public class Map : MonoBehaviour {
         Destroy(gameObject);
     }
 
-    
+    public static Tile GetTile(float x, float y)
+    {
+        RaycastHit hit;
+        if (Physics.Raycast(new Vector3(x, y, 1), new Vector3(0, 0, -1), out hit, 2, LayerMask.NameToLayer("Tile")))
+        {
+            return hit.collider.gameObject.GetComponent<Tile>();
+        }
+        else return null;
+    }
 }
