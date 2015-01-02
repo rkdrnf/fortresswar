@@ -40,15 +40,11 @@ namespace Client
     
         public KeyFocusManager keyFocusManager;
         public MouseFocusManager mouseFocusManager;
-
+        
         bool mapLoaded;
         bool playerLoaded;
 
         public Map map;
-
-        public ParticlePool particlePool;
-
-        public GameObject particlePrefab;
 
         void Awake()
         {
@@ -59,12 +55,6 @@ namespace Client
         {
             keyFocusManager = new KeyFocusManager(InputKeyFocus.PLAYER);
             mouseFocusManager = new MouseFocusManager(InputMouseFocus.PLAYER);
-
-            int particleLayer = LayerMask.NameToLayer("Particle");
-            Physics2D.IgnoreLayerCollision(particleLayer, LayerMask.NameToLayer("Default"));
-            Physics2D.IgnoreLayerCollision(particleLayer, particleLayer);
-
-            particlePool = new ParticlePool(particlePrefab, 800);
         }
     
         /// <summary>

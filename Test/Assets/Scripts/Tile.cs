@@ -18,6 +18,7 @@ public class Tile : MonoBehaviour {
 
     public int ID;
     public Const.TileType tileType;
+    public Const.ParticleType particleType;
 	public bool destroyable;
 	public int health;
     public int maxHealth;
@@ -29,13 +30,10 @@ public class Tile : MonoBehaviour {
 
     public Sprite tileBack;
 
-    public ParticleSystem2D splashMaker;
     void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
         spriteRenderer.sprite = GetSprite(health);
-
-        splashMaker = GetComponentInChildren<ParticleSystem2D>();
     }
 
     Sprite GetSprite(int health)
@@ -101,10 +99,10 @@ public class Tile : MonoBehaviour {
 
     public void PlaySplash()
     {
-        if(splashMaker != null)
-        { 
-            splashMaker.Play();
-        }
+        ParticleSystem2D pSystem = Client.ParticleManager.Inst.particleSystemPool.Borrow();
+        pSystem.Init(Client.ParticleManager.Inst.particleSet.particles[(int)particleType]);
+        pSystem.transform.position = transform.position;
+        pSystem.Play();
     }
 
     public void DestroyTile()

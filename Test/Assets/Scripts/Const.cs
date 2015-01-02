@@ -178,5 +178,11 @@ namespace Const
         INSTANT,
         CHARGE
     }
+
+    public enum ParticleType
+    {
+        DIRT,
+        STONE
+    }
 }
 

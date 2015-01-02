@@ -298,6 +298,58 @@ public class MapMakerEditor : Editor {
         EditorGUIUtility.PingObject(job);
     }
 
+    [MenuItem("Assets/Create/Particle2D")]
+    static void CreateParticle2D()
+    {
+        ParticleSystem2DData particle = CreateInstance<ParticleSystem2DData>();
+        var path = AssetDatabase.GetAssetPath(Selection.activeObject);
+
+        if (string.IsNullOrEmpty(path))
+        {
+            path = "Assets";
+        }
+        else if (Path.GetExtension(path) != "")
+        {
+            path.Replace(Path.GetFileName(path), "");
+        }
+        else
+        {
+            path += Path.DirectorySeparatorChar;
+        }
+
+        var assetPathAndName = AssetDatabase.GenerateUniqueAssetPath(path + "Particle.asset");
+        AssetDatabase.CreateAsset(particle, assetPathAndName);
+        AssetDatabase.SaveAssets();
+        Selection.activeObject = particle;
+        EditorGUIUtility.PingObject(particle);
+    }
+
+    [MenuItem("Assets/Create/Particle2DSet")]
+    static void CreateParticle2DSet()
+    {
+        ParticleSystem2DSet particle = CreateInstance<ParticleSystem2DSet>();
+        var path = AssetDatabase.GetAssetPath(Selection.activeObject);
+
+        if (string.IsNullOrEmpty(path))
+        {
+            path = "Assets";
+        }
+        else if (Path.GetExtension(path) != "")
+        {
+            path.Replace(Path.GetFileName(path), "");
+        }
+        else
+        {
+            path += Path.DirectorySeparatorChar;
+        }
+
+        var assetPathAndName = AssetDatabase.GenerateUniqueAssetPath(path + "ParticleSet.asset");
+        AssetDatabase.CreateAsset(particle, assetPathAndName);
+        AssetDatabase.SaveAssets();
+        Selection.activeObject = particle;
+        EditorGUIUtility.PingObject(particle);
+    }
+
     public void LoadMap()
     {
         map.Load(mapFileAsset);
