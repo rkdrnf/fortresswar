@@ -15,6 +15,8 @@ public class ParticleSystem2D : MonoBehaviour {
 
     bool isPlaying;
 
+    static readonly float PARTICLE_SIZE = 0.15f;
+
     // Use this for initialization
     void Awake()
     {
@@ -122,15 +124,17 @@ public class ParticleSystem2D : MonoBehaviour {
         {
             p.position = transform.position + (Vector3)FindBorder(randomX, randomY);
         }
-        
 
+        if (Map.GetTile(p.position.x, p.position.y))
+            return null;
+        /*
         RaycastHit2D[] hits = Physics2D.RaycastAll(transform.position, randomDirection, 1.2f, collidingMask);
 
         if (hits.Length > 1)
         {
             return null;
         }
-
+        */
         p.velocity = (randomDirection * Random.Range(pSystemData.minVelocity, pSystemData.maxVelocity)) + (Vector3)(pSystemData.gravityModifier);
         p.gravityScale = pSystemData.gravityScale;
 
@@ -149,57 +153,16 @@ public class ParticleSystem2D : MonoBehaviour {
     Vector2 FindBorder(float x, float y)
     {
         Bounds bounds = pSystemData.bounds;
-
         float particleInc = y / x;
-
-        if (x >= 0 && y >= 0) //1사분면
+        if (Mathf.Abs(inclination) >= Mathf.Abs(particleInc))
         {
-            if (inclination > particleInc)
-            {
-                return new Vector2(bounds.size.x / 2, y * bounds.size.y);
-            }
-            else
-            {
-                return new Vector2(x * bounds.size.x, bounds.size.y / 2);
-            }
+            x = (x >= 0) ? (bounds.size.x + PARTICLE_SIZE) / 2.0f : -(bounds.size.x + PARTICLE_SIZE) / 2.0f;
+            return new Vector2(x, x * particleInc);
         }
-
-        if (x < 0 && y >= 0) //2사분면
+        else
         {
-            if (-inclination < particleInc)
-            {
-                return new Vector2(-bounds.size.x / 2, y * bounds.size.y);
-            }
-            else
-            {
-                return new Vector2(x * bounds.size.x, bounds.size.y / 2);
-            }
+            y = (y >= 0) ? (bounds.size.y + PARTICLE_SIZE) / 2.0f : -(bounds.size.y + PARTICLE_SIZE) / 2.0f;
+            return new Vector2(y / particleInc, y);
         }
-
-        if (x < 0 && y < 0) //3사분면
-        {
-            if (inclination > particleInc)
-            {
-                return new Vector2(-bounds.size.x / 2, y * bounds.size.y);
-            }
-            else
-            {
-                return new Vector2(x * bounds.size.x, -bounds.size.y / 2);
-            }
-        }
-
-        if (x >= 0 && y < 0)
-        {
-            if (-inclination < particleInc)
-            {
-                return new Vector2(bounds.size.x / 2, y * bounds.size.y);
-            }
-            else
-            {
-                return new Vector2(x * bounds.size.x, bounds.size.y / 2);
-            }
-        }
-
-        return Vector2.zero;
     }
 }
