@@ -8,8 +8,6 @@ public class Particle2D : MonoBehaviour
     public LayerMask collidingMask;
 
     float lifeTime;
-    float inclination;
-    Bounds bounds;
 
     Rigidbody2D pBody;
     BoxCollider2D pColl;

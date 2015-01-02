@@ -15,8 +15,6 @@ public class ParticleSystem2D : MonoBehaviour {
 
     bool isPlaying;
 
-    static readonly float PARTICLE_SIZE = 0.15f;
-
     // Use this for initialization
     void Awake()
     {
@@ -125,7 +123,7 @@ public class ParticleSystem2D : MonoBehaviour {
             p.position = transform.position + (Vector3)FindBorder(randomX, randomY);
         }
 
-        if (Map.GetTile(p.position.x, p.position.y))
+        if (Map.GetTile(p.position))
             return null;
         /*
         RaycastHit2D[] hits = Physics2D.RaycastAll(transform.position, randomDirection, 1.2f, collidingMask);
@@ -156,12 +154,12 @@ public class ParticleSystem2D : MonoBehaviour {
         float particleInc = y / x;
         if (Mathf.Abs(inclination) >= Mathf.Abs(particleInc))
         {
-            x = (x >= 0) ? (bounds.size.x + PARTICLE_SIZE) / 2.0f : -(bounds.size.x + PARTICLE_SIZE) / 2.0f;
+            x = (x >= 0) ? (bounds.size.x + pSystemData.size) / 2.0f : -(bounds.size.x + pSystemData.size) / 2.0f;
             return new Vector2(x, x * particleInc);
         }
         else
         {
-            y = (y >= 0) ? (bounds.size.y + PARTICLE_SIZE) / 2.0f : -(bounds.size.y + PARTICLE_SIZE) / 2.0f;
+            y = (y >= 0) ? (bounds.size.y + pSystemData.size) / 2.0f : -(bounds.size.y + pSystemData.size) / 2.0f;
             return new Vector2(y / particleInc, y);
         }
     }
