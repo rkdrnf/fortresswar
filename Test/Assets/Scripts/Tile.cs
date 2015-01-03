@@ -48,6 +48,19 @@ public class Tile : MonoBehaviour {
         return sprites[index].sprite;
     }
 
+    public void SetHealth(int health)
+    {
+        this.health = health;
+
+        if (health < 1)
+        {
+            DestroyTile();
+            return;
+        }
+
+        spriteRenderer.sprite = GetSprite(health);
+    }
+
     public void Damage(int damage, Vector2 point)
     {
         if (!Network.isServer) return;

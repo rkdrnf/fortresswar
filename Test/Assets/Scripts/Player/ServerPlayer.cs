@@ -58,7 +58,6 @@ namespace Server
         public PhysicsMaterial2D onAirMaterial;
 
         Collider2D bodyCollider;
-        Collider2D footCollider;
 
 
         public Vector2 lookingDirection
@@ -91,9 +90,7 @@ namespace Server
             weaponManager = GetComponent<WeaponManager>();
             weaponManager.Init(this);
 
-            var colliders = GetComponents<Collider2D>();
-            bodyCollider = colliders[0];
-            footCollider = colliders[1];
+            bodyCollider = GetComponent<Collider2D>();
 
             wallWalkTimer = 0f;
             animator = GetComponent<Animator>();
@@ -127,6 +124,8 @@ namespace Server
 
         public void BroadcastState()
         {
+            if (!Network.isServer) return;
+
             S2C.CharacterChangeState pck = new S2C.CharacterChangeState(stateManager.GetState());
 
             if (!ServerGame.Inst.isDedicatedServer)
@@ -859,9 +858,6 @@ namespace Server
             bodyCollider.enabled = false;
             bodyCollider.sharedMaterial = onAirMaterial;
             bodyCollider.enabled = true;
-            footCollider.enabled = false;
-            footCollider.sharedMaterial = onAirMaterial;
-            footCollider.enabled = true;
         }
 
         public void ToGroundMaterial()
@@ -869,9 +865,6 @@ namespace Server
             bodyCollider.enabled = false;
             bodyCollider.sharedMaterial = bodyMaterial;
             bodyCollider.enabled = true;
-            footCollider.enabled = false;
-            footCollider.sharedMaterial = bodyMaterial;
-            footCollider.enabled = true;
         }
     }
 
