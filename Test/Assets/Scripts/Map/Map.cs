@@ -87,7 +87,7 @@ public class Map : MonoBehaviour {
         foreach(var tileStatus in mapInfo.tileStatusList)
         {
             Tile tile = GetTile(tileStatus.ID);
-            tile.DamageInternal(tile.maxHealth - tileStatus.health, Vector2.zero);
+            tile.SetHealth(tileStatus.health);
         }
 
         Client.ClientGame.Inst.OnMapLoadCompleted(this);

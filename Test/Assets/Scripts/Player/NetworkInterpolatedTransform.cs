@@ -20,7 +20,7 @@ public class NetworkInterpolatedTransform : MonoBehaviour
 
     void OnNetworkInstantiate(NetworkMessageInfo info)
     {
-        if (Network.isServer) enabled = false;
+        if (!Network.isClient) enabled = false;
     }
 
 
