@@ -47,30 +47,21 @@ namespace Client
             GUILayout.BeginArea(new Rect(Screen.width / 2 - 150f, Screen.height / 2 - 50f, 300, 100), areaStyle);
     
             GUILayout.BeginHorizontal();
-            GUILayout.FlexibleSpace();
+
+            foreach(Job job in Enum.GetValues(typeof(Job)))
+            { 
     
-            GUIStyle blueStyle = new GUIStyle(GUI.skin.button);
-            blueStyle.fixedWidth = 145f;
-            blueStyle.fixedHeight = 90f;
-    
-            if (GUILayout.Button("Scout", blueStyle))
-            {
-                Close();
-                PlayerBehaviour player = C_PlayerManager.Inst.Get(ClientGame.Inst.GetID());
-                if (player != null)
-                    player.ChangeJob(Job.SCOUT);
-            }
-    
-            GUIStyle redStyle = new GUIStyle(GUI.skin.button);
-            redStyle.fixedWidth = 145f;
-            redStyle.fixedHeight = 90f;
-            if (GUILayout.Button("Heavy Gunner", redStyle))
-            {
-                PlayerBehaviour player = C_PlayerManager.Inst.Get(ClientGame.Inst.GetID());
-                if (player != null)
-                    player.ChangeJob(Job.HEAVY_GUNNER);
-    
-                Close();
+                GUIStyle buttonStyle = new GUIStyle(GUI.skin.button);
+                buttonStyle.fixedWidth = 100f;
+                buttonStyle.fixedHeight = 90f;
+
+                if (GUILayout.Button(job.ToString(), buttonStyle))
+                {
+                    Close();
+                    PlayerBehaviour player = C_PlayerManager.Inst.Get(ClientGame.Inst.GetID());
+                    if (player != null)
+                        player.ChangeJob(job);
+                }
             }
     
             GUILayout.EndHorizontal();

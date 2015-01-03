@@ -29,6 +29,15 @@ public class Grenade : Projectile {
         }
     }
 
+    protected override void OnCollideToBuilding(Building building, Vector2 point)
+    {
+        if (building)
+        {
+            DamageAround(new Vector2(transform.position.x, transform.position.y));
+            DestroyFromNetwork();
+        }
+    }
+
     protected override void OnCollideToPlayer(ServerPlayer character, Vector2 point)
     {
         //When Hit My Player
@@ -66,6 +75,10 @@ public class Grenade : Projectile {
             {
                 collidingObject.GetComponent<ServerPlayer>().Damage(DamageByDistance(collidingObject.transform.position), new NetworkMessageInfo());
                 ImpactTargetAway(collidingObject.rigidbody2D, ImpactByDistance(collidingObject.transform.position));
+            }
+            else if (collidingObject.CompareTag("Building"))
+            {
+                collidingObject.GetComponent<Building>().Damage(DamageByDistance(collidingObject.transform.position), Vector2.zero);
             }
         }
     }

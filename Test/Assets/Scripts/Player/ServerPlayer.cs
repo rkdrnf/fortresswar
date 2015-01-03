@@ -866,6 +866,34 @@ namespace Server
             bodyCollider.sharedMaterial = bodyMaterial;
             bodyCollider.enabled = true;
         }
+
+        [RPC]
+        public void ServerBuild(byte[] pckData, NetworkMessageInfo info)
+        {
+            C2S.Build pck = C2S.Build.DeserializeFromBytes(pckData);
+
+            Build(pck);
+        }
+
+        void Build(C2S.Build pck)
+        {   
+            if (!CanBuild(pck)) return;
+
+            Vector2 position = Map.GetGridPos(pck.position);
+            BuildingData building = BuildingDataLoader.Inst.GetBuilding(pck.buildingName); 
+
+            Network.Instantiate(building.prefab, position, Quaternion.identity, 3);
+        }
+
+        bool CanBuild(C2S.Build pck)
+        {
+            Vector2 position = Map.GetGridPos(pck.position);
+
+            if (Map.IsTileExist(position)) return false;
+
+
+            return true;
+        }
     }
 
     class CharacterSM : StateManager<CharacterState>

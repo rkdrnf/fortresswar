@@ -123,7 +123,7 @@ public class ParticleSystem2D : MonoBehaviour {
             p.position = transform.position + (Vector3)FindBorder(randomX, randomY);
         }
 
-        if (Map.GetTile(p.position))
+        if (Map.IsTileExist(p.position))
             return null;
         /*
         RaycastHit2D[] hits = Physics2D.RaycastAll(transform.position, randomDirection, 1.2f, collidingMask);

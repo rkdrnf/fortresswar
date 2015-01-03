@@ -37,6 +37,7 @@ namespace Client
         public TeamSelector teamSelector;
         public JobSelector jobSelector;
         public NameSelector nameSelector;
+        public BuildMenu buildMenu;
     
         public KeyFocusManager keyFocusManager;
         public MouseFocusManager mouseFocusManager;
