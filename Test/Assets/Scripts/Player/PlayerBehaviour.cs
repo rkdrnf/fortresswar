@@ -52,6 +52,7 @@ namespace Client
         CharacterSM stateManager;
 
         C_WeaponManager weaponManager;
+        C_SkillManager skillManager;
 
         WeaponUI weaponUI;
 
@@ -87,6 +88,8 @@ namespace Client
 
             weaponManager = GetComponent<C_WeaponManager>();
             weaponManager.Init(this);
+
+            skillManager = GetComponent<C_SkillManager>();
 
             animator = GetComponent<Animator>();
 
@@ -327,6 +330,11 @@ namespace Client
                         client.jobSelector.Open();
                     }
 
+                    if (Input.GetKey(KeyCode.F))
+                    {
+                        client.buildMenu.Open();
+                    }
+
                     foreach (KeyCode code in weaponCodes)
                     {
                         if (Input.GetKeyDown(code))
@@ -340,9 +348,15 @@ namespace Client
                     {
                         if (Input.GetKeyDown(code))
                         {
-                            weaponManager.UseSkill(code);
+                            weaponManager.Fire(WeaponType.ROPE);
+                        }
+                        /*
+                        if (Input.GetKeyDown(code))
+                        {
+                            skillManager.Cast(code);
                             break;
                         }
+                         * */
                     }
                 }
                 else
@@ -354,18 +368,27 @@ namespace Client
 
                 if (client.mouseFocusManager.IsFocused(InputMouseFocus.PLAYER))
                 {
-                    if (Input.GetButton("Fire1"))
+                    do
                     {
-                        weaponManager.Fire();
-                    }
+                        if (building != null)
+                        { 
+                            ProcessInputForBuild();
+                            break;
+                        }
 
-                    if (Input.GetButtonUp("Fire1"))
-                    {
-                        weaponManager.FireCharged();
+                        if (Input.GetButton("Fire1"))
+                        {
+                            weaponManager.Fire();
+                        }
+
+                        if (Input.GetButtonUp("Fire1"))
+                        {
+                            weaponManager.FireCharged();
+                        }
                     }
+                    while (false);
                 }
 
-                
 
                 Vector3 worldMousePosition = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0));
                 lookingDirection = (worldMousePosition - transform.position);
@@ -460,6 +483,48 @@ namespace Client
             team = setting.team;
 
             LoadAnimation();
+        }
+
+        BuildingData building;
+
+        public void SelectBuildTool(BuildingData building)
+        {
+            if (job != Job.ENGINEER) return;
+
+            this.building = building;
+        }
+
+        public void ReleaseBuildTool()
+        {
+            building = null;
+        }
+
+        public void ProcessInputForBuild()
+        {
+            if (Input.GetButton("Fire1"))
+                Build();
+
+            if (Input.GetButton("Fire2"))
+                ReleaseBuildTool();
+        }
+
+        public void Build()
+        {
+            if (building == null) return;
+            if (job != Job.ENGINEER) { ReleaseBuildTool(); return; }
+
+            Vector3 worldMousePosition = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0));
+
+            C2S.Build pck = new C2S.Build(building.buildingName, worldMousePosition);
+
+            if (Network.isServer)
+            {
+                serverPlayer.ServerBuild(pck.SerializeToBytes(), new NetworkMessageInfo());
+            }
+            else
+            {
+                networkView.RPC("ServerBuild", RPCMode.Server, pck.SerializeToBytes());
+            }
         }
 
         

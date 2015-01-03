@@ -73,6 +73,16 @@ public class Rope : Projectile {
         }
     }
 
+    protected override void OnCollideToBuilding(Building building, Vector2 point)
+    {
+        if (stickInfo.isSticked) return;
+
+        if (building)
+        {
+            ConnectRope(building.gameObject, building.ID, ObjectType.BUILDING);
+        }
+    }
+
     protected override void OnCollideToPlayer(ServerPlayer character, Vector2 point)
     {
         if (stickInfo.isSticked) return;

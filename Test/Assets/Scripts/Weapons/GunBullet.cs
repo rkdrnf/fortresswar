@@ -16,6 +16,16 @@ public class GunBullet : Projectile {
         }
     }
 
+    protected override void OnCollideToBuilding(Building building, Vector2 point)
+    {
+        if (building)
+        {
+            building.Damage(damage, point);
+            ImpactTarget(building.rigidbody2D, impact);
+            DestroyFromNetwork();
+        }
+    }
+
     protected override void OnCollideToPlayer(ServerPlayer character, Vector2 point)
     {
         //When Hit My Player

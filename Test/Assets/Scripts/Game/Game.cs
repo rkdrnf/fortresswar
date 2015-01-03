@@ -43,6 +43,8 @@ public class Game : MonoBehaviour
     public JobSet jobSet;
     public MapData mapData;
     public WeaponSet weaponSet;
+    SkillDataLoader skillLoader;
+    
 
     public Map map;
 	NetworkManager netManager;
@@ -51,10 +53,6 @@ public class Game : MonoBehaviour
     void Init()
     {
         instance = this;
-        /*
-        RuntimeTypeModel.Default.Add(typeof(Vector3), true);
-        RuntimeTypeModel.Default.Add(typeof(Vector2), true);
-         */
     }
 
 	void Awake()
@@ -63,6 +61,9 @@ public class Game : MonoBehaviour
 		netManager = netManagerObject.GetComponent<NetworkManager> ();
 		mapLoader = GetComponent<MapLoader> ();
 	}
+
+    
+
 
 	public void LoadMap()
 	{

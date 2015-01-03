@@ -28,7 +28,7 @@ public abstract class Projectile : Weapon
 
     void Awake()
     {
-        tileMask = LayerMask.GetMask("Tile");
+        tileMask = LayerMask.GetMask("Tile", "Building");
         networkView.group = NetworkViewGroup.PROJECTILE;
         startPosition = transform.position;
 
@@ -124,6 +124,10 @@ public abstract class Projectile : Weapon
         {
             OnCollideToTile(targetCollider.GetComponent<Tile>(), hit.point);
         }
+        else if (targetCollider.gameObject.CompareTag("Building"))
+        {
+            OnCollideToBuilding(targetCollider.GetComponent<Building>(), hit.point);
+        }
         else if (targetCollider.gameObject.CompareTag("Player"))
         {
             ServerPlayer character = targetCollider.gameObject.GetComponent<ServerPlayer>();
@@ -143,6 +147,8 @@ public abstract class Projectile : Weapon
     }
 
     protected abstract void OnCollideToTile(Tile tile, Vector2 point);
+
+    protected abstract void OnCollideToBuilding(Building tile, Vector2 point);
 
     protected abstract void OnCollideToPlayer(ServerPlayer character, Vector2 point);
 

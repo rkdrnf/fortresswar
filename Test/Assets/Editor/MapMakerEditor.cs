@@ -173,161 +173,72 @@ public class MapMakerEditor : Editor {
 	[MenuItem("Assets/Create/TileSet")]
 	static void CreateTileSet()
 	{
-		TileSet tileSet = CreateInstance<TileSet> ();
-		var path = AssetDatabase.GetAssetPath (Selection.activeObject);
-
-		if (string.IsNullOrEmpty (path)) {
-			path = "Assets";
-		} else if (Path.GetExtension (path) != "")
-		{
-			path.Replace (Path.GetFileName (path), "");
-		}
-		else
-		{
-			path += Path.DirectorySeparatorChar;
-		}
-
-		var assetPathAndName = AssetDatabase.GenerateUniqueAssetPath (path + "TileSet.asset");
-		AssetDatabase.CreateAsset (tileSet, assetPathAndName);
-		AssetDatabase.SaveAssets ();
-		EditorUtility.FocusProjectWindow ();
-		Selection.activeObject = tileSet;
+        CreateAsset<TileSet>();
 	}
 
     [MenuItem("Assets/Create/WeaponSet")]
     static void CreateWeapon()
     {
-        WeaponSet projSet = CreateInstance<WeaponSet>();
-        var path = AssetDatabase.GetAssetPath(Selection.activeObject);
-
-        if (string.IsNullOrEmpty(path))
-        {
-            path = "Assets";
-        }
-        else if (Path.GetExtension(path) != "")
-        {
-            path.Replace(Path.GetFileName(path), "");
-        }
-        else
-        {
-            path += Path.DirectorySeparatorChar;
-        }
-
-        var assetPathAndName = AssetDatabase.GenerateUniqueAssetPath(path + "WeaponSet.asset");
-        AssetDatabase.CreateAsset(projSet, assetPathAndName);
-        AssetDatabase.SaveAssets();
-        Selection.activeObject = projSet;
-        EditorGUIUtility.PingObject(projSet);
+        CreateAsset<WeaponSet>();
     }
 
     [MenuItem("Assets/Create/Weapon")]
     static void CreateWeaponSet()
     {
-        WeaponData projSet = CreateInstance<WeaponData>();
-        var path = AssetDatabase.GetAssetPath(Selection.activeObject);
-
-        if (string.IsNullOrEmpty(path))
-        {
-            path = "Assets";
-        }
-        else if (Path.GetExtension(path) != "")
-        {
-            path.Replace(Path.GetFileName(path), "");
-        }
-        else
-        {
-            path += Path.DirectorySeparatorChar;
-        }
-
-        var assetPathAndName = AssetDatabase.GenerateUniqueAssetPath(path + "Weapon.asset");
-        AssetDatabase.CreateAsset(projSet, assetPathAndName);
-        AssetDatabase.SaveAssets();
-        Selection.activeObject = projSet;
-        EditorGUIUtility.PingObject(projSet);
+        CreateAsset<WeaponData>();
     }
 
     [MenuItem("Assets/Create/JobSet")]
     static void CreateJobSet()
     {
-        JobSet jobSet = CreateInstance<JobSet>();
-        var path = AssetDatabase.GetAssetPath(Selection.activeObject);
-
-        if (string.IsNullOrEmpty(path))
-        {
-            path = "Assets";
-        }
-        else if (Path.GetExtension(path) != "")
-        {
-            path.Replace(Path.GetFileName(path), "");
-        }
-        else
-        {
-            path += Path.DirectorySeparatorChar;
-        }
-
-        var assetPathAndName = AssetDatabase.GenerateUniqueAssetPath(path + "JobSet.asset");
-        AssetDatabase.CreateAsset(jobSet, assetPathAndName);
-        AssetDatabase.SaveAssets();
-        Selection.activeObject = jobSet;
-        EditorGUIUtility.PingObject(jobSet);
+        CreateAsset<JobSet>();
     }
 
     [MenuItem("Assets/Create/Job")]
     static void CreateJob()
     {
-        JobStat job = CreateInstance<JobStat>();
-        var path = AssetDatabase.GetAssetPath(Selection.activeObject);
-
-        if (string.IsNullOrEmpty(path))
-        {
-            path = "Assets";
-        }
-        else if (Path.GetExtension(path) != "")
-        {
-            path.Replace(Path.GetFileName(path), "");
-        }
-        else
-        {
-            path += Path.DirectorySeparatorChar;
-        }
-
-        var assetPathAndName = AssetDatabase.GenerateUniqueAssetPath(path + "Job.asset");
-        AssetDatabase.CreateAsset(job, assetPathAndName);
-        AssetDatabase.SaveAssets();
-        Selection.activeObject = job;
-        EditorGUIUtility.PingObject(job);
+        CreateAsset<JobStat>();
     }
 
     [MenuItem("Assets/Create/Particle2D")]
     static void CreateParticle2D()
     {
-        ParticleSystem2DData particle = CreateInstance<ParticleSystem2DData>();
-        var path = AssetDatabase.GetAssetPath(Selection.activeObject);
-
-        if (string.IsNullOrEmpty(path))
-        {
-            path = "Assets";
-        }
-        else if (Path.GetExtension(path) != "")
-        {
-            path.Replace(Path.GetFileName(path), "");
-        }
-        else
-        {
-            path += Path.DirectorySeparatorChar;
-        }
-
-        var assetPathAndName = AssetDatabase.GenerateUniqueAssetPath(path + "Particle.asset");
-        AssetDatabase.CreateAsset(particle, assetPathAndName);
-        AssetDatabase.SaveAssets();
-        Selection.activeObject = particle;
-        EditorGUIUtility.PingObject(particle);
+        CreateAsset<ParticleSystem2DData>();
     }
 
     [MenuItem("Assets/Create/Particle2DSet")]
     static void CreateParticle2DSet()
     {
-        ParticleSystem2DSet particle = CreateInstance<ParticleSystem2DSet>();
+        CreateAsset<ParticleSystem2DSet>();
+    }
+
+    [MenuItem("Assets/Create/Skill")]
+    static void CreateSkill()
+    {
+        CreateAsset<SkillData>();
+    }
+
+    [MenuItem("Assets/Create/SkillSet")]
+    static void CreateSkillSet()
+    {
+        CreateAsset<SkillDataSet>();
+    }
+
+    [MenuItem("Assets/Create/Building")]
+    static void CreateBuilding()
+    {
+        CreateAsset<BuildingData>();
+    }
+
+    [MenuItem("Assets/Create/BuildingSet")]
+    static void CreateBuildingSet()
+    {
+        CreateAsset<BuildingDataSet>();
+    }
+
+    static void CreateAsset<T>() where T : ScriptableObject
+    {
+        T asset = CreateInstance<T>();
         var path = AssetDatabase.GetAssetPath(Selection.activeObject);
 
         if (string.IsNullOrEmpty(path))
@@ -343,11 +254,11 @@ public class MapMakerEditor : Editor {
             path += Path.DirectorySeparatorChar;
         }
 
-        var assetPathAndName = AssetDatabase.GenerateUniqueAssetPath(path + "ParticleSet.asset");
-        AssetDatabase.CreateAsset(particle, assetPathAndName);
+        var assetPathAndName = AssetDatabase.GenerateUniqueAssetPath(path + typeof(T).ToString() + ".asset");
+        AssetDatabase.CreateAsset(asset, assetPathAndName);
         AssetDatabase.SaveAssets();
-        Selection.activeObject = particle;
-        EditorGUIUtility.PingObject(particle);
+        Selection.activeObject = asset;
+        EditorGUIUtility.PingObject(asset);
     }
 
     public void LoadMap()

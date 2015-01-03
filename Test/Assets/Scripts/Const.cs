@@ -20,7 +20,8 @@ namespace Const
     {
         PLAYER,
         TILE,
-        PROJECTILE
+        PROJECTILE,
+        BUILDING
     };
 
     public enum GameState
@@ -36,7 +37,8 @@ namespace Const
         PLAYER,
         TEAM_SELECTOR,
         JOB_SELECTOR,
-        NAME_SELECTOR
+        NAME_SELECTOR,
+        BUILD_MENU
     }
 
     public enum InputMouseFocus
@@ -45,7 +47,8 @@ namespace Const
         PLAYER,
         TEAM_SELECTOR,
         JOB_SELECTOR,
-        NAME_SELECTOR
+        NAME_SELECTOR,
+        BUILD_MENU
     }
 
     public enum ChatState
@@ -79,6 +82,12 @@ namespace Const
         OFF
     }
 
+    public enum BuildMenuState
+    {
+        ON,
+        OFF
+    }
+
     public enum Team
     {
         NONE,
@@ -89,7 +98,8 @@ namespace Const
     public enum Job
     {
         SCOUT,
-        HEAVY_GUNNER
+        HEAVY_GUNNER,
+        ENGINEER
     }
 
     public enum PlayerStatus
@@ -183,6 +193,12 @@ namespace Const
     {
         DIRT,
         STONE
+    }
+
+    public enum SkillName
+    {
+        ROPE,
+        BUILD_MENU
     }
 }
 

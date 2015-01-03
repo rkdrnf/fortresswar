@@ -314,6 +314,24 @@ namespace Packet
             [ProtoMember(6)]
             public bool isSticked;
         }
+
+        [ProtoContract]
+        public class SkillCastInfo: Packet<SkillCastInfo>
+        {
+            public SkillCastInfo() { }
+            public SkillCastInfo(SkillName name, int casterID)
+            {
+                skillName = name;
+                this.casterID = casterID;
+            }
+
+            [ProtoMember(1)]
+            public SkillName skillName;
+
+            [ProtoMember(2)]
+            public int casterID;
+        }
+
     }
 
     namespace C2S
@@ -429,6 +447,45 @@ namespace Packet
 
             [ProtoMember(2)]
             public Job job;
+        }
+
+        [ProtoContract]
+        public class CastSkill : Packet<CastSkill>
+        {
+            public CastSkill() { }
+            public CastSkill(int casterID, SkillName skillName, Vector2 direction )
+            {
+                this.casterID = casterID;
+                this.skillName = skillName;
+                this.direction = direction;
+            }
+
+            [ProtoMember(1)]
+            public int packetID = -1;
+            [ProtoMember(2)]
+            public int casterID;
+            [ProtoMember(3)]
+            public SkillName skillName;
+            [ProtoMember(4)]
+            public PacketVector2 direction;
+        }
+
+        [ProtoContract]
+        public class Build : Packet<Build>
+        {
+            public Build() { }
+            public Build(string buildingName, Vector2 position)
+            {
+                this.buildingName = buildingName;
+                this.position = position;
+            }
+
+            [ProtoMember(1)]
+            public int packetID = -1;
+            [ProtoMember(2)]
+            public string buildingName;
+            [ProtoMember(3)]
+            public PacketVector2 position;
         }
     }
 }

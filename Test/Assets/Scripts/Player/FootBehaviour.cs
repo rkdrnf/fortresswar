@@ -44,7 +44,7 @@ public class FootBehaviour : MonoBehaviour {
 			RaycastHit2D hit = Physics2D.Raycast(transform.position, rayDirections[i], rayDistances[i], groundLayer);
 
 			//ray hit and normal = (0,1) then ground;
-			if (hit.collider != null && hit.normal.x == 0 && hit.normal.y == 1)
+			if (hit.collider != null && Mathf.Abs(hit.normal.x) < 0.4 && Mathf.Abs(hit.normal.y) > 0.6)
 			{
                 player.OnTouchGround();
                 return;
