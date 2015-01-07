@@ -30,6 +30,8 @@ namespace Client
 
         public ParticleSystem2DSet particleSet;
 
+        public LayerMask particleCollidingLayer;
+
     
         void Awake()
         {

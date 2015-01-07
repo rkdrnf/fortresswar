@@ -112,7 +112,7 @@ public class Tile : MonoBehaviour {
 
     public void PlaySplash()
     {
-        ParticleSystem2D pSystem = Client.ParticleManager.Inst.particleSystemPool.Borrow();
+        Client.ParticleSystem2D pSystem = Client.ParticleManager.Inst.particleSystemPool.Borrow();
         pSystem.Init(Client.ParticleManager.Inst.particleSet.particles[(int)particleType]);
         pSystem.transform.position = transform.position;
         pSystem.Play();

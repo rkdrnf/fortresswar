@@ -183,15 +183,26 @@ public class Map : MonoBehaviour {
         Destroy(gameObject);
     }
 
-    public static bool IsTileExist(Vector2 pos)
+    public static bool IsLayerExists(Vector2 pos, LayerMask mask)
     {
-        RaycastHit2D hit = Physics2D.Raycast(pos, Vector2.zero, float.MaxValue, LayerMask.GetMask("Tile", "Building"));
+        RaycastHit2D hit = Physics2D.Raycast(pos, Vector2.zero, float.MaxValue, mask);
 
         if (hit)
         {
             return true;
         }
         else return false;
+    }
+
+    public static GameObject GetLayerObjectAt(Vector2 pos, LayerMask mask)
+    {
+        RaycastHit2D hit = Physics2D.Raycast(pos, Vector2.zero, float.MaxValue, mask);
+
+        if (hit)
+        {
+            return hit.collider.gameObject;
+        }
+        else return null;
     }
 
     public static Vector2 GetGridPos(Vector2 pos)
