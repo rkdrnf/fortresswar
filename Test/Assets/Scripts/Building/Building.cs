@@ -5,6 +5,7 @@ using System.Text;
 using UnityEngine;
 using S2C = Packet.S2C;
 using C2S = Packet.C2S;
+using Server;
 
 [RequireComponent(typeof(SpriteRenderer), typeof(Rigidbody2D), typeof(Collider2D))]
 public class Building : MonoBehaviour
@@ -12,19 +13,65 @@ public class Building : MonoBehaviour
     public int ID;
     public Const.ParticleType particleType;
     public bool destroyable;
-    public int health;
     public int maxHealth;
+    public Vector2 size;
+    public spriteInfo[] sprites;
 
+    [HideInInspector]
+    public int health;
+    [HideInInspector]
     public Map map;
 
-    public spriteInfo[] sprites;
+    
+    
     private SpriteRenderer spriteRenderer;
+
+    
 
     void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
         spriteRenderer.sprite = GetSprite(health);
+
+        rigidbody2D.isKinematic = true;
+
+        FillNeighbors();
     }
+
+    public void Fall()
+    {
+        if (!Network.isServer) return;
+
+        gameObject.layer = BuildingDataLoader.Inst.fallingBuildingLayer;
+        rigidbody.isKinematic = false;
+
+        collider2D.isTrigger = true;
+    }
+
+    void BroadcastFall()
+    {
+        //서버는 이미 처리 다 해서 또 보낼 필요 없음
+        networkView.RPC("ClientFall", RPCMode.Others);
+    }
+
+    [RPC]
+    void ClientFall()
+    {
+        gameObject.layer = BuildingDataLoader.Inst.fallingBuildingLayer;
+        rigidbody.isKinematic = false;
+        collider2D.isTrigger = true;
+    }
+
+
+    void OnTriggerEnter2D(Collider2D targetCollider)
+    {
+        Network.RemoveRPCs(networkView.viewID);
+        Network.Destroy(gameObject);
+
+        //damage target collider
+    }
+
+
 
     Sprite GetSprite(int health)
     {
@@ -104,7 +151,7 @@ public class Building : MonoBehaviour
 
     public void PlaySplash()
     {
-        ParticleSystem2D pSystem = Client.ParticleManager.Inst.particleSystemPool.Borrow();
+        Client.ParticleSystem2D pSystem = Client.ParticleManager.Inst.particleSystemPool.Borrow();
         pSystem.Init(Client.ParticleManager.Inst.particleSet.particles[(int)particleType]);
         pSystem.transform.position = transform.position;
         pSystem.Play();
@@ -114,5 +161,20 @@ public class Building : MonoBehaviour
     {
         Network.RemoveRPCs(networkView.viewID);
         Network.Destroy(gameObject);
+    }
+
+
+    [HideInInspector]
+    public List<GameObject> neighbors;
+
+    private bool suspended;
+    private bool isSuspensor;
+
+    public void FillNeighbors()
+    {
+        neighbors.Add(Map.GetLayerObjectAt(new Vector2(transform.position.x - size.x, transform.position.y), BuildingDataLoader.Inst.buildingCollidingLayers));
+        neighbors.Add(Map.GetLayerObjectAt(new Vector2(transform.position.x + size.x, transform.position.y), BuildingDataLoader.Inst.buildingCollidingLayers));
+        neighbors.Add(Map.GetLayerObjectAt(new Vector2(transform.position.x, transform.position.y - transform.position.y), BuildingDataLoader.Inst.buildingCollidingLayers));
+        neighbors.Add(Map.GetLayerObjectAt(new Vector2(transform.position.x, transform.position.y + transform.position.y), BuildingDataLoader.Inst.buildingCollidingLayers));
     }
 }

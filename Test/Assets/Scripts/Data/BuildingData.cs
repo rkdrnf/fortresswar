@@ -8,6 +8,7 @@ public class BuildingData : ScriptableObject
 {
     public string buildingName;
     public Texture2D image;
-    public GameObject prefab;
+    public Building building;
+    public LayerMask invalidLocations;
      
 }

@@ -876,21 +876,22 @@ namespace Server
         }
 
         void Build(C2S.Build pck)
-        {   
-            if (!CanBuild(pck)) return;
-
+        {
+            BuildingData building = BuildingDataLoader.Inst.GetBuilding(pck.buildingName);
             Vector2 position = Map.GetGridPos(pck.position);
-            BuildingData building = BuildingDataLoader.Inst.GetBuilding(pck.buildingName); 
 
-            Network.Instantiate(building.prefab, position, Quaternion.identity, 3);
+            if (!CanBuild(building, position)) return;
+
+            Network.Instantiate(building.building, position, Quaternion.identity, 3);
         }
 
-        bool CanBuild(C2S.Build pck)
+        bool CanBuild(BuildingData bData, Vector2 position)
         {
-            Vector2 position = Map.GetGridPos(pck.position);
+            //building.
 
-            if (Map.IsTileExist(position)) return false;
+            Collider2D[] colliders = Physics2D.OverlapAreaAll(position - (bData.building.size / 2), position + (bData.building.size / 2), bData.invalidLocations);
 
+            if (colliders.Length > 0) return false;
 
             return true;
         }

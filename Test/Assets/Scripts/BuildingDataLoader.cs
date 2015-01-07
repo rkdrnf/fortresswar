@@ -26,11 +26,18 @@ public class BuildingDataLoader : MonoBehaviour
         instance = this;
 
         FillScript();
+
+        buildingLayer = LayerMask.NameToLayer("Building");
+        fallingBuildingLayer = LayerMask.NameToLayer("FallingBuilding");
     }
 
 
     public BuildingDataSet buildingSet;
     private Dictionary<string, BuildingData> buildingNameMap;
+    public int buildingLayer;
+    public int fallingBuildingLayer;
+    public LayerMask buildingCollidingLayers;
+    public LayerMask fallingBuildingCollidingLayers;
 
     void FillScript()
     {
