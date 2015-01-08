@@ -6,11 +6,13 @@ using UnityEngine;
 using S2C = Packet.S2C;
 using C2S = Packet.C2S;
 using Server;
+using Const;
 
 [RequireComponent(typeof(SpriteRenderer), typeof(Rigidbody2D), typeof(Collider2D))]
 public class Building : MonoBehaviour
 {
     public int ID;
+    public GridCoord coord;
     public Const.ParticleType particleType;
     public bool destroyable;
     public int maxHealth;
@@ -23,10 +25,15 @@ public class Building : MonoBehaviour
     public Map map;
 
     
-    
     private SpriteRenderer spriteRenderer;
 
-    
+
+    public enum DestroyReason
+    {
+        DAMAGE,
+        COLLIDE,
+        MANUAL,
+    }
 
     void Awake()
     {
@@ -34,8 +41,18 @@ public class Building : MonoBehaviour
         spriteRenderer.sprite = GetSprite(health);
 
         rigidbody2D.isKinematic = true;
+    }
 
-        FillNeighbors();
+    public void Init(GridCoord coord)
+    {
+        this.coord = coord;
+ 
+        if (Network.isServer)
+        {
+            BuildingManager.Inst.Add(this);
+            FillNeighbors();
+            FillSuspension();
+        }
     }
 
     public void Fall()
@@ -43,7 +60,7 @@ public class Building : MonoBehaviour
         if (!Network.isServer) return;
 
         gameObject.layer = BuildingDataLoader.Inst.fallingBuildingLayer;
-        rigidbody.isKinematic = false;
+        rigidbody2D.isKinematic = false;
 
         collider2D.isTrigger = true;
     }
@@ -65,9 +82,11 @@ public class Building : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D targetCollider)
     {
-        Network.RemoveRPCs(networkView.viewID);
-        Network.Destroy(gameObject);
+        if (rigidbody2D.isKinematic) return;
 
+        if (targetCollider.tag == "Building" || targetCollider.tag == "Tile")
+            DestroyBuilding(DestroyReason.COLLIDE);
+        
         //damage target collider
     }
 
@@ -91,7 +110,7 @@ public class Building : MonoBehaviour
 
         if (health < 1)
         {
-            DestroyTile();
+            DestroyBuilding(DestroyReason.MANUAL);
             return;
         }
 
@@ -107,12 +126,12 @@ public class Building : MonoBehaviour
             health -= damage;
         }
 
-        S2C.DamageTile pck = new S2C.DamageTile(this.ID, damage, point);
+        S2C.DamageTile pck = new S2C.DamageTile(this.coord, damage, point);
         BroadcastDamage(pck);
 
         if (health < 1)
         {
-            DestroyTile();
+            DestroyBuilding(DestroyReason.DAMAGE);
             return;
         }
     }
@@ -157,24 +176,82 @@ public class Building : MonoBehaviour
         pSystem.Play();
     }
 
-    public void DestroyTile()
+    public void DestroyBuilding(DestroyReason reason)
     {
+        switch(reason)
+        {
+            case DestroyReason.DAMAGE:
+                PropagateDestruction();
+                break;
+
+            case DestroyReason.MANUAL:
+                break;
+
+            case DestroyReason.COLLIDE:
+                break;
+        }
+
         Network.RemoveRPCs(networkView.viewID);
         Network.Destroy(gameObject);
     }
 
+    public void PropagateDestruction()
+    {
+        neighbors.DoForAll((GridDirection direction, Building building) => { building.DestroySuspension(direction); }); 
+    }
 
-    [HideInInspector]
-    public List<GameObject> neighbors;
+    public void DestroySuspension(GridDirection direction)
+    {
+        suspension.DestroySuspension(direction);
 
-    private bool suspended;
-    private bool isSuspensor;
+        if (suspension.Count == 0)
+        { 
+            PropagateDestruction();
+            Fall();
+        }
+    }
+
+    public void AddSuspension(GridDirection direction, Building building)
+    {
+        suspension.Add(direction, building);
+    }
+
+    public void PropagateSuspension()
+    {
+        neighbors.DoForAll((GridDirection direction, Building building) =>
+        {
+            building.AddSuspension(direction, this);
+        });
+    }
+
+    public void AddNeighbor(GridDirection direction, Building building)
+    {
+        neighbors.Add(direction, building);
+    }
+
+    public void PropagateNeighbor()
+    {
+        suspension.DoForAll((GridDirection direction, MonoBehaviour behaviour) =>
+        {
+            if (behaviour is Building)
+                (behaviour as Building).AddNeighbor(direction, this);
+        });
+    }
+
+    private Neighbors neighbors;
+    private Suspension suspension;
 
     public void FillNeighbors()
     {
-        neighbors.Add(Map.GetLayerObjectAt(new Vector2(transform.position.x - size.x, transform.position.y), BuildingDataLoader.Inst.buildingCollidingLayers));
-        neighbors.Add(Map.GetLayerObjectAt(new Vector2(transform.position.x + size.x, transform.position.y), BuildingDataLoader.Inst.buildingCollidingLayers));
-        neighbors.Add(Map.GetLayerObjectAt(new Vector2(transform.position.x, transform.position.y - transform.position.y), BuildingDataLoader.Inst.buildingCollidingLayers));
-        neighbors.Add(Map.GetLayerObjectAt(new Vector2(transform.position.x, transform.position.y + transform.position.y), BuildingDataLoader.Inst.buildingCollidingLayers));
+        neighbors = BuildingManager.Inst.FindNeighbors(coord);
+        PropagateSuspension();
+    }
+
+    public void FillSuspension()
+    {
+        suspension = BuildingManager.Inst.FindSuspension(coord);
+        PropagateNeighbor();
     }
 }
+
+

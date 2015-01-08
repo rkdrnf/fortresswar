@@ -210,7 +210,7 @@ public class Rope : Projectile {
                 break;
 
             case ObjectType.TILE:
-                targetObj = Game.Inst.map.GetTile((int)info.targetID).gameObject;
+                targetObj = Game.Inst.map.GetTile(Game.Inst.map.ToGridCoord((int)info.targetID)).gameObject;
                 break;
 
             default:

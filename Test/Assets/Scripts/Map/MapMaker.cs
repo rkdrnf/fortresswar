@@ -1,12 +1,15 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class MapMaker : MonoBehaviour {
 
-    public float tileSize = 1.0f;
+    public int tileSize = 1;
 
     public int mapWidth = 320;
     public int mapHeight = 160;
+
+    public List<Tile> tiles;
 
 	public GameObject tile;
 	public TileSet tileSet;

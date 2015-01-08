@@ -12,19 +12,5 @@ namespace Server
         HashSet<Building> checkedList;
         List<Building> notCheckedList;
 
-        bool CheckStability()
-        {
-            
-        }
-
-        IEnumerable<Building> CheckBuildingStability()
-        {
-            Building first = buildings.First();
-        }
-
-        public void AddBuilding()
-        {
-
-        }
     }
 }
