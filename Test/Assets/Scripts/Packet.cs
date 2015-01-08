@@ -74,15 +74,15 @@ namespace Packet
     public class TileStatus
     {
         public TileStatus() { }
-        public TileStatus(int ID, int health)
+        public TileStatus(GridCoord coord, int health)
         {
-            this.ID = ID;
+            this.coord = coord;
             this.health = health;
         }
         [ProtoMember(1)]
         public int packetID = -1;
         [ProtoMember(2)]
-        public int ID;
+        public GridCoord coord;
         [ProtoMember(3)]
         public int health;
     }
@@ -93,16 +93,16 @@ namespace Packet
         public class DamageTile : Packet<DamageTile>
         {
             public DamageTile() { }
-            public DamageTile(int tileID, int damage, Vector2 point)
+            public DamageTile(GridCoord tileCoord, int damage, Vector2 point)
             {
-                this.tileID = tileID;
+                this.tileCoord = tileCoord;
                 this.damage = damage;
                 this.point = point;
             }
             [ProtoMember(1)]
             public int packetID = -1;
             [ProtoMember(2)]
-            public int tileID;
+            public GridCoord tileCoord;
             [ProtoMember(3)]
             public int damage;
             [ProtoMember(4)]
@@ -143,7 +143,7 @@ namespace Packet
         public class MapInfo : Packet<MapInfo>
         {
             public MapInfo() { }
-            public MapInfo(Dictionary<int, Tile> tileList)
+            public MapInfo(Dictionary<GridCoord, Tile> tileList)
             {
                 tileStatusList = new List<TileStatus>();
 

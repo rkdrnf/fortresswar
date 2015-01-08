@@ -17,6 +17,7 @@ public struct spriteInfo
 public class Tile : MonoBehaviour {
 
     public int ID;
+    public GridCoord coord;
     public Const.TileType tileType;
     public Const.ParticleType particleType;
 	public bool destroyable;
@@ -70,7 +71,7 @@ public class Tile : MonoBehaviour {
             health -= damage;
         }
 
-        S2C.DamageTile pck = new S2C.DamageTile(this.ID, damage, point);
+        S2C.DamageTile pck = new S2C.DamageTile(this.coord, damage, point);
         BroadcastDamage(pck);
 
         if (health < 1)

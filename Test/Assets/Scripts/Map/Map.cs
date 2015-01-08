@@ -16,7 +16,7 @@ public class Map : MonoBehaviour {
     int mapWidth;
     int mapHeight;
 
-    Dictionary<int, Tile> tileList = new Dictionary<int,Tile>();
+    Dictionary<GridCoord, Tile> tileList = new Dictionary<GridCoord, Tile>();
 
     double mapLoadTime;
 
@@ -86,25 +86,28 @@ public class Map : MonoBehaviour {
 
         foreach(var tileStatus in mapInfo.tileStatusList)
         {
-            Tile tile = GetTile(tileStatus.ID);
+            Tile tile = GetTile(tileStatus.coord);
             tile.SetHealth(tileStatus.health);
         }
 
         Client.ClientGame.Inst.OnMapLoadCompleted(this);
     }
 
-    public Tile GetTile(int ID)
+    public Tile GetTile(GridCoord coord)
     {
-        return tileList[ID];
+        if (tileList.ContainsKey(coord))
+            return tileList[coord];
+        else
+            return null;
     }
 
     public void AddTile(Tile tile)
     {
         tile.transform.parent = this.transform;
-        tileList.Add(tile.ID, tile);
+        tileList.Add(tile.coord, tile);
     }
 
-    public Dictionary<int, Tile> GetTileList()
+    public Dictionary<GridCoord, Tile> GetTileList()
     {
         return tileList;
     }
@@ -128,7 +131,8 @@ public class Map : MonoBehaviour {
             Tile tile = obj.GetComponent<Tile>();
             tile.ID = tileData.ID;
             tile.health = tileData.health;
-            tile.transform.localPosition = new Vector3(tileData.x, tileData.y, 0);
+            tile.coord = tileData.coord;
+            tile.transform.localPosition = tileData.coord.ToVector2();
             tile.map = this;
 
             AddTile(tile);
@@ -160,7 +164,7 @@ public class Map : MonoBehaviour {
             
 
         S2C.DamageTile pck = S2C.DamageTile.DeserializeFromBytes(damageTileData);
-        Tile tile = GetTile(pck.tileID);
+        Tile tile = GetTile(pck.tileCoord);
         tile.DamageInternal(pck.damage, pck.point);
     }
 
@@ -208,5 +212,21 @@ public class Map : MonoBehaviour {
     public static Vector2 GetGridPos(Vector2 pos)
     {
         return new Vector2(Mathf.Floor(pos.x + 0.5f), Mathf.Floor(pos.y + 0.5f));
+    }
+
+
+    public int GetTileIndex(Tile tile)
+    {
+        return Map.GetTileIndex(tile, mapWidth);
+    }
+
+    static public int GetTileIndex(Tile tile, int mapWidth)
+    {
+        return Mathf.FloorToInt(tile.transform.localPosition.x) + Mathf.FloorToInt(tile.transform.localPosition.y) * mapWidth;
+    }
+
+    public GridCoord ToGridCoord(int index)
+    {
+        return GridCoord.ToCoord(index, mapWidth);
     }
 }

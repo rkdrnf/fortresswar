@@ -51,13 +51,10 @@ public class MapMakerEditor : Editor {
 			{
 				GameObject tileObj = (GameObject)PrefabUtility.InstantiatePrefab(maker.tile);
                 Tile tile = tileObj.GetComponent<Tile>();
-                tile.transform.position = new Vector3(Mathf.Floor((mousePos.x + 0.5f) / maker.tileSize) * maker.tileSize, Mathf.Floor((mousePos.y + 0.5f) / maker.tileSize) * maker.tileSize, 0f);
+                tile.coord = new GridCoord(Mathf.FloorToInt((mousePos.x + 0.5f) / maker.tileSize) * maker.tileSize, Mathf.FloorToInt((mousePos.y + 0.5f) / maker.tileSize) * maker.tileSize);
+                tile.transform.position = tile.coord.ToVector2();
 
-                tile.ID = GetTileIndex(tile);
-                if (tile != null)
-                {
-                    map.AddTile(tile);
-                }
+                maker.tiles.Add(tile);
 			}
 		}
 
@@ -81,7 +78,7 @@ public class MapMakerEditor : Editor {
 
 		GUILayout.BeginHorizontal();
 		GUILayout.Label(" Tile Size ");
-        maker.tileSize = EditorGUILayout.FloatField(maker.tileSize, GUILayout.Width(100f));
+        maker.tileSize = EditorGUILayout.IntField(maker.tileSize, GUILayout.Width(100f));
 		GUILayout.EndHorizontal();
 
         GUILayout.BeginHorizontal();
@@ -112,7 +109,7 @@ public class MapMakerEditor : Editor {
 
 					maker.tile = maker.tileSet.tiles [tileIndex];
 
-					maker.tileSize = maker.tile.renderer.bounds.size.x;
+					maker.tileSize = Mathf.FloorToInt(maker.tile.renderer.bounds.size.x);
 
 					//move focus to first sceneview
 					if (SceneView.sceneViews.Count > 0) { SceneView sceneView = (SceneView)SceneView.sceneViews[0]; sceneView.Focus(); }
@@ -273,7 +270,7 @@ public class MapMakerEditor : Editor {
         string filePath = AssetDatabase.GenerateUniqueAssetPath(string.Format("Assets/Resources/Maps/{0}.asset", mapFileName));
 
         MapData mapAsset = CreateInstance<MapData>();
-        mapAsset.init(mapFileName, maker.mapWidth, maker.mapHeight, maker.tileSize, maker.tileSet, map.GetTileList(), maker.backgroundImage);
+        mapAsset.init(mapFileName, maker.mapWidth, maker.mapHeight, maker.tileSize, maker.tileSet, maker.tiles, maker.backgroundImage);
 
         //mapAsset.hideFlags = HideFlags.NotEditable;
 
@@ -303,17 +300,12 @@ public class MapMakerEditor : Editor {
         map.Clear();
         for (int i = 0; i < tiles.Length; ++i)
         {
-            map.GetTileList().Add(GetTileIndex(tiles[i]), tiles[i]);
+            map.GetTileList().Add(tiles[i].coord, tiles[i]);
         }
     }
 
     public void Apply()
     {
         map.OnApply(maker.backgroundImage, maker.mapWidth, maker.mapHeight);
-    }
-
-    public int GetTileIndex(Tile tile)
-    {
-        return Mathf.FloorToInt(tile.transform.localPosition.x) + Mathf.FloorToInt(tile.transform.localPosition.y) * maker.mapWidth;
     }
 }

@@ -200,5 +200,13 @@ namespace Const
         ROPE,
         BUILD_MENU
     }
+
+    public enum GridDirection
+    {
+        UP,
+        DOWN,
+        LEFT,
+        RIGHT
+    }
 }
 
