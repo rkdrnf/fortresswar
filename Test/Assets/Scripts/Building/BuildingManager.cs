@@ -28,6 +28,8 @@ namespace Server
             instance = this;
 
             buildingMap = new Dictionary<GridCoord, Building>();
+
+            
         }
 
         Dictionary<GridCoord, Building> buildingMap;
@@ -123,6 +125,18 @@ namespace Server
         public MonoBehaviour down;
         public MonoBehaviour right;
 
+        public bool isPermanent
+        {
+            get
+            {
+                return (center != null ||
+                    left is Tile ||
+                    right is Tile ||
+                    down is Tile
+                    );
+            }
+        }
+
         public int Count
         {
             get { 
@@ -131,6 +145,23 @@ namespace Server
                 (right == null ? 0 : 1) +
                 (down == null ? 0 : 1);
             }
+        }
+
+        public bool HasSuspension(GridDirection direction)
+        {
+            switch (direction)
+            {
+                case GridDirection.LEFT:
+                    return left != null;
+
+                case GridDirection.RIGHT:
+                    return right != null;
+
+                case GridDirection.DOWN:
+                    return down != null;
+            }
+
+            return false;
         }
 
         public void DestroySuspension(GridDirection direction)
@@ -180,6 +211,11 @@ namespace Server
             if (right != null)
                 action(GridDirection.LEFT, right);
         }
+
+        public override string ToString()
+        {
+            return string.Format("Center: {0} Left: {1}, Right: {2}, Down: {3}", center != null, left != null, right != null, down != null);
+        }
     }
 
     public struct Neighbors
@@ -195,6 +231,24 @@ namespace Server
                 return (left == null ? 0 : 1) +
                 (right == null ? 0 : 1) +
                 (up == null ? 0 : 1);
+            }
+        }
+
+        public void Destroy(GridDirection direction)
+        {
+            switch (direction)
+            {
+                case GridDirection.LEFT:
+                    left = null;
+                    break;
+
+                case GridDirection.RIGHT:
+                    right = null;
+                    break;
+
+                case GridDirection.UP:
+                    up = null;
+                    break;
             }
         }
 
@@ -215,7 +269,7 @@ namespace Server
                     break;
             }
         }
-
+        
         public void DoForAll(Action<GridDirection, Building> action)
         {
             if (left != null)
@@ -227,6 +281,22 @@ namespace Server
             if (right != null)
                 action(GridDirection.LEFT, right);
         }
-    }
 
+        public void DoForSide(Action<GridDirection, Building> action)
+        {
+            if (left != null)
+                action(GridDirection.RIGHT, left);
+
+            if (up != null)
+                action(GridDirection.DOWN, up);
+
+            if (right != null)
+                action(GridDirection.LEFT, right);
+        }
+
+        public override string ToString()
+        {
+            return string.Format("Left: {0}, Right: {1}, Up: {2}", left != null, right != null, up != null);
+        }
+    }
 }
