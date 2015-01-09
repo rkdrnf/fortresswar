@@ -21,6 +21,20 @@ public class BuildingDataLoader : MonoBehaviour
         }
     }
 
+    void Update()
+    {
+        if(Input.GetButton("Fire1"))
+        {
+            Vector3 worldMousePosition = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0));
+            GameObject obj = Map.GetLayerObjectAt(worldMousePosition, buildingCollidingLayers);
+
+            if(obj != null && obj.GetComponent<Building>() != null)
+            {
+                obj.GetComponent<Building>().LogForDebug();
+            }
+        }
+    }
+
     void Awake()
     {
         instance = this;
@@ -29,6 +43,8 @@ public class BuildingDataLoader : MonoBehaviour
 
         buildingLayer = LayerMask.NameToLayer("Building");
         fallingBuildingLayer = LayerMask.NameToLayer("FallingBuilding");
+
+        Physics2D.IgnoreLayerCollision(fallingBuildingLayer, fallingBuildingLayer);
     }
 
 

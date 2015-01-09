@@ -50,8 +50,8 @@ public class Building : MonoBehaviour
         if (Network.isServer)
         {
             BuildingManager.Inst.Add(this);
-            FillNeighbors();
             FillSuspension();
+            FillNeighbors();
         }
     }
 
@@ -197,31 +197,59 @@ public class Building : MonoBehaviour
 
     public void PropagateDestruction()
     {
-        neighbors.DoForAll((GridDirection direction, Building building) => { building.DestroySuspension(direction); }); 
+        neighbors.DoForAll((GridDirection direction, Building building) => { building.DestroyNeighbor(direction); }); 
+    }
+
+    public void DestroyNeighbor(GridDirection direction)
+    {
+        neighbors.Destroy(direction);
+        DestroySuspension(direction);
     }
 
     public void DestroySuspension(GridDirection direction)
     {
-        suspension.DestroySuspension(direction);
+        if (!suspension.HasSuspension(direction)) return;
 
+        suspension.DestroySuspension(direction);
+        
         if (suspension.Count == 0)
         { 
             PropagateDestruction();
             Fall();
+            return;
+        }
+
+        PropagateAsNoSuspension();
+    }
+
+    public void PropagateAsNoSuspension()
+    {
+        if (suspension.isPermanent || suspension.down != null)
+        {
+            return; 
+        }
+
+        if (suspension.down == null)
+        {
+            if (suspension.left == null && neighbors.right != null)
+            { 
+                neighbors.right.DestroySuspension(GridDirection.LEFT);
+            }
+
+            if (suspension.right == null && neighbors.left != null)
+            {
+                neighbors.left.DestroySuspension(GridDirection.RIGHT);
+            }
         }
     }
 
     public void AddSuspension(GridDirection direction, Building building)
     {
-        suspension.Add(direction, building);
-    }
+        if (suspension.HasSuspension(direction)) return;
 
-    public void PropagateSuspension()
-    {
-        neighbors.DoForAll((GridDirection direction, Building building) =>
-        {
-            building.AddSuspension(direction, this);
-        });
+        suspension.Add(direction, building);
+
+        PropagateAsSuspension();
     }
 
     public void AddNeighbor(GridDirection direction, Building building)
@@ -229,7 +257,38 @@ public class Building : MonoBehaviour
         neighbors.Add(direction, building);
     }
 
-    public void PropagateNeighbor()
+    public void PropagateAsSuspension()
+    {
+        if (neighbors.up != null)
+        {
+            neighbors.up.AddSuspension(GridDirection.DOWN, this);
+        }
+
+        if (suspension.isPermanent || suspension.down != null) // 영구 지지대거나 아래쪽이 있을 경우 모두에게 지지대로 등록
+        { 
+            neighbors.DoForSide((GridDirection direction, Building building) =>
+            {
+                //if (building.suspension.down != null) return; // 이미 propagate 했어야함.
+
+                building.AddSuspension(direction, this);
+            });
+
+            return;
+        }
+
+        if (suspension.left != null && suspension.right != null) //양쪽이 모두 있을 경우 양쪽에게 지지대로 등록
+        {
+            neighbors.DoForSide((GridDirection direction, Building building) =>
+                {
+                    //if (building.suspension.down != null) return; // 이미 propagate 했어야함.
+
+                    building.AddSuspension(direction, this);
+                });
+            return;
+        }
+    }
+
+    public void PropagateAsNeighbor()
     {
         suspension.DoForAll((GridDirection direction, MonoBehaviour behaviour) =>
         {
@@ -238,19 +297,27 @@ public class Building : MonoBehaviour
         });
     }
 
+    public void LogForDebug()
+    {
+        Debug.Log("Current Building Coord : " + coord);
+        Debug.Log("Suspension: " + suspension);
+        Debug.Log("Neighbors: " + neighbors);
+
+    }
+
     private Neighbors neighbors;
     private Suspension suspension;
 
     public void FillNeighbors()
     {
         neighbors = BuildingManager.Inst.FindNeighbors(coord);
-        PropagateSuspension();
+        PropagateAsSuspension();
     }
 
     public void FillSuspension()
     {
         suspension = BuildingManager.Inst.FindSuspension(coord);
-        PropagateNeighbor();
+        PropagateAsNeighbor();
     }
 }
 
