@@ -5,8 +5,6 @@ using System.Text;
 using UnityEngine;
 using Const;
 
-namespace Client
-{ 
     public class ParticleManager : MonoBehaviour
     {
         private static ParticleManager instance;
@@ -45,4 +43,3 @@ namespace Client
             Physics2D.IgnoreLayerCollision(particleLayer, particleLayer);
         }
     }
-}

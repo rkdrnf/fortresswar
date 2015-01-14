@@ -10,7 +10,7 @@ public class Rope : Projectile {
     private SpringJoint2D ropeSJ;
 
     ServerPlayer ownerPlayer;
-    private Client.PlayerBehaviour C_ropeSource;
+    private ServerPlayer ropeSource;
     GameObject ropeTarget;
 
     public GameObject ropeImagePrefab;
@@ -41,7 +41,7 @@ public class Rope : Projectile {
         transform.position = pck.position;
         rigidbody2D.velocity = pck.velocity;
 
-        C_ropeSource = Client.C_PlayerManager.Inst.Get(owner);
+        ropeSource = PlayerManager.Inst.Get(owner);
 
         OnSetRopeStuck(pck.stickInfo);
     }
@@ -51,7 +51,7 @@ public class Rope : Projectile {
         if (Network.isServer)
         {
             PlayerManager.Inst.Get(owner).OnFireRope(this);
-            C_ropeSource = Client.C_PlayerManager.Inst.Get(owner);
+            ropeSource = PlayerManager.Inst.Get(owner);
         }
     }
 
@@ -112,14 +112,14 @@ public class Rope : Projectile {
 
     void DrawRope()
     {
-        if (C_ropeSource)
+        if (ropeSource)
         {
             foreach (Transform prevChild in transform)
             {
                 Destroy(prevChild.gameObject);
             }
 
-            Vector2 startPoint = C_ropeSource.transform.position;
+            Vector2 startPoint = ropeSource.transform.position;
             Vector2 endPoint = transform.position;
 
             Vector2 direction = (endPoint - startPoint).normalized;
@@ -145,7 +145,7 @@ public class Rope : Projectile {
         if (stickInfo.isSticked) return;
 
         if (ServerGame.Inst.isDedicatedServer == false)
-            C_ropeSource = Client.C_PlayerManager.Inst.Get(owner);
+            ropeSource = PlayerManager.Inst.Get(owner);
 
         StickToTarget(target, targetID, objType);
 
@@ -202,7 +202,7 @@ public class Rope : Projectile {
         switch(info.objType)
         {
             case ObjectType.PLAYER:
-                targetObj = Client.C_PlayerManager.Inst.Get((int)info.targetID).gameObject;
+                targetObj = PlayerManager.Inst.Get((int)info.targetID).gameObject;
                 break;
 
             case ObjectType.PROJECTILE:
@@ -217,7 +217,7 @@ public class Rope : Projectile {
                 return;
         }
 
-        C_ropeSource = Client.C_PlayerManager.Inst.Get(owner);
+        ropeSource = PlayerManager.Inst.Get(owner);
 
         transform.position = targetObj.transform.TransformPoint(info.targetAnchor);
         stickHJ = gameObject.AddComponent<HingeJoint2D>();
@@ -254,16 +254,16 @@ public class Rope : Projectile {
     {
         if (ropeSJ != null)
         {
-            float dist = Vector2.Distance(transform.position, C_ropeSource.transform.position);
+            float dist = Vector2.Distance(transform.position, ropeSource.transform.position);
 
             //거리보다 로프가 짧으면 로프쪽, 아니면 캐릭터쪽 방향
             float ropeCharDist = (ropeSJ.distance - dist);
-            Vector2 direction = (ropeSJ.distance - dist) * (C_ropeSource.transform.position - transform.position);
+            Vector2 direction = (ropeSJ.distance - dist) * (ropeSource.transform.position - transform.position);
 
-            RaycastHit2D hit = Physics2D.Raycast(C_ropeSource.transform.position, direction, range, groundLayer);
+            RaycastHit2D hit = Physics2D.Raycast(ropeSource.transform.position, direction, range, groundLayer);
 
             //장애물이 있고, 캐릭터와 장애물 간 거리보다 캐릭터와 로프 길이가 
-            float hitDist = Vector2.Distance(C_ropeSource.transform.position, hit.point);
+            float hitDist = Vector2.Distance(ropeSource.transform.position, hit.point);
             if (hit.collider != null && hitDist < 1.5)
             {
                 if (ropeCharDist > hitDist)
@@ -290,6 +290,6 @@ public class Rope : Projectile {
 
     public Vector2 GetNormalVector()
     {
-        return transform.position - C_ropeSource.transform.position;
+        return transform.position - ropeSource.transform.position;
     }
 }

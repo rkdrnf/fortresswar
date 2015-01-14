@@ -6,6 +6,9 @@ using UnityEngine;
 using Const;
 using C2S = Packet.C2S;
 using S2C = Packet.S2C;
+using FocusManager;
+using Client;
+using InGameMenu;
 
 namespace Server
 {
@@ -25,22 +28,37 @@ namespace Server
             }
         }
 
-
-        Client.ClientGame myClient
-        {
-            get { return Client.ClientGame.Inst; }
-        }
-
         public Vector3 spawnPosition;
         public GameObject playerPrefab;
 
+        public Map m_map;
         public Vector2 RevivalLocation;
 
         public bool isDedicatedServer = false;
 
+        public KeyFocusManager keyFocusManager;
+        public MouseFocusManager mouseFocusManager;
+
+        public TeamSelector teamSelector;
+        public JobSelector jobSelector;
+        public NameSelector nameSelector;
+        public BuildMenu buildMenu;
+        public ScoreBoard scoreBoard;
+
+        CTeam[] m_teams;
+
+        public CTeam GetTeam(Team team)
+        {
+            return m_teams[(int)team];
+        }
+
         void Awake()
         {
             instance = this;
+            m_teams = new CTeam[2] { new CTeam(), new CTeam() };
+
+            keyFocusManager = new KeyFocusManager(InputKeyFocus.PLAYER);
+            mouseFocusManager = new MouseFocusManager(InputMouseFocus.PLAYER);
         }
 
         void Start()
@@ -57,12 +75,12 @@ namespace Server
 
         public void StartServerGame()
         {
-            myClient.ClientClearGame();
+            RecvClearGame();
 
             Game.Inst.LoadMap();
 
             int ID = PlayerManager.Inst.SetID(PlayerManager.Inst.GetUniqueID(), Network.player);
-            myClient.SetPlayerID(ID, new NetworkMessageInfo());
+            SetPlayerID(ID, new NetworkMessageInfo());
         }
 
         void OnPlayerConnected(NetworkPlayer player)
@@ -87,21 +105,48 @@ namespace Server
 
             //TODO::TeamSelect Validation (team balance)
 
-            ServerPlayer player = PlayerManager.Inst.Get(update.playerID);
+            OnRecvPlayerTeam(update);
+            
+            BroadcastPlayerTeam(updateData);
 
+            ServerPlayer player = PlayerManager.Inst.Get(update.playerID);
+            if (player == null)
+            {
+                ReadyToEnterCharacter(PlayerManager.Inst.GetSetting(update.playerID));
+            }
+        }
+
+        void BroadcastPlayerTeam(byte[] updateData)
+        {
+            networkView.RPC("RecvPlayerTeam", RPCMode.Others, updateData);
+        }
+
+        [RPC]
+        void RecvPlayerTeam(byte[] updateData, NetworkMessageInfo info)
+        {
+            //ServerCheck
+
+            C2S.UpdatePlayerTeam update = C2S.UpdatePlayerTeam.DeserializeFromBytes(updateData);
+
+            OnRecvPlayerTeam(update);
+        }
+
+        void OnRecvPlayerTeam(C2S.UpdatePlayerTeam update)
+        {
             PlayerManager.Inst.UpdatePlayer(update);
 
-            if (player != null) 
-                player.BroadcastDie(); // Player Exists.
-            else    
-                ReadyToEnterCharacter(PlayerManager.Inst.GetSetting(update.playerID));
+            ServerPlayer player = PlayerManager.Inst.Get(update.playerID);
+            if (player != null)
+            {
+                PlayerSetting setting = PlayerManager.Inst.GetSetting(update.playerID);
+                if (setting.team != Team.NONE)
+                    GetTeam(setting.team).RemovePlayer(player);
 
+                GetTeam(update.team).AddPlayer(player);
 
-
-            if (!isDedicatedServer)
-                networkView.RPC("SetPlayerTeam", RPCMode.All, updateData);
-            else
-                networkView.RPC("SetPlayerTeam", RPCMode.Others, updateData);
+                player.OnChangeTeam(update.team);
+                
+            }
         }
 
         [RPC]
@@ -116,11 +161,21 @@ namespace Server
 
 
             if (!isDedicatedServer)
-                networkView.RPC("ClientSetPlayerName", RPCMode.All, update.SerializeToBytes());
+                networkView.RPC("RecvSetPlayerName", RPCMode.All, update.SerializeToBytes());
             else
-                networkView.RPC("ClientSetPlayerName", RPCMode.Others, update.SerializeToBytes());
+                networkView.RPC("RecvSetPlayerName", RPCMode.Others, update.SerializeToBytes());
 
             ReadyToEnterCharacter(PlayerManager.Inst.GetSetting(update.playerID));
+        }
+
+        [RPC]
+        void RecvSetPlayerName(byte[] updateData)
+        {
+            //ServerCheck
+
+            C2S.UpdatePlayerName update = C2S.UpdatePlayerName.DeserializeFromBytes(updateData);
+
+            PlayerManager.Inst.UpdatePlayer(update);
         }
 
         void ReadyToEnterCharacter(PlayerSetting setting)
@@ -138,10 +193,29 @@ namespace Server
             NetworkPlayer player = PlayerManager.Inst.GetPlayer(setting.playerID);
 
             if (player == Network.player) // ServerPlayer
-                myClient.PlayerNotReadyToEnter(notReady.SerializeToBytes(), new NetworkMessageInfo());
+                PlayerNotReadyToEnter(notReady.SerializeToBytes(), new NetworkMessageInfo());
             else
                 networkView.RPC("PlayerNotReadyToEnter", player, notReady.SerializeToBytes());
         }
+
+        [RPC]
+        public void PlayerNotReadyToEnter(byte[] notReadyData, NetworkMessageInfo info)
+        {
+            S2C.PlayerNotReady notReady = S2C.PlayerNotReady.DeserializeFromBytes(notReadyData);
+
+            switch (notReady.error)
+            {
+                case PlayerSettingError.NAME:
+                    nameSelector.Open();
+                    break;
+
+                case PlayerSettingError.TEAM:
+                    teamSelector.Open();
+                    break;
+            }
+
+        }
+    
 
         public void EnterCharacter(PlayerSetting setting)
         {
@@ -154,17 +228,6 @@ namespace Server
             
             PlayerManager.Inst.Set(setting.playerID, serverPlayer);
             serverPlayer.Init(setting.playerID);
-
-            if (!isDedicatedServer) // own player
-            {
-                newPlayer.networkView.RPC("InitFinished", RPCMode.AllBuffered);
-                //newPlayer.networkView.RPC("SetOwner", RPCMode.AllBuffered, pck.SerializeToBytes());
-            }
-            else
-            { 
-                newPlayer.networkView.RPC("InitFinished", RPCMode.Others);
-                //newPlayer.networkView.RPC("SetOwner", RPCMode.OthersBuffered, pck.SerializeToBytes());
-            }
         }
 
         /// <summary>
@@ -181,30 +244,161 @@ namespace Server
 
             character.RemoveCharacterFromNetwork();
 
-            networkView.RPC("OnPlayerRemoved", RPCMode.All, playerID);
+            networkView.RPC("RecvPlayerRemove", RPCMode.Others, playerID);
+        }
+
+        [RPC]
+        void RecvPlayerRemove(int player)
+        {
+            PlayerManager.Inst.Remove(player);
+            PlayerManager.Inst.RemoveSetting(player);
         }
 
         public void ClearGame()
         {
-            networkView.RPC("ClientClearGame", RPCMode.All);
+            networkView.RPC("RecvClearGame", RPCMode.All);
+        }
+
+        [RPC]
+        public void RecvClearGame()
+        {
+            PlayerManager.Inst.Clear();
+            ProjectileManager.Inst.Clear();
+            Game.Inst.ClearMap();
         }
 
         void OnDisconnectedFromServer(NetworkDisconnection info)
         {
-            if (!Network.isServer) return;
-
             OnServerDown();
-
-            if (!isDedicatedServer)
-                myClient.OnServerDown();
         }
 
-        void OnServerDown()
+        public void OnServerDown()
         {
             PlayerManager.Inst.Clear();
             ProjectileManager.Inst.Clear();
 
+            ClearMap();
+        }
+
+        public void ClearMap()
+        {
             Game.Inst.ClearMap();
         }
+
+        public void OpenInGameMenu(InGameMenuType menu)
+        {
+            switch(menu)
+            {
+                case InGameMenuType.BUILD_MENU:
+                    buildMenu.Open();
+                    break;
+
+                case InGameMenuType.JOB_SELECTOR:
+                    jobSelector.Open();
+                    break;
+
+                case InGameMenuType.NAME_SELECTOR:
+                    nameSelector.Open();
+                    break;
+
+                case InGameMenuType.TEAM_SELECTOR:
+                    teamSelector.Open();
+                    break;
+
+                case InGameMenuType.SCORE_BOARD:
+                    scoreBoard.Open();
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        private int m_ID = -1;
+
+        void SetMyID(int newID)
+        {
+            m_ID = newID;
+        }
+
+        public int GetID()
+        {
+            return m_ID;
+        }
+
+        [RPC]
+        public void SetPlayerID(int newID, NetworkMessageInfo info)
+        {
+            //ServerCheck
+
+            SetMyID(newID);
+            nameSelector.Open();
+        }
+
+        public void SelectTeam(Team team)
+        {
+            C2S.UpdatePlayerTeam selectTeam = new C2S.UpdatePlayerTeam(m_ID, team);
+
+            if (Network.isServer)
+                ServerSelectTeam(selectTeam.SerializeToBytes(), new NetworkMessageInfo());
+            else if (Network.isClient)
+                networkView.RPC("ServerSelectTeam", RPCMode.Server, selectTeam.SerializeToBytes());
+        }
+
+        public void SetPlayerName(string name)
+        {
+            C2S.UpdatePlayerName pck = new C2S.UpdatePlayerName(m_ID, name);
+
+            if (Network.isServer)
+            {
+                ServerSetPlayerName(pck.SerializeToBytes(), new NetworkMessageInfo());
+            }
+            else if (Network.isClient)
+            {
+                networkView.RPC("ServerSetPlayerName", RPCMode.Server, pck.SerializeToBytes());
+            }
+        }
+
+
+        bool mapLoaded;
+        bool playerLoaded;
+
+        public void OnPlayerLoadCompleted()
+        {
+            if (!Network.isClient) return;
+
+            playerLoaded = true;
+
+            if (IsPlayerMapLoaded())
+            {
+                foreach (var obj in FindObjectsOfType<Projectile>())
+                {
+                    obj.SendMessage("OnPlayerMapLoaded", SendMessageOptions.DontRequireReceiver);
+                }
+            }
+        }
+
+        public void OnMapLoadCompleted(Map map)
+        {
+            if (!Network.isClient) return;
+
+            m_map = map;
+            mapLoaded = true;
+
+            if (IsPlayerMapLoaded())
+            {
+                foreach (var obj in FindObjectsOfType<Projectile>())
+                {
+                    obj.SendMessage("OnPlayerMapLoaded", SendMessageOptions.DontRequireReceiver);
+                }
+            }
+        }
+
+        public bool IsPlayerMapLoaded()
+        {
+            return mapLoaded && playerLoaded;
+        }
+
+
     }
 }

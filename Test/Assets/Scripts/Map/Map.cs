@@ -90,7 +90,7 @@ public class Map : MonoBehaviour {
             tile.SetHealth(tileStatus.health);
         }
 
-        Client.ClientGame.Inst.OnMapLoadCompleted(this);
+        ServerGame.Inst.OnMapLoadCompleted(this);
     }
 
     public Tile GetTile(GridCoord coord)
