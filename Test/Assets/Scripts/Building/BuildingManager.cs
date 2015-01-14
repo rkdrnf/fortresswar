@@ -36,7 +36,7 @@ namespace Server
 
         public void Add(Building building)
         {
-            buildingMap.Add(building.coord, building);
+            buildingMap.Add(building.m_coord, building);
         }
 
         public Building Get(GridCoord coord)
@@ -57,7 +57,7 @@ namespace Server
 
         public bool CanBuild(BuildingData bData, Vector2 position)
         {
-            Collider2D[] colliders = Physics2D.OverlapAreaAll(position - (bData.building.size / 2 * 0.9f), position + (bData.building.size / 2 * 0.9f), bData.invalidLocations);
+            Collider2D[] colliders = Physics2D.OverlapAreaAll(position - (bData.building.m_size / 2 * 0.9f), position + (bData.building.m_size / 2 * 0.9f), bData.invalidLocations);
             if (colliders.Length > 0) return false;
 
             GridCoord coord = GridCoord.ToCoord(position);

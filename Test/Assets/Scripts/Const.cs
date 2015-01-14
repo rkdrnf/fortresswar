@@ -208,5 +208,15 @@ namespace Const
         LEFT,
         RIGHT
     }
+
+    namespace Structure
+    {
+        public enum DestroyReason
+        {
+            DAMAGE,
+            COLLIDE,
+            MANUAL,
+        }
+    }
 }
 

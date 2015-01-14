@@ -86,8 +86,8 @@ public class Map : MonoBehaviour {
 
         foreach(var tileStatus in mapInfo.tileStatusList)
         {
-            Tile tile = GetTile(tileStatus.coord);
-            tile.SetHealth(tileStatus.health);
+            Tile tile = GetTile(tileStatus.m_coord);
+            tile.SetHealth(tileStatus.m_health, Const.Structure.DestroyReason.MANUAL);
         }
 
         Client.ClientGame.Inst.OnMapLoadCompleted(this);
@@ -104,7 +104,7 @@ public class Map : MonoBehaviour {
     public void AddTile(Tile tile)
     {
         tile.transform.parent = this.transform;
-        tileList.Add(tile.coord, tile);
+        tileList.Add(tile.m_coord, tile);
     }
 
     public Dictionary<GridCoord, Tile> GetTileList()
@@ -127,13 +127,10 @@ public class Map : MonoBehaviour {
 
         foreach (TileData tileData in mapData.tiles)
         {
-            GameObject obj = Instantiate(mapData.tileSet.tiles[(int)tileData.tileType]) as GameObject;
-            Tile tile = obj.GetComponent<Tile>();
-            tile.ID = tileData.ID;
-            tile.health = tileData.health;
-            tile.coord = tileData.coord;
-            tile.transform.localPosition = tileData.coord.ToVector2();
-            tile.map = this;
+            Tile tile = (Tile)Network.Instantiate(mapData.tileSet.tiles[(int)tileData.tileType], tileData.coord.ToVector2(), Quaternion.identity, 4);
+
+            tile.Init(tileData, this);
+            
 
             AddTile(tile);
         }
@@ -151,21 +148,6 @@ public class Map : MonoBehaviour {
         mapHeight = height;
 
         LoadBackground(backgroundImage);
-    }
-
-    [RPC]
-    public void ClientDamageTile(byte[] damageTileData, NetworkMessageInfo info)
-    {
-        // (!Network.isClient) return;
-        //ServerCheck
-
-        //old Info
-        if (mapLoadTime == 0f || mapLoadTime > info.timestamp) return;
-            
-
-        S2C.DamageTile pck = S2C.DamageTile.DeserializeFromBytes(damageTileData);
-        Tile tile = GetTile(pck.tileCoord);
-        tile.DamageInternal(pck.damage, pck.point);
     }
 
     public bool CheckInBorder(Transform obj)

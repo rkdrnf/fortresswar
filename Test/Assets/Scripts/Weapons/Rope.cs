@@ -69,7 +69,7 @@ public class Rope : Projectile {
 
         if (tile)
         {
-            ConnectRope(tile.gameObject, tile.ID, ObjectType.TILE);
+            ConnectRope(tile.gameObject, tile.m_ID, ObjectType.TILE);
         }
     }
 
@@ -79,7 +79,7 @@ public class Rope : Projectile {
 
         if (building)
         {
-            ConnectRope(building.gameObject, building.ID, ObjectType.BUILDING);
+            ConnectRope(building.gameObject, building.m_ID, ObjectType.BUILDING);
         }
     }
 

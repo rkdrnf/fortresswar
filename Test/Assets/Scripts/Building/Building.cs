@@ -7,45 +7,45 @@ using S2C = Packet.S2C;
 using C2S = Packet.C2S;
 using Server;
 using Const;
+using Const.Structure;
 
 [RequireComponent(typeof(SpriteRenderer), typeof(Rigidbody2D), typeof(Collider2D))]
-public class Building : MonoBehaviour
+public class Building : Structure
 {
-    public int ID;
-    public GridCoord coord;
-    public Const.ParticleType particleType;
-    public bool destroyable;
-    public int maxHealth;
-    public Vector2 size;
-    public spriteInfo[] sprites;
+    bool m_isFalling;
 
-    [HideInInspector]
-    public int health;
-    [HideInInspector]
-    public Map map;
-
-    
-    private SpriteRenderer spriteRenderer;
-
-
-    public enum DestroyReason
+    protected override void AfterAwake()
     {
-        DAMAGE,
-        COLLIDE,
-        MANUAL,
+        rigidbody2D.isKinematic = true;
     }
 
-    void Awake()
+    [RPC]
+    protected override void RequestCurrentStatus(NetworkMessageInfo info)
     {
-        spriteRenderer = GetComponent<SpriteRenderer>();
-        spriteRenderer.sprite = GetSprite(health);
+        S2C.BuildingStatus pck = new S2C.BuildingStatus(m_coord, m_health, m_isFalling, m_direction);
 
-        rigidbody2D.isKinematic = true;
+        networkView.RPC("RecvCurrentStatus", info.sender, pck.SerializeToBytes());
+    }
+
+    [RPC]
+    protected override void RecvCurrentStatus(byte[] pckData, NetworkMessageInfo info)
+    {
+        S2C.BuildingStatus pck = S2C.BuildingStatus.DeserializeFromBytes(pckData);
+
+        m_coord = pck.m_coord;
+        m_health = pck.m_health;
+        
+        m_direction = pck.m_direction;
+        if (pck.m_falling)
+        {
+            Fall();
+        }
+
     }
 
     public void Init(GridCoord coord)
     {
-        this.coord = coord;
+        m_coord = coord;
  
         if (Network.isServer)
         {
@@ -57,128 +57,43 @@ public class Building : MonoBehaviour
 
     public void Fall()
     {
-        if (!Network.isServer) return;
+        //if (!Network.isServer) return;
 
         gameObject.layer = BuildingDataLoader.Inst.fallingBuildingLayer;
         rigidbody2D.isKinematic = false;
 
         collider2D.isTrigger = true;
+        (collider2D as BoxCollider2D).size = (collider2D as BoxCollider2D).size * 0.9f;
     }
 
     void BroadcastFall()
     {
         //서버는 이미 처리 다 해서 또 보낼 필요 없음
-        networkView.RPC("ClientFall", RPCMode.Others);
+        networkView.RPC("RecvFall", RPCMode.Others);
     }
 
     [RPC]
-    void ClientFall()
+    void RecvFall()
     {
         gameObject.layer = BuildingDataLoader.Inst.fallingBuildingLayer;
         rigidbody.isKinematic = false;
         collider2D.isTrigger = true;
     }
 
-
     void OnTriggerEnter2D(Collider2D targetCollider)
     {
+        if (!Network.isServer) return;
         if (rigidbody2D.isKinematic) return;
 
         if (targetCollider.tag == "Building" || targetCollider.tag == "Tile")
-            DestroyBuilding(DestroyReason.COLLIDE);
+            OnBreak(DestroyReason.COLLIDE);
         
         //damage target collider
     }
 
-
-
-    Sprite GetSprite(int health)
+    protected override void OnBreak(DestroyReason reason)
     {
-        int index = 0;
-
-        while (index + 1 < sprites.Length && health < sprites[index].HealthValue)
-        {
-            index++;
-        }
-
-        return sprites[index].sprite;
-    }
-
-    public void SetHealth(int health)
-    {
-        this.health = health;
-
-        if (health < 1)
-        {
-            DestroyBuilding(DestroyReason.MANUAL);
-            return;
-        }
-
-        spriteRenderer.sprite = GetSprite(health);
-    }
-
-    public void Damage(int damage, Vector2 point)
-    {
-        if (!Network.isServer) return;
-
-        if (destroyable)
-        {
-            health -= damage;
-        }
-
-        S2C.DamageTile pck = new S2C.DamageTile(this.coord, damage, point);
-        BroadcastDamage(pck);
-
-        if (health < 1)
-        {
-            DestroyBuilding(DestroyReason.DAMAGE);
-            return;
-        }
-    }
-
-    public void BroadcastDamage(S2C.DamageTile pck)
-    {
-        if (!Server.ServerGame.Inst.isDedicatedServer)
-        {
-            networkView.RPC("ClientDamage", RPCMode.All, pck.SerializeToBytes());
-        }
-        else
-        {
-            networkView.RPC("ClientDamage", RPCMode.Others, pck.SerializeToBytes());
-        }
-    }
-
-    [RPC]
-    void ClientDamage(byte[] pckData, NetworkMessageInfo info)
-    {
-        S2C.DamageTile pck = S2C.DamageTile.DeserializeFromBytes(pckData);
-
-        DamageInternal(pck.damage, pck.point);
-    }
-
-    public void DamageInternal(int damage, Vector2 point)
-    {
-        if (destroyable)
-        {
-            PlaySplash();
-
-            health -= damage;
-
-            spriteRenderer.sprite = GetSprite(health);
-        }
-    }
-
-    public void PlaySplash()
-    {
-        Client.ParticleSystem2D pSystem = Client.ParticleManager.Inst.particleSystemPool.Borrow();
-        pSystem.Init(Client.ParticleManager.Inst.particleSet.particles[(int)particleType]);
-        pSystem.transform.position = transform.position;
-        pSystem.Play();
-    }
-
-    public void DestroyBuilding(DestroyReason reason)
-    {
-        switch(reason)
+        switch (reason)
         {
             case DestroyReason.DAMAGE:
                 PropagateDestruction();
@@ -195,24 +110,26 @@ public class Building : MonoBehaviour
         Network.Destroy(gameObject);
     }
 
+    protected override void OnRecvBreak() { }
+
     public void PropagateDestruction()
     {
-        neighbors.DoForAll((GridDirection direction, Building building) => { building.DestroyNeighbor(direction); }); 
+        m_neighbors.DoForAll((GridDirection direction, Building building) => { building.DestroyNeighbor(direction); }); 
     }
 
     public void DestroyNeighbor(GridDirection direction)
     {
-        neighbors.Destroy(direction);
+        m_neighbors.Destroy(direction);
         DestroySuspension(direction);
     }
 
     public void DestroySuspension(GridDirection direction)
     {
-        if (!suspension.HasSuspension(direction)) return;
+        if (!m_suspension.HasSuspension(direction)) return;
 
-        suspension.DestroySuspension(direction);
-        
-        if (suspension.Count == 0)
+        m_suspension.DestroySuspension(direction);
+
+        if (m_suspension.Count == 0)
         { 
             PropagateDestruction();
             Fall();
@@ -224,49 +141,49 @@ public class Building : MonoBehaviour
 
     public void PropagateAsNoSuspension()
     {
-        if (suspension.isPermanent || suspension.down != null)
+        if (m_suspension.isPermanent || m_suspension.down != null)
         {
             return; 
         }
 
-        if (suspension.down == null)
+        if (m_suspension.down == null)
         {
-            if (suspension.left == null && neighbors.right != null)
-            { 
-                neighbors.right.DestroySuspension(GridDirection.LEFT);
+            if (m_suspension.left == null && m_neighbors.right != null)
+            {
+                m_neighbors.right.DestroySuspension(GridDirection.LEFT);
             }
 
-            if (suspension.right == null && neighbors.left != null)
+            if (m_suspension.right == null && m_neighbors.left != null)
             {
-                neighbors.left.DestroySuspension(GridDirection.RIGHT);
+                m_neighbors.left.DestroySuspension(GridDirection.RIGHT);
             }
         }
     }
 
     public void AddSuspension(GridDirection direction, Building building)
     {
-        if (suspension.HasSuspension(direction)) return;
+        if (m_suspension.HasSuspension(direction)) return;
 
-        suspension.Add(direction, building);
+        m_suspension.Add(direction, building);
 
         PropagateAsSuspension();
     }
 
     public void AddNeighbor(GridDirection direction, Building building)
     {
-        neighbors.Add(direction, building);
+        m_neighbors.Add(direction, building);
     }
 
     public void PropagateAsSuspension()
     {
-        if (neighbors.up != null)
+        if (m_neighbors.up != null)
         {
-            neighbors.up.AddSuspension(GridDirection.DOWN, this);
+            m_neighbors.up.AddSuspension(GridDirection.DOWN, this);
         }
 
-        if (suspension.isPermanent || suspension.down != null) // 영구 지지대거나 아래쪽이 있을 경우 모두에게 지지대로 등록
-        { 
-            neighbors.DoForSide((GridDirection direction, Building building) =>
+        if (m_suspension.isPermanent || m_suspension.down != null) // 영구 지지대거나 아래쪽이 있을 경우 모두에게 지지대로 등록
+        {
+            m_neighbors.DoForSide((GridDirection direction, Building building) =>
             {
                 //if (building.suspension.down != null) return; // 이미 propagate 했어야함.
 
@@ -276,9 +193,9 @@ public class Building : MonoBehaviour
             return;
         }
 
-        if (suspension.left != null && suspension.right != null) //양쪽이 모두 있을 경우 양쪽에게 지지대로 등록
+        if (m_suspension.left != null && m_suspension.right != null) //양쪽이 모두 있을 경우 양쪽에게 지지대로 등록
         {
-            neighbors.DoForSide((GridDirection direction, Building building) =>
+            m_neighbors.DoForSide((GridDirection direction, Building building) =>
                 {
                     //if (building.suspension.down != null) return; // 이미 propagate 했어야함.
 
@@ -290,7 +207,7 @@ public class Building : MonoBehaviour
 
     public void PropagateAsNeighbor()
     {
-        suspension.DoForAll((GridDirection direction, MonoBehaviour behaviour) =>
+        m_suspension.DoForAll((GridDirection direction, MonoBehaviour behaviour) =>
         {
             if (behaviour is Building)
                 (behaviour as Building).AddNeighbor(direction, this);
@@ -299,24 +216,24 @@ public class Building : MonoBehaviour
 
     public void LogForDebug()
     {
-        Debug.Log("Current Building Coord : " + coord);
-        Debug.Log("Suspension: " + suspension);
-        Debug.Log("Neighbors: " + neighbors);
+        Debug.Log("Current Building Coord : " + m_coord);
+        Debug.Log("Suspension: " + m_suspension);
+        Debug.Log("Neighbors: " + m_neighbors);
 
     }
 
-    private Neighbors neighbors;
-    private Suspension suspension;
+    private Neighbors m_neighbors;
+    private Suspension m_suspension;
 
     public void FillNeighbors()
     {
-        neighbors = BuildingManager.Inst.FindNeighbors(coord);
+        m_neighbors = BuildingManager.Inst.FindNeighbors(m_coord);
         PropagateAsSuspension();
     }
 
     public void FillSuspension()
     {
-        suspension = BuildingManager.Inst.FindSuspension(coord);
+        m_suspension = BuildingManager.Inst.FindSuspension(m_coord);
         PropagateAsNeighbor();
     }
 }

@@ -29,7 +29,7 @@ public class MapData : ScriptableObject
         List<TileData> tileDataList = new List<TileData>();
         foreach(var tile in tileList)
         {
-            tileDataList.Add(new TileData(tile.ID, tile.tileType, tile.coord, tile.health));
+            tileDataList.Add(new TileData(tile.m_ID, tile.m_tileType, tile.m_coord, tile.m_health));
         }
 
         return tileDataList.ToArray();
