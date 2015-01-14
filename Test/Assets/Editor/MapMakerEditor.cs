@@ -4,6 +4,7 @@ using System.Collections;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
+using Data; 
 
 [CustomEditor(typeof(MapMaker))]
 public class MapMakerEditor : Editor {
@@ -231,6 +232,12 @@ public class MapMakerEditor : Editor {
     static void CreateBuildingSet()
     {
         CreateAsset<BuildingDataSet>();
+    }
+
+    [MenuItem("Assets/Create/MaterialSet")]
+    static void CreateMaterialSet()
+    {
+        CreateAsset<MaterialSet>();
     }
 
     static void CreateAsset<T>() where T : ScriptableObject

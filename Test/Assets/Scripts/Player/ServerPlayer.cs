@@ -10,6 +10,7 @@ using Packet;
 using S2C = Packet.S2C;
 using C2S = Packet.C2S;
 using System.Threading;
+using Character;
 
 namespace Server
 {
@@ -29,26 +30,27 @@ namespace Server
             return isOwner;
         }
 
-        Job job;
-        public JobStat jobStat;
-
-        int health;
-        Animator animator;
-
-        public bool facingRight = true;
-
-        WeaponManager weaponManager;
-
-        float horMov
+        Job m_job;
+        public Job GetJob()
         {
-            get { return clientPlayer.horMov; }
-        }
-        float verMov
-        {
-            get { return clientPlayer.verMov; }
+            return m_job;
         }
 
-        float wallWalkTimer;
+
+        public JobStat m_jobStat;
+        public JobStat GetJobStat()
+        {
+            return m_jobStat;
+        }
+
+        int m_health;
+        public int GetHealth()
+        {
+            return m_health;
+        }
+
+        
+        WeaponManager m_weaponManager;
 
 
         NetworkView controllerView;
@@ -57,51 +59,68 @@ namespace Server
         public PhysicsMaterial2D bodyMaterial;
         public PhysicsMaterial2D onAirMaterial;
 
+        UI.WeaponUI m_weaponUI;
+
         Collider2D bodyCollider;
-
-
-        public Vector2 lookingDirection
-        {
-            get { return clientPlayer.lookingDirection; }
-        }
-
-
-        int envFlag;
 
         const float REVIVAL_TIME = 5f;
         double revivalTimer = 0f;
 
-        CharacterSM stateManager;
-
-        Client.ClientGame client
+        Team m_team;
+        public Team GetTeam()
         {
-            get { return Client.ClientGame.Inst; }
+            return m_team;
         }
+        
         ServerGame server
         {
             get { return ServerGame.Inst; }
         }
 
-        Client.PlayerBehaviour clientPlayer;
+        CharacterMoveController m_controller;
+        CharacterInputProcessor m_inputProcessor;
+        BuildController m_buildController;
+        CharacterRenderer m_characterRenderer;
 
+        public float GetInputX()
+        {
+            return m_inputProcessor.GetInputX();
+        }
+        public float GetInputY()
+        {
+            return m_inputProcessor.GetInputY();
+        }
+        public Vector2 GetInputLookingDirection()
+        {
+            return m_inputProcessor.GetLookingDirection();
+        }
+
+        public bool IsFacingRight()
+        {
+            return m_controller.IsFacingRight();
+        }
+        
         void Awake()
         {
+            PlayerManager.Inst.StartLoadUser(this);
+
             networkView.group = NetworkViewGroup.PLAYER;
-            weaponManager = GetComponent<WeaponManager>();
-            weaponManager.Init(this);
+            m_weaponManager = GetComponent<WeaponManager>();
+            m_weaponManager.Init(this);
 
             bodyCollider = GetComponent<Collider2D>();
 
-            wallWalkTimer = 0f;
-            animator = GetComponent<Animator>();
-
-            InfectingRopes = new List<Rope>();
+            m_controller = new CharacterMoveController(this);
+            m_ropeController = new RopeController(this);
+            m_inputProcessor = new CharacterInputProcessor(this);
+            m_buildController = new BuildController(this);
+            m_characterRenderer = new CharacterRenderer(this);
 
             Component[] views = gameObject.GetComponents(typeof(NetworkView));
             foreach (Component view in views)
             {
                 NetworkView nView = (NetworkView)view;
-                if (nView.observed is Client.PlayerBehaviour)
+                if (nView.observed is ServerPlayer)
                 {
                     controllerView = nView;
                 }
@@ -112,90 +131,100 @@ namespace Server
                 }
             }
 
-            clientPlayer = GetComponent<Client.PlayerBehaviour>();
+            m_stateManager = new CharacterSM(CharacterState.DEAD, this);
+            m_envManager = new CharacterEM();
 
-            stateManager = new CharacterSM(CharacterState.DEAD, this);
+            
         }
+
+
+        // StateManager
+        [HideInInspector]
+        CharacterSM m_stateManager;
 
         public CharacterState GetState()
         {
-            return stateManager.GetState();
+            return m_stateManager.GetState();
+        }
+        public void SetState(CharacterState state)
+        {
+            m_stateManager.SetState(state);
+        }
+        public bool IsInState(CharacterState state, params CharacterState[] stateList)
+        {
+            return m_stateManager.IsInState(state, stateList);
+        }
+        public bool IsNotInState(CharacterState state, params CharacterState[] states)
+        {
+            return m_stateManager.IsNotInState(state, states);
         }
 
         public void BroadcastState()
         {
             if (!Network.isServer) return;
 
-            S2C.CharacterChangeState pck = new S2C.CharacterChangeState(stateManager.GetState());
+            S2C.CharacterChangeState pck = new S2C.CharacterChangeState(m_stateManager.GetState());
 
-            if (!ServerGame.Inst.isDedicatedServer)
-                networkView.RPC("ClientSetState", RPCMode.All, pck.SerializeToBytes());
+            networkView.RPC("RecvState", RPCMode.Others, pck.SerializeToBytes());
+        }
+
+        [RPC]
+        void RecvState(byte[] pckData, NetworkMessageInfo info)
+        {
+            //ServerCheck
+            S2C.CharacterChangeState pck = S2C.CharacterChangeState.DeserializeFromBytes(pckData);
+
+            m_stateManager.SetState(pck.state);
+        }
+
+        //EnvManager
+        [HideInInspector]
+        CharacterEM m_envManager;
+        public void SetEnv(CharacterEnv env, bool set)
+        {
+            m_envManager.SetEnv(env, set);
+        }
+        public bool IsInEnv(CharacterEnv env, params CharacterEnv[] envList)
+        {
+            return m_envManager.IsInEnv(env, envList);
+        }
+
+        public void TryJump()
+        {
+            if (Network.isServer)
+                Jump(new NetworkMessageInfo());
             else
-                networkView.RPC("ClientSetState", RPCMode.Others, pck.SerializeToBytes());
+                networkView.RPC("Jump", RPCMode.Server);
         }
 
         public void OnTouchGround()
         {
-            if (stateManager.IsInState(CharacterState.GROUNDED, CharacterState.JUMPING_UP))
+            if (m_stateManager.IsInState(CharacterState.GROUNDED, CharacterState.JUMPING_UP))
             {
                 //Maintain State;
                 return;
             }
 
-            if (stateManager.IsInState(CharacterState.FALLING, CharacterState.WALL_JUMPING, CharacterState.WALL_WALKING))
+            if (m_stateManager.IsInState(CharacterState.FALLING, CharacterState.WALL_JUMPING, CharacterState.WALL_WALKING))
             {
                 Debug.Log("grounded!");
-                stateManager.SetState(CharacterState.GROUNDED);
+                m_stateManager.SetState(CharacterState.GROUNDED);
                 return;
             }
         }
 
         public void OnAwayFromGround()
         {
-            if (stateManager.IsInState(CharacterState.GROUNDED))
+            if (m_stateManager.IsInState(CharacterState.GROUNDED))
             {
-                stateManager.SetState(CharacterState.FALLING);
+                m_stateManager.SetState(CharacterState.FALLING);
                 return;
             }
 
-            if (stateManager.IsInState(CharacterState.JUMPING_UP, CharacterState.WALL_WALKING, CharacterState.WALL_JUMPING, CharacterState.FALLING))
+            if (m_stateManager.IsInState(CharacterState.JUMPING_UP, CharacterState.WALL_WALKING, CharacterState.WALL_JUMPING, CharacterState.FALLING))
             {
                 //Maintain state;
                 return;
-            }
-        }
-
-        public bool IsInEnv(CharacterEnv env, params CharacterEnv[] envList)
-        {
-            bool result = (envFlag & (1 << (int)env)) != 0;
-
-
-            foreach (CharacterEnv envVal in envList)
-            {
-                if (result == false)
-                    break;
-
-                result = result && ((envFlag & (1 << (int)env)) != 0);
-            }
-
-            return result;
-        }
-
-        public void SetEnv(CharacterEnv env, bool value)
-        {
-            if (IsInEnv(env) != value)
-            {
-                Debug.Log("EnvSet : " + env + "   " + value);
-            }
-
-
-            if (value)
-            {
-                envFlag = envFlag | (1 << (int)env);
-            }
-            else
-            {
-                envFlag = envFlag & (~(1 << (int)env));
             }
         }
 
@@ -205,21 +234,100 @@ namespace Server
             PlayerSetting setting = PlayerManager.Inst.GetSetting(owner);
             S2C.CharacterStatus pck = new S2C.CharacterStatus(setting.playerID, setting, GetInfo());
 
-            if (info.sender == Network.player)
-                clientPlayer.SetOwner(pck.SerializeToBytes(), new NetworkMessageInfo());
-            else
-                networkView.RPC("SetOwner", info.sender, pck.SerializeToBytes());
+            networkView.RPC("SetOwner", info.sender, pck.SerializeToBytes());
+        }
+
+        [RPC]
+        public void SetOwner(byte[] pckData, NetworkMessageInfo info)
+        {
+            //ServerCheck
+
+            S2C.CharacterStatus pck = S2C.CharacterStatus.DeserializeFromBytes(pckData);
+
+            PlayerManager.Inst.Set(pck.playerID, this);
+            owner = pck.playerID;
+
+            OnSetOwner(pck.playerID);
+
+            PlayerManager.Inst.SetSetting(pck.setting);
+            OnSettingChange(pck.setting);
+
+            LoadJob(pck.info.job);
+
+            ServerGame.Inst.GetTeam(m_team).AddPlayer(this);
+
+            SetHealth(pck.info.health, info.timestamp);
+            m_stateManager.SetState(pck.info.state);
+
+            m_weaponManager.TryChangeWeapon(pck.info.weapon, info.timestamp);
+
+            PlayerManager.Inst.CompleteLoad(this);
+
+            if (PlayerManager.Inst.IsLoadComplete())
+            {
+                ServerGame.Inst.OnPlayerLoadCompleted();
+            }
+        }
+
+
+        public void OnSetOwner(int playerID)
+        {
+            isOwner = owner == ServerGame.Inst.GetID();
+
+            if (isOwner) // Set Camera to own character.
+            {
+                CameraBehaviour camera = GameObject.Find("Main Camera").GetComponent<CameraBehaviour>();
+                camera.target = transform;
+
+                GameObject weaponUIObj = new GameObject();
+                weaponUIObj.transform.parent = this.transform;
+                m_weaponUI = weaponUIObj.AddComponent<UI.WeaponUI>();
+            }
+
+            if (isOwner && !Network.isServer) // Allocating controller ID. When Network is server, ID is already allocated.
+            {
+                Network.RemoveRPCs(controllerView.viewID);
+                NetworkViewID controllerID = Network.AllocateViewID();
+                controllerView.RPC("SetControllerNetworkView", RPCMode.Server, controllerID);
+                controllerView.viewID = controllerID;
+            }
         }
 
         public S2C.CharacterInfo GetInfo()
         {
-            return new S2C.CharacterInfo(job, weaponManager.GetCurrentWeapon(), health, stateManager.GetState());
+            return new S2C.CharacterInfo(m_job, m_weaponManager.GetCurrentWeaponType(), m_health, m_stateManager.GetState());
         }
         
         public void Init(int playerID)
         {
+            if (!Network.isServer) return;
+
             owner = playerID;
-            LoadJob(job);
+            LoadJob(m_job);
+
+            ServerGame.Inst.GetTeam(m_team).AddPlayer(this);
+
+            if (!ServerGame.Inst.isDedicatedServer) // own player
+            {
+                networkView.RPC("RecvInitFinished", RPCMode.AllBuffered);
+                //newPlayer.networkView.RPC("SetOwner", RPCMode.AllBuffered, pck.SerializeToBytes());
+            }
+            else
+            {
+                networkView.RPC("RecvInitFinished", RPCMode.OthersBuffered);
+                //newPlayer.networkView.RPC("SetOwner", RPCMode.OthersBuffered, pck.SerializeToBytes());
+            }
+        }
+
+        [RPC]
+        void RecvInitFinished(NetworkMessageInfo info)
+        {
+            //ServerCheck
+
+            if (Network.isServer)
+                OnSetOwner(owner);
+            else
+                networkView.RPC("RequestCharacterStatus", RPCMode.Server);
         }
 
         [RPC]
@@ -229,20 +337,25 @@ namespace Server
             controllerView.enabled = true;
         }
 
-        void LoadJob(Job job)
-        {
-            JobStat newJobStat = Game.Inst.jobSet.Jobs[(int)job];
+        
 
-            this.job = job;
-            this.jobStat = newJobStat;
-            this.health = Mathf.Min(health, newJobStat.MaxHealth);
-            BroadcastHealth(this.health);
-            
-            weaponManager.LoadWeapons(newJobStat.Weapons);
+        public void TryChangeJob(Job newJob)
+        {
+            C2S.ChangeJob pck = new C2S.ChangeJob(newJob);
+
+            if (Network.isServer) //own server player
+            {
+                ChangeJob(pck.SerializeToBytes(), new NetworkMessageInfo());
+            }
+            else if (Network.isClient)
+            {
+
+                networkView.RPC("ChangeJob", RPCMode.Server, pck.SerializeToBytes());
+            }
         }
 
         [RPC]
-        public void ChangeJobRequest(byte[] pckData, NetworkMessageInfo info)
+        public void ChangeJob(byte[] pckData, NetworkMessageInfo info)
         {
             if (!Network.isServer) return;
             if (!PlayerManager.Inst.IsValidPlayer(owner, info.sender)) return;
@@ -251,10 +364,56 @@ namespace Server
 
             LoadJob(C2S.ChangeJob.DeserializeFromBytes(pckData).job);
 
-            if (!ServerGame.Inst.isDedicatedServer)
-                networkView.RPC("ClientChangeJob", RPCMode.All, pckData);
-            else
-                networkView.RPC("ClientChangeJob", RPCMode.Others, pckData);
+            networkView.RPC("RecvChangeJob", RPCMode.Others, pckData);
+        }
+
+        [RPC]
+        void RecvChangeJob(byte[] pckData, NetworkMessageInfo info)
+        {
+            if (!Network.isClient) return;
+            //ServerCheck
+
+            LoadJob(C2S.ChangeJob.DeserializeFromBytes(pckData).job);
+        }
+
+        void LoadJob(Job job)
+        {
+            JobStat newJobStat = Game.Inst.jobSet.Jobs[(int)job];
+
+            
+            m_job = job;
+            m_jobStat = newJobStat;
+
+            if (Network.isServer)
+            { 
+                m_health = Mathf.Min(m_health, newJobStat.MaxHealth);
+                BroadcastHealth(m_health);
+            }
+
+            m_weaponManager.LoadWeapons(newJobStat.Weapons);
+            m_characterRenderer.LoadAnimation(m_team);
+        }
+        
+        public void OnChangeTeam(Team newTeam)
+        {
+            m_team = newTeam;
+
+            m_characterRenderer.LoadAnimation(m_team);
+
+            if (Network.isServer)
+                BroadcastDie();
+        }
+
+        public void OnSettingChange(PlayerSetting setting)
+        {
+            m_team = setting.team;
+
+            m_characterRenderer.LoadAnimation(m_team);
+        }
+
+        void OnSerializeNetworkView(BitStream stream, NetworkMessageInfo mnInfo)
+        {
+            m_inputProcessor.SyncInput(ref stream);
         }
 
         void FixedUpdate()
@@ -282,403 +441,30 @@ namespace Server
         public void Jump(NetworkMessageInfo info)
         {
             if(!PlayerManager.Inst.IsValidPlayer(owner, info.sender)) return;
-            if (stateManager.IsInState(CharacterState.ROPING))
+            if (m_stateManager.IsInState(CharacterState.ROPING))
             {
-                CutRope();
+                m_ropeController.CutRope();
             }
         }
 
         void Update()
         {
+            //Animation Rendering.
+            //Every client must do his own Animation Rendering.
+            m_characterRenderer.Render();
+            //Client Input Processing
+            m_inputProcessor.ProcessInput();
+
             // Server Rendering. Rendering from input must be in Update()
             // Fixed Update refreshes in fixed period. 
             // When Update() Period is shorter than fixed period, Update() can be called multiple times between FixedUpdate().
             // Because Input Data is reset in Update(), FixedUpdate() Can't get input data properly.
-            if (Network.isServer)
-            {
-                
-
-                if (IsDead())
-                {
-                    return;
-                }
-
-                do
-                {
-                    if (stateManager.IsInState(CharacterState.GROUNDED))
-                    {
-                        WhenGrounded();
-                        break;
-                    }
-
-                    if (stateManager.IsInState(CharacterState.FALLING))
-                    {
-                        WhenFalling();
-                        break;
-                    }
-
-                    if (stateManager.IsInState(CharacterState.JUMPING_UP))
-                    {
-                        WhenJumping();
-                        break;
-                    }
-
-                    if (stateManager.IsInState(CharacterState.WALL_JUMPING))
-                    {
-                        WhenWallJumping();
-                        break;
-                    }
-
-                    if (stateManager.IsInState(CharacterState.WALL_WALKING))
-                    {
-                        WhenWallWalking();
-                        break;
-                    }
-
-                    if (stateManager.IsInState(CharacterState.ROPING))
-                    {
-                        WhenRoping();
-                        break;
-                    }
-                }
-                while (false);
-
-
-                if (lookingDirection.x < 0 && facingRight)
-                {
-                    Flip();
-                }
-                if (lookingDirection.x > 0 && !facingRight)
-                {
-                    Flip();
-                }
-            }
+            m_controller.ProcessCharacter();
         }
-
-        void WhenGrounded()
+        
+        public bool ProcessInputForBuild()
         {
-            //Set Other States
-            EndWallWalk();
-            SetEnv(CharacterEnv.WALL_WALKED_LEFT, false);
-            SetEnv(CharacterEnv.WALL_WALKED_RIGHT, false);
-
-            MoveInGround();
-
-            //
-            if (verMov > 0)
-            {
-                Debug.Log("jump!!!");
-                Jump();
-
-            }
-        }
-
-        void MoveInGround()
-        {
-            const int multiplier = 300;
-            if (horMov != 0)
-            {
-                if (horMov * rigidbody2D.velocity.x < 0) // 다른방향
-                {
-                    rigidbody2D.AddForce(new Vector2(horMov * jobStat.MovingSpeed * multiplier, 0));
-                }
-                else // 같은 방향
-                {
-                    rigidbody2D.AddForce(new Vector2(horMov * jobStat.MovingSpeed * multiplier, 0));
-                    if (rigidbody2D.velocity.x > jobStat.MovingSpeed || rigidbody2D.velocity.x < -jobStat.MovingSpeed) //초과시 최대스피드로
-                    {
-                        rigidbody2D.velocity = new Vector2(horMov * jobStat.MovingSpeed, rigidbody2D.velocity.y);
-                    }
-                }
-            }
-            else
-            {
-                rigidbody2D.velocity = Vector2.Lerp(rigidbody2D.velocity, new Vector2(0, rigidbody2D.velocity.y), Time.deltaTime * 4);
-            }
-        }
-
-        void MoveInAir()
-        {
-            const int multiplier = 200;
-            if (horMov != 0)
-            {
-                if (horMov * rigidbody2D.velocity.x < 0) // 다른방향
-                {
-                    rigidbody2D.AddForce(new Vector2(horMov * jobStat.MovingSpeed * multiplier, 0));
-                }
-                else // 같은 방향
-                {
-                    rigidbody2D.AddForce(new Vector2(horMov * jobStat.MovingSpeed * multiplier, 0));
-                    if (rigidbody2D.velocity.x > jobStat.MovingSpeed || rigidbody2D.velocity.x < -jobStat.MovingSpeed) //초과시 최대스피드로
-                    {
-                        rigidbody2D.velocity = new Vector2(horMov * jobStat.MovingSpeed, rigidbody2D.velocity.y);
-                    }
-                }
-            }
-            else
-            {
-                rigidbody2D.velocity = Vector2.Lerp(rigidbody2D.velocity, new Vector2(0, rigidbody2D.velocity.y), Time.deltaTime * 4);
-            }
-        }
-
-        void MoveInAirDirection(float maxSpeed)
-        {
-            const int multiplier = 200;
-            if (horMov != 0)
-            {
-                if (horMov * rigidbody2D.velocity.x < 0) // 다른방향
-                {
-                    rigidbody2D.AddForce(new Vector2(horMov * jobStat.MovingSpeed * multiplier, 0));
-                }
-                else // 같은 방향
-                {
-                    rigidbody2D.AddForce(new Vector2(horMov * jobStat.MovingSpeed * multiplier, 0));
-                    if (rigidbody2D.velocity.x > maxSpeed || rigidbody2D.velocity.x < -maxSpeed) //초과시 최대스피드로
-                    {
-                        rigidbody2D.velocity = new Vector2(horMov * maxSpeed, rigidbody2D.velocity.y);
-                        Debug.Log("MaxSpeed: " + rigidbody2D.velocity);
-                    }
-                }
-            }
-        }
-
-        void WhenFalling()
-        {
-            MoveInAir();
-
-            if (horMov != 0)
-            {
-                //WallJump Or Climb more.
-                if (verMov > 0)
-                {
-                    //Debug.Log("CheckWallJump");
-                    CheckWallJump();
-
-                    return;
-                }
-            }
-        }
-
-        void StopJumping()
-        {
-            if(rigidbody2D.velocity.y > 0)
-            { 
-                rigidbody2D.velocity = Vector2.Lerp(rigidbody2D.velocity, new Vector2(rigidbody2D.velocity.x, 0), Time.deltaTime * 4);
-            }
-        }
-
-        void WhenJumping()
-        {
-            MoveInAir();
-
-            if (horMov != 0 && verMov > 0)
-            {
-                CheckWallJump();
-            }
-
-            if (verMov <= 0)
-            {
-                StopJumping();
-            }
-
-            if (rigidbody2D.velocity.y <= 0f)
-            {
-                stateManager.SetState(CharacterState.FALLING);
-            }
-        }
-
-        void WhenWallJumping()
-        {
-            MoveInAirDirection(jobStat.WallJumpingSpeed.x);
-
-            if (horMov != 0 && verMov > 0)
-            {
-                CheckWallJump();
-            }
-
-            if (verMov <= 0)
-            {
-                StopJumping();
-            }
-        }
-
-        void WhenWallWalking()
-        {
-            //Fall to ground.
-            if (horMov == 0)
-            {
-                stateManager.SetState(CharacterState.FALLING);
-                return;
-            }
-
-            if (horMov != 0)
-            {
-                //WallJump Or Climb more.
-                if (verMov > 0)
-                {
-                    //월 워킹 중에 위 방향키를 누르고 있는데도 월 관련 함수가 실패하면 벽이 사라진거. 가던 방향으로 점프함.
-                    if (CheckWallJump())
-                    {
-                        return;
-                    }
-                    else
-                    {
-                        Jump();
-                    }
-                }
-
-                //Fall to ground.
-                if (verMov <= 0f)
-                {
-                    rigidbody2D.velocity = new Vector2(horMov * jobStat.MovingSpeed, rigidbody2D.velocity.y);
-
-
-                    stateManager.SetState(CharacterState.FALLING);
-                    return;
-                }
-
-                rigidbody2D.velocity = new Vector2(horMov * jobStat.MovingSpeed, rigidbody2D.velocity.y);
-            }
-        }
-
-
-        bool IsMoving(Direction direction)
-        {
-            return direction == Direction.RIGHT ? horMov > 0 : horMov < 0;
-        }
-
-        bool IsWalled(Direction direction)
-        {
-            if (direction == Direction.LEFT)
-            {
-                return facingRight ? IsInEnv(CharacterEnv.WALLED_BACK) : IsInEnv(CharacterEnv.WALLED_FRONT);
-            }
-            else
-            {
-                return facingRight ? IsInEnv(CharacterEnv.WALLED_FRONT) : IsInEnv(CharacterEnv.WALLED_BACK);
-            }
-        }
-
-        void Jump()
-        {
-            stateManager.SetState(CharacterState.JUMPING_UP);
-            rigidbody2D.velocity = new Vector2(rigidbody2D.velocity.x, jobStat.JumpingSpeed);
-        }
-
-        void WallWalk(Direction direction)
-        {
-            //Already wall walked same wall
-            if ((stateManager.IsNotInState(CharacterState.WALL_WALKING)) && WallWalked(direction))
-                return;
-
-            stateManager.SetState(CharacterState.WALL_WALKING);
-
-            SetEnv(GetWallWalkStateByDirection(direction), true);
-            SetEnv(direction == Direction.RIGHT ? CharacterEnv.WALL_WALKED_LEFT : CharacterEnv.WALL_WALKED_RIGHT, false);
-            wallWalkTimer += Time.deltaTime;
-
-            if (wallWalkTimer > jobStat.WallWalkingTime)
-            {
-                EndWallWalk();
-                stateManager.SetState(CharacterState.FALLING);
-                return;
-            }
-
-            rigidbody2D.velocity = new Vector2(rigidbody2D.velocity.x, jobStat.WallWalkingSpeed);
-        }
-
-        void EndWallWalk()
-        {
-            wallWalkTimer = 0f;
-        }
-
-        CharacterEnv GetWallWalkStateByDirection(Direction direction)
-        {
-            return direction == Direction.RIGHT ? CharacterEnv.WALL_WALKED_RIGHT : CharacterEnv.WALL_WALKED_LEFT;
-        }
-
-        bool WallWalked(Direction direction)
-        {
-            return IsInEnv(GetWallWalkStateByDirection(direction));
-        }
-
-        bool CheckWallJump()
-        {
-            do
-            {
-                if (rigidbody2D.velocity.y < -6f)
-                    return false;
-                //Check Wall and moving direction
-
-                //Climb more;
-                if (IsWalled(Direction.LEFT) && IsMoving(Direction.LEFT))
-                {
-                    WallWalk(Direction.LEFT);
-                    return true;
-                }
-
-                if (IsWalled(Direction.RIGHT) && IsMoving(Direction.RIGHT))
-                {
-                    WallWalk(Direction.RIGHT);
-                    return true;
-                }
-
-                //Wall Jump;
-                if (IsWalled(Direction.LEFT) && IsMoving(Direction.RIGHT))
-                {
-                    WallJump(Direction.RIGHT);
-                    return true;
-                }
-
-                if (IsWalled(Direction.RIGHT) && IsMoving(Direction.LEFT))
-                {
-                    WallJump(Direction.LEFT);
-                    return true;
-                }
-
-            } while (false);
-
-            return false;
-        }
-
-        void WallJump(Direction direction)
-        {
-            Debug.Log("Wall Jump!!");
-            EndWallWalk();
-
-            stateManager.SetState(CharacterState.WALL_JUMPING);
-            rigidbody2D.velocity = new Vector2(direction == Direction.RIGHT ? jobStat.WallJumpingSpeed.x : -jobStat.WallJumpingSpeed.x, jobStat.WallJumpingSpeed.y);
-        }
-
-        void WhenRoping()
-        {
-            if (verMov != 0)
-            {
-                rope.ModifyLength(verMov * jobStat.RopingSpeed * Time.deltaTime);
-            }
-
-            if (horMov != 0)
-            {
-                Vector2 normalVector = rope.GetNormalVector();
-                Vector2 perpendicular = (horMov == 1) ? 
-                    new Vector2(normalVector.y, -normalVector.x)
-                    : new Vector2(-normalVector.y, normalVector.x);
-
-                perpendicular.Normalize();
-
-                rigidbody2D.AddForce(perpendicular * jobStat.RopeMovingSpeed * 70);
-            }
-        }
-
-        void Flip()
-        {
-            if (IsDead())
-                return;
-
-            facingRight = !facingRight;
-            Vector3 scale = transform.localScale;
-            scale.x = -scale.x;
-            transform.localScale = scale;
+            return m_buildController.ProcessInput();
         }
 
         public void Damage(int damage, NetworkMessageInfo info)
@@ -690,32 +476,63 @@ namespace Server
             if (IsDead())
                 return;
 
-            health -= damage;
-            if (health < 0)
+            m_health -= damage;
+            if (m_health < 0)
             {
-                health = 0;
+                m_health = 0;
             }
 
             BroadcastDamage(damage);
 
-            if (health <= 0)
+            if (m_health <= 0)
                 BroadcastDie();
         }
 
         void BroadcastHealth(int health)
         {
             if (!ServerGame.Inst.isDedicatedServer)
-                networkView.RPC("ClientSetHealth", RPCMode.All, health);
+                networkView.RPC("RecvHealth", RPCMode.All, health);
             else
-                networkView.RPC("ClientSetHealth", RPCMode.Others, health);
+                networkView.RPC("RecvHealth", RPCMode.Others, health);
         }
         
         void BroadcastDamage(int damage)
         {
             if (!ServerGame.Inst.isDedicatedServer)
-                networkView.RPC("ClientDamage", RPCMode.All, damage);
+                networkView.RPC("RecvDamage", RPCMode.All, damage);
             else
-                networkView.RPC("ClientDamage", RPCMode.Others, damage);
+                networkView.RPC("RecvDamage", RPCMode.Others, damage);
+        }
+
+        [RPC]
+        void RecvHealth(int health, NetworkMessageInfo info)
+        {
+            //ServerCheck
+
+            SetHealth(health, info.timestamp);
+        }
+
+        [RPC]
+        void RecvDamage(int damage, NetworkMessageInfo info)
+        {
+            //ServerCheck
+
+            if (damage == 0) return;
+
+            //old damage;
+            SetHealth(m_health - damage, info.timestamp);
+
+            m_characterRenderer.Highlight(Const.Effect.CharacterHighlight.DAMAGE);
+        }
+
+        void SetHealth(int health, double settingTime)
+        {
+            m_health = health;
+
+            if (m_health < 0)
+            {
+                m_health = 0;
+            }
         }
 
         public void BroadcastDie()
@@ -725,20 +542,28 @@ namespace Server
             OnDie();
 
             if (!ServerGame.Inst.isDedicatedServer)
-                networkView.RPC("Die", RPCMode.All);
+                networkView.RPC("RecvDie", RPCMode.All);
             else
-                networkView.RPC("Die", RPCMode.Others);
+                networkView.RPC("RecvDie", RPCMode.Others);
         }
 
         void OnDie()
         {
-            stateManager.SetState(CharacterState.DEAD);
+            m_stateManager.SetState(CharacterState.DEAD);
             revivalTimer = REVIVAL_TIME;
+        }
+
+        [RPC]
+        void RecvDie(NetworkMessageInfo info)
+        {
+            //ServerCheck
+
+            SetHealth(0, info.timestamp);
         }
 
         public bool IsDead()
         {
-            return stateManager.IsInState(CharacterState.DEAD);
+            return m_stateManager.IsInState(CharacterState.DEAD);
         }
 
         void UpdateRevivalTimer(double deltaTime)
@@ -748,15 +573,26 @@ namespace Server
 
         bool CanRevive()
         {
-            return jobStat != null && revivalTimer <= 0;
+            return m_jobStat != null && revivalTimer <= 0;
         }
 
         void BroadcastRevive()
         {
             if (!ServerGame.Inst.isDedicatedServer)
-                networkView.RPC("ClientRevive", RPCMode.All);
+                networkView.RPC("RecvRevive", RPCMode.All);
             else
-                networkView.RPC("ClientRevive", RPCMode.Others);
+                networkView.RPC("RecvRevive", RPCMode.Others);
+        }
+
+        [RPC]
+        void RecvRevive(NetworkMessageInfo info)
+        {
+            //ServerCheck
+
+            m_stateManager.SetState(CharacterState.FALLING);
+
+            if (m_jobStat != null)
+                m_health = m_jobStat.MaxHealth;
         }
 
         void Revive()
@@ -766,91 +602,23 @@ namespace Server
             transform.position = server.RevivalLocation;
             rigidbody2D.velocity = Vector2.zero;
 
-            stateManager.SetState(CharacterState.FALLING);
+            m_stateManager.SetState(CharacterState.FALLING);
 
-            weaponManager.ReloadAll();
-            health = jobStat.MaxHealth;
+            m_weaponManager.ReloadAll();
+            m_health = m_jobStat.MaxHealth;
 
-            CutRopeAll();
+            m_ropeController.CutRopeAll();
 
             BroadcastRevive();
         }
 
         public void RemoveCharacterFromNetwork()
         {
-            if (rope != null)
-                CutRope();
+            m_ropeController.CutRope();
 
             Network.RemoveRPCs(transformView.viewID);
             Network.RemoveRPCs(controllerView.viewID);
             Network.Destroy(gameObject);
-        }
-
-        Rope rope;
-        object ropeLock = new object();
-
-        List<Rope> InfectingRopes;
-
-        public void Roped(Rope newRope)
-        {
-            lock(ropeLock)
-            {
-                if (newRope != null)
-                { 
-                    stateManager.SetState(CharacterState.ROPING);
-                    ToAirMaterial();
-                }
-            }
-        }
-
-        public void RopedToMe(Rope newRope)
-        {
-            InfectingRopes.Add(newRope);
-        }
-
-        public void CutInfectingRope(Rope rope)
-        {
-            InfectingRopes.Remove(rope);
-        }
-
-        public void CutRopeAll()
-        {
-            foreach(Rope rope in InfectingRopes)
-            {
-                rope.Cut();
-            }
-
-            CutRope();
-        }
-
-        public void OnFireRope(Rope newRope)
-        {
-            lock (ropeLock)
-            {
-                if (rope != null)
-                    CutRope();
-
-                rope = newRope;
-            }
-        }
-        
-        public void CutRope()
-        {
-            lock (ropeLock)
-            {
-                if (rope != null)
-                {
-                    rope.Cut();
-                    rope = null;
-                }
-            }
-        }
-
-        public void StopRoping()
-        {
-            rope = null;
-            stateManager.SetState(CharacterState.FALLING);
-            ToGroundMaterial();
         }
 
         public void ToAirMaterial()
@@ -867,27 +635,89 @@ namespace Server
             bodyCollider.enabled = true;
         }
 
-        [RPC]
-        public void ServerBuild(byte[] pckData, NetworkMessageInfo info)
+        //Weapon
+        public void TryFire()
         {
+            m_weaponManager.TryFire();
+        }
+
+        public void TryFire(WeaponType type)
+        {
+            m_weaponManager.TryFire(type);
+        }
+        public void TryFireCharged()
+        {
+            m_weaponManager.TryFireCharged();
+        }
+
+
+        public void ChangeWeapon(KeyCode code)
+        {
+            m_weaponManager.ChangeWeapon(code);
+        }
+
+
+        // Build
+        public void TryBuild(BuildingData building, Vector2 location)
+        {
+            C2S.Build pck = new C2S.Build(building.buildingName, location);
+
+            if (Network.isServer)
+                Build(pck.SerializeToBytes(), new NetworkMessageInfo());
+            else
+                networkView.RPC("Build", RPCMode.Server, pck.SerializeToBytes());
+        }
+        [RPC]
+        public void Build(byte[] pckData, NetworkMessageInfo info)
+        {
+            if (!Network.isServer) return;
+
             C2S.Build pck = C2S.Build.DeserializeFromBytes(pckData);
 
-            BuildingData building = BuildingDataLoader.Inst.GetBuilding(pck.buildingName);
-
-            if (!CanBuild(building)) return;
-
-            BuildingManager.Inst.Build(building, Map.GetGridPos(pck.position));
+            m_buildController.Build(pck);
         }
 
-        bool CanBuild(BuildingData bData)
+        public void SelectBuildTool(BuildingData bData)
         {
-            return true;
-
-            
+            m_buildController.SelectBuildTool(bData);
         }
+       
+
+        // Ropes
+        RopeController m_ropeController;
+
+        public void CutInfectingRope(Rope rope)
+        {
+            m_ropeController.CutInfectingRope(rope);
+        }
+        public void StopRoping()
+        {
+            m_ropeController.StopRoping();
+        }
+        public void RopedToMe(Rope newRope)
+        {
+            m_ropeController.RopedToMe(newRope);
+        }
+        public void Roped(Rope newRope)
+        {
+            m_ropeController.Roped(newRope);
+        }
+        public void OnFireRope(Rope newRope)
+        {
+            m_ropeController.OnFireRope(newRope);
+        }
+        public void ModifyRopeLength(float modifier)
+        {
+            m_ropeController.ModifyRopeLength(modifier);
+        }
+        public Vector2 GetRopeDirection()
+        {
+            return m_ropeController.GetRopeDirection();
+        }
+
     }
 
-    class CharacterSM : StateManager<CharacterState>
+    public class CharacterSM : StateManager<CharacterState>
     {
         ServerPlayer player;
 
@@ -907,5 +737,8 @@ namespace Server
             Debug.Log(newState);
         }
     }
+
+    public class CharacterEM : EnvManager<CharacterEnv>
+    { }
 }
 

@@ -32,7 +32,7 @@ public abstract class Projectile : Weapon
         networkView.group = NetworkViewGroup.PROJECTILE;
         startPosition = transform.position;
 
-        if(Network.isClient && Client.ClientGame.Inst.IsPlayerMapLoaded())
+        if(Network.isClient && ServerGame.Inst.IsPlayerMapLoaded())
         {
             OnPlayerMapLoaded();
         }

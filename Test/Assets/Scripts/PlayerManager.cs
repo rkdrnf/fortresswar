@@ -21,6 +21,10 @@ namespace Server
         int idCount;
 
 
+        private Dictionary<ServerPlayer, bool> playerLoadDic;
+
+        object managerLock = new object();
+
         private static PlayerManager instance;
 
         public static PlayerManager Inst
@@ -41,6 +45,7 @@ namespace Server
             playerObjManager = new PlayerObjManager();
             settingDic = new Dictionary<int, PlayerSetting>();
             playerIDDic = new Dictionary<int, NetworkPlayer>();
+            playerLoadDic = new Dictionary<ServerPlayer, bool>();
         }
 
 
@@ -58,6 +63,7 @@ namespace Server
 
         public void Remove(int player)
         {
+            playerLoadDic.Remove(Get(player));
             playerObjManager.Remove(player);
         }
 
@@ -161,6 +167,40 @@ namespace Server
         public NetworkPlayer GetPlayer(int ID)
         {
             return playerIDDic[ID];
+        }
+
+        public void StartLoadUser(ServerPlayer player)
+        {
+            lock (managerLock)
+            {
+                playerLoadDic.Add(player, false);
+            }
+        }
+
+        public void CompleteLoad(ServerPlayer player)
+        {
+            lock (managerLock)
+            {
+                playerLoadDic[player] = true;
+            }
+        }
+
+        public bool IsLoadComplete()
+        {
+            bool loadedAll = true;
+
+            lock (managerLock)
+            {
+                foreach (bool loaded in playerLoadDic.Values)
+                {
+                    loadedAll = loaded;
+
+                    if (loadedAll == false)
+                        break;
+                }
+            }
+
+            return loadedAll;
         }
     }
 

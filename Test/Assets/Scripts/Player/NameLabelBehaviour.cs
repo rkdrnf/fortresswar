@@ -1,11 +1,11 @@
 ﻿using UnityEngine;
 using System.Collections;
-
-namespace Client
+using Server;
+namespace UI
 {
     public class NameLabelBehaviour : MonoBehaviour
     {
-        PlayerBehaviour player;
+        ServerPlayer player;
         PlayerSetting setting;
         public TextMesh textMesh;
 
@@ -13,7 +13,7 @@ namespace Client
         void Start()
         {
             setting = null;
-            player = transform.parent.gameObject.GetComponent<PlayerBehaviour>();
+            player = transform.parent.gameObject.GetComponent<ServerPlayer>();
         }
 
         // Update is called once per frame
@@ -21,7 +21,7 @@ namespace Client
         {
             if (setting == null)
             {
-                PlayerSetting newSetting = C_PlayerManager.Inst.GetSetting(player.GetOwner());
+                PlayerSetting newSetting = PlayerManager.Inst.GetSetting(player.GetOwner());
                 if (newSetting == null)
                     return;
 
@@ -29,7 +29,8 @@ namespace Client
             }
 
             transform.localScale = player.transform.localScale;
-            textMesh.text = setting.name + "\n" + player.GetState().ToString() + "\n" + player.health;
+            textMesh.text = setting.name + "\n" + player.GetState().ToString() + "\n" + player.GetHealth();
         }
     }
+
 }

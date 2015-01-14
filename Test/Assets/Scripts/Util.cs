@@ -10,12 +10,12 @@
 using System;
 using UnityEngine;
 using Const;
+using System.Globalization;
 
 namespace Util
 {
 	public abstract class LayerUtil
 	{
-
 		public static bool HasLayer(int layer, LayerMask layers)
 		{
 			return HasLayer (layer, layers.value);
@@ -31,7 +31,6 @@ namespace Util
 		{
 			return ((1 << layer) & layerArray) != 0;
 		}
-			
 	}
 
     public abstract class StateUtil
@@ -99,6 +98,50 @@ namespace Util
             return StateUtil.IsNotInState<T>(this.state, state, states);
         }
 
+    }
+
+    public abstract class EnvManager<T> where T : IComparable, IConvertible
+    {
+        int envFlag;
+
+        int ShiftEnv(T env)
+        {
+            return 1 << env.ToInt32(CultureInfo.InvariantCulture.NumberFormat);
+        }
+
+        public bool IsInEnv(T env, params T[] envList)
+        {
+            bool result = (envFlag & ShiftEnv(env)) != 0;
+
+
+            foreach (T envVal in envList)
+            {
+                if (result == false)
+                    break;
+
+                result = result && ((envFlag & ShiftEnv(envVal)) != 0);
+            }
+
+            return result;
+        }
+
+        public void SetEnv(T env, bool value)
+        {
+            if (IsInEnv(env) != value)
+            {
+                Debug.Log("EnvSet : " + env + "   " + value);
+            }
+
+
+            if (value)
+            {
+                envFlag = envFlag | ShiftEnv(env);
+            }
+            else
+            {
+                envFlag = envFlag & (~ShiftEnv(env));
+            }
+        }
     }
 }
 
