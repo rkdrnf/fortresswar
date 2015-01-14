@@ -12,13 +12,17 @@ public class MapMakerEditor : Editor {
 	MapMaker maker;
 
 	int tileIndex = 0;
+    
     string mapFileName;
     MapData mapFileAsset;
+
+    double drawTimer;
 
 	void OnEnable()
 	{
 		maker = target as MapMaker;
         map = maker.transform.GetComponentInChildren<Map>();
+        drawTimer = 0f;
 	}
 
 	void OnSceneGUI()
@@ -29,40 +33,122 @@ public class MapMakerEditor : Editor {
 		Vector3 worldMousePos = Camera.current.ScreenToWorldPoint (new Vector3(e.mousePosition.x, -e.mousePosition.y + Camera.current.pixelHeight, 0f));
 
 		Vector2 mousePos = new Vector2(worldMousePos.x, worldMousePos.y);
-		RaycastHit2D hit = Physics2D.Raycast(mousePos, Vector2.zero);
+		
 
-        
 		
 		if (e.isKey && e.character == 'a') {
-			
-			if(hit.collider != null)
-			{
-				string[] invalidLocations = {"Tile", "Player"};
-				if(ArrayUtility.Contains(invalidLocations, hit.transform.gameObject.tag))
-				{
-					Debug.Log("Unable to locate tile");
-					return;
-				}
-			}
-			
-			PrefabType prefab = PrefabUtility.GetPrefabType(maker.tile);
-			
-			if (prefab == PrefabType.Prefab)
-			{
-				GameObject tileObj = (GameObject)PrefabUtility.InstantiatePrefab(maker.tile);
-                Tile tile = tileObj.GetComponent<Tile>();
-                tile.coord = new GridCoord(Mathf.FloorToInt((mousePos.x + 0.5f) / maker.tileSize) * maker.tileSize, Mathf.FloorToInt((mousePos.y + 0.5f) / maker.tileSize) * maker.tileSize);
-                tile.transform.position = tile.coord.ToVector2();
+            if (Time.realtimeSinceStartup - drawTimer <= 0.15f)
+            {
+                return;
+            }
+            drawTimer = Time.realtimeSinceStartup;
 
-                maker.tiles.Add(tile);
-			}
+            List<Vector2> points = GetPointsInRange(worldMousePos, maker.m_brushSize);
+
+            if (points.Count == 0)
+            { 
+                PutTile(worldMousePos);
+                
+                return;
+            }
+
+            foreach(Vector2 point in points)
+            {
+                PutTile(point);
+            }
 		}
+
+        if (e.isKey && e.character == 'd')
+        {
+            if (Time.realtimeSinceStartup - drawTimer <= 0.15f)
+            {
+                return;
+            }
+            drawTimer = Time.realtimeSinceStartup;
+
+            List<Vector2> points = GetPointsInRange(worldMousePos, maker.m_brushSize);
+
+            if (points.Count == 0)
+            {
+                DeleteTile(worldMousePos);
+
+                return;
+            }
+
+            foreach (Vector2 point in points)
+            {
+                DeleteTile(point);
+            }
+        }
 
         if (e.isKey && e.character == 'g')
         {
             maker.ToggleGrid();
         }
 	}
+
+    void PutTile(Vector2 point)
+    {
+        RaycastHit2D hit = Physics2D.Raycast(point, Vector2.zero, float.MaxValue, LayerMask.GetMask("Tile", "Building"));
+
+        if (hit.collider != null)
+        {
+            Debug.Log("Unable to locate tile");
+            return;
+        }
+
+        PrefabType prefab = PrefabUtility.GetPrefabType(maker.tile);
+
+        if (prefab == PrefabType.Prefab)
+        {
+            Tile tile = (Tile)PrefabUtility.InstantiatePrefab(maker.tile);
+            tile.m_coord = new GridCoord(Mathf.FloorToInt((point.x + 0.5f) / maker.tileSize) * maker.tileSize, Mathf.FloorToInt((point.y + 0.5f) / maker.tileSize) * maker.tileSize);
+            tile.transform.position = tile.m_coord.ToVector2();
+            tile.m_health = tile.m_maxHealth;
+
+            maker.tiles.Add(tile);
+            tile.transform.parent = map.transform;
+        }
+    }
+
+    void DeleteTile(Vector2 point)
+    {
+        RaycastHit2D hit = Physics2D.Raycast(point, Vector2.zero, float.MaxValue, LayerMask.GetMask("Tile", "Building"));
+
+        if (hit.collider == null)
+        {
+            return;
+        }
+
+        maker.tiles.Remove(hit.collider.gameObject.GetComponent<Tile>());
+
+        DestroyImmediate(hit.collider.gameObject);
+    }
+
+    List<Vector2> GetPointsInRange(Vector2 center, float radius)
+    {
+        List<Vector2> points = new List<Vector2>();
+
+        int yBottom = Mathf.CeilToInt(center.y - radius);
+        int yTop = Mathf.FloorToInt(center.y + radius);
+
+        for(int y = yBottom; y <= yTop; y++)
+        {
+            float yLength = center.y - y;
+            float xLengthSqr = (radius * radius) - (yLength * yLength);
+            float xLength = xLengthSqr < 0 ? 0 : Mathf.Sqrt(xLengthSqr);
+
+            int xLeft = Mathf.CeilToInt(center.x - xLength);
+            int xRight = Mathf.FloorToInt(center.x + xLength);
+
+            for(int x = xLeft; x <= xRight; x++)
+            {
+                points.Add(new Vector2(x, y));
+            }
+        }
+
+        return points;
+    }
 
 
 	public override void OnInspectorGUI()
@@ -104,7 +190,7 @@ public class MapMakerEditor : Editor {
                  , maker.tileSet.tiles.Select (t => t != null ? t.name : "").ToArray ()
                  , maker.tileSet.tiles.Select (t => ArrayUtility.IndexOf (maker.tileSet.tiles, t)).ToArray ()
 			);
-			if (index != tileIndex && maker.tileSet.tiles.Length > 0) {
+			if ((index != tileIndex || maker.tile == null) && maker.tileSet.tiles.Length > 0) {
 					tileIndex = index;
 
 					maker.tile = maker.tileSet.tiles [tileIndex];
@@ -117,6 +203,11 @@ public class MapMakerEditor : Editor {
 				
 			GUILayout.EndHorizontal();
 		}
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Brush Size");
+        maker.m_brushSize = EditorGUILayout.FloatField(maker.m_brushSize);
+        GUILayout.EndHorizontal();
 
         GUILayout.BeginHorizontal();
         GUILayout.Label("Background");
@@ -297,10 +388,10 @@ public class MapMakerEditor : Editor {
     public void Fix()
     {
         Tile[] tiles = map.GetComponentsInChildren<Tile>();
-        map.Clear();
+        maker.tiles.Clear();
         for (int i = 0; i < tiles.Length; ++i)
         {
-            map.GetTileList().Add(tiles[i].coord, tiles[i]);
+            maker.tiles.Add(tiles[i]);
         }
     }
 

@@ -149,7 +149,7 @@ namespace Packet
 
                 foreach(var tile in tileList)
                 {
-                    tileStatusList.Add(new TileStatus(tile.Key, tile.Value.health));
+                    tileStatusList.Add(new TileStatus(tile.Key, tile.Value.m_health));
                 }
             }
             [ProtoMember(1)]
@@ -330,6 +330,61 @@ namespace Packet
 
             [ProtoMember(2)]
             public int casterID;
+        }
+
+        [ProtoContract]
+        public class SetStructureHealth: Packet<SetStructureHealth>
+        {
+            public SetStructureHealth() { }
+            public SetStructureHealth(int health, Const.Structure.DestroyReason reason)
+            {
+                m_health = health;
+                m_reason = reason;
+            }
+
+            [ProtoMember(1)]
+            public int m_health;
+            [ProtoMember(2)]
+            public Const.Structure.DestroyReason m_reason;
+        }
+
+        [ProtoContract]
+        public class TileStatus : Packet<TileStatus>
+        {
+            public TileStatus() { }
+            public TileStatus(GridCoord coord, int health )
+            {
+                m_coord = coord;
+                m_health = health;
+            }
+
+            [ProtoMember(1)]
+            public GridCoord m_coord;
+            [ProtoMember(2)]
+            public int m_health;
+
+        }
+
+        [ProtoContract]
+        public class BuildingStatus : Packet<BuildingStatus>
+        {
+            public BuildingStatus() { }
+            public BuildingStatus(GridCoord coord, int health, bool falling, GridDirection direction)
+            {
+                m_coord = coord;
+                m_health = health;
+                m_falling = falling;
+                m_direction = direction;
+            }
+
+            [ProtoMember(1)]
+            public GridCoord m_coord;
+            [ProtoMember(2)]
+            public int m_health;
+            [ProtoMember(3)]
+            public bool m_falling;
+            [ProtoMember(4)]
+            public GridDirection m_direction;
         }
 
     }

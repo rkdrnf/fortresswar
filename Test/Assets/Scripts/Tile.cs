@@ -5,132 +5,62 @@ using System.Collections.Generic;
 using S2C = Packet.S2C;
 using C2S = Packet.C2S;
 using System;
+using Const.Structure;
 
-[System.Serializable]
-public struct spriteInfo
-{
-    public Sprite sprite;
-    public int HealthValue;
-}
 
-[RequireComponent(typeof(SpriteRenderer))]
-public class Tile : MonoBehaviour {
 
-    public int ID;
-    public GridCoord coord;
-    public Const.TileType tileType;
-    public Const.ParticleType particleType;
-	public bool destroyable;
-	public int health;
-    public int maxHealth;
+public class Tile : Structure {
 
-    public Map map;
+    public Const.TileType m_tileType;
+    public Sprite m_tileBack;
 
-    public spriteInfo[] sprites;
-    private SpriteRenderer spriteRenderer;
 
-    public Sprite tileBack;
-
-    void Awake()
+    public void Init(TileData tData, Map map)
     {
-        spriteRenderer = GetComponent<SpriteRenderer>();
-        spriteRenderer.sprite = GetSprite(health);
+        m_ID = tData.ID;
+        m_health = tData.health;
+        m_coord = tData.coord;
+        transform.localPosition = tData.coord.ToVector2();
+        m_map = map;
+
+        GetSprite(m_health);
     }
 
-    Sprite GetSprite(int health)
-    {
-        int index = 0;
+    protected override void AfterAwake() { }
 
-        while (index + 1 < sprites.Length && health < sprites[index].HealthValue)
-        {
-            index++;
-        }
-
-        return sprites[index].sprite;
-    }
-
-    public void SetHealth(int health)
-    {
-        this.health = health;
-
-        if (health < 1)
-        {
-            DestroyTile();
-            return;
-        }
-
-        spriteRenderer.sprite = GetSprite(health);
-    }
-
-    public void Damage(int damage, Vector2 point)
+    [RPC]
+    protected override void RequestCurrentStatus(NetworkMessageInfo info)
     {
         if (!Network.isServer) return;
 
-        if (destroyable)
-        {
-            health -= damage;
-        }
+        S2C.TileStatus pck = new S2C.TileStatus(m_coord, m_health);
 
-        S2C.DamageTile pck = new S2C.DamageTile(this.coord, damage, point);
-        BroadcastDamage(pck);
-
-        if (health < 1)
-        {
-            DestroyTile();
-            return;
-        }
+        networkView.RPC("RecvCurrentStatus", info.sender, pck.SerializeToBytes());
     }
 
-    public void BroadcastDamage(S2C.DamageTile pck)
+    [RPC]
+    protected override void RecvCurrentStatus(byte[] pckData, NetworkMessageInfo info)
     {
-        if (!Server.ServerGame.Inst.isDedicatedServer)
-        {
-            map.networkView.RPC("ClientDamageTile", RPCMode.All, pck.SerializeToBytes());
-        }
-        else
-        {
-            map.networkView.RPC("ClientDamageTile", RPCMode.Others, pck.SerializeToBytes());
-        }
+        S2C.TileStatus pck = S2C.TileStatus.DeserializeFromBytes(pckData);
+
+        SetHealth(pck.m_health, DestroyReason.MANUAL);
+        m_coord = pck.m_coord;
     }
-
-    public void DamageInternal(int damage, Vector2 point)
-    {
-        if (destroyable)
-        {
-            PlaySplash();
-
-            health -= damage;
-
-            if (health < 1)
-            {
-                DestroyTile();
-                return;
-            }
-
-            spriteRenderer.sprite = GetSprite(health);
-        }
-    }
-
-    public void PlaySplash()
-    {
-        Client.ParticleSystem2D pSystem = Client.ParticleManager.Inst.particleSystemPool.Borrow();
-        pSystem.Init(Client.ParticleManager.Inst.particleSet.particles[(int)particleType]);
-        pSystem.transform.position = transform.position;
-        pSystem.Play();
-    }
-
-    public void DestroyTile()
-    {
-        spriteRenderer.sprite = tileBack;
-        if (GetComponent<Collider2D>() != null)
-            Destroy(GetComponent<Collider2D>());
-        if (GetComponent<Rigidbody2D>())
-            Destroy(GetComponent<Rigidbody2D>());
-    }
-
+    
     public override string ToString()
     {
-        return transform.position.x.ToString() + "\t" + transform.position.y.ToString() + "\t" + ((int)tileType).ToString() + "\t" + health.ToString();
+        return transform.position.x.ToString() + "\t" + transform.position.y.ToString() + "\t" + ((int)m_tileType).ToString() + "\t" + m_health.ToString();
+    }
+
+    protected override void OnBreak(DestroyReason reason)
+    {
+        Destroy(m_collider);
+        Destroy(rigidbody2D);
+    }
+
+    protected override void OnRecvBreak()
+    {
+        m_spriteRenderer.sprite = m_tileBack;
     }
 }
 

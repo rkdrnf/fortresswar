@@ -11,8 +11,10 @@ public class MapMaker : MonoBehaviour {
 
     public List<Tile> tiles;
 
-	public GameObject tile;
+	public Tile tile;
 	public TileSet tileSet;
+
+    public float m_brushSize;
 
     public Sprite backgroundImage;
 

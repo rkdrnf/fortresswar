@@ -6,17 +6,18 @@ namespace Client
     public class ParticleSystem2D : MonoBehaviour
     {
 
-        public LayerMask collidingMask;
-        ParticleSystem2DData pSystemData;
+        public LayerMask m_collidingMask;
+        ParticleSystem2DData m_pSystemData;
 
-        double durationTimer;
-        double spawnTimer;
-        int spawningCount;
-        int totalSpawningCount;
+        double m_durationTimer;
+        double m_spawnTimer;
+        int m_spawningCount;
+        int m_totalSpawningCount;
+        int m_amountMultiplier = 1;
 
-        float inclination;
+        float m_inclination;
 
-        bool isPlaying;
+        bool m_isPlaying;
 
         // Use this for initialization
         void Awake()
@@ -27,36 +28,41 @@ namespace Client
 
         public void Init(ParticleSystem2DData setting)
         {
-            spawnTimer = 0;
-            spawningCount = 0;
-            totalSpawningCount = 0;
-            isPlaying = false;
+            m_spawnTimer = 0;
+            m_spawningCount = 0;
+            m_totalSpawningCount = 0;
+            m_isPlaying = false;
 
-            pSystemData = setting;
+            m_pSystemData = setting;
 
-            if (pSystemData.bounds.size.x != 0)
+            if (m_pSystemData.bounds.size.x != 0)
             {
-                inclination = pSystemData.bounds.size.y / pSystemData.bounds.size.x;
+                m_inclination = m_pSystemData.bounds.size.y / m_pSystemData.bounds.size.x;
             }
 
-            if (pSystemData.playAutomatically)
+            if (m_pSystemData.playAutomatically)
             {
                 Play();
             }
         }
 
+        public void ChangeAmount(int amount)
+        {
+            m_amountMultiplier = amount;
+        }
+
         public void Play()
         {
-            isPlaying = true;
-            spawnTimer = 0;
-            spawningCount = 0;
-            totalSpawningCount = 0;
-            durationTimer = pSystemData.duration;
+            m_isPlaying = true;
+            m_spawnTimer = 0;
+            m_spawningCount = 0;
+            m_totalSpawningCount = 0;
+            m_durationTimer = m_pSystemData.duration;
         }
 
         public void Stop()
         {
-            isPlaying = false;
+            m_isPlaying = false;
             Disable();
         }
 
@@ -68,14 +74,14 @@ namespace Client
         // Update is called once per frame
         void Update()
         {
-            if (!isPlaying) return;
+            if (!m_isPlaying) return;
 
-            if (durationTimer < 0)
+            if (m_durationTimer < 0)
             {
-                if (pSystemData.loop)
+                if (m_pSystemData.loop)
                 {
-                    durationTimer = pSystemData.duration;
-                    totalSpawningCount = 0;
+                    m_durationTimer = m_pSystemData.duration;
+                    m_totalSpawningCount = 0;
                 }
                 else
                 {
@@ -84,21 +90,21 @@ namespace Client
                 }
             }
 
-            if (totalSpawningCount > pSystemData.maxCount) { Stop(); return; }
+            if (m_totalSpawningCount > m_pSystemData.maxCount) { Stop(); return; }
 
-            durationTimer -= Time.deltaTime;
+            m_durationTimer -= Time.deltaTime;
 
-            spawnTimer += Time.deltaTime;
-            spawningCount = (int)(spawnTimer / pSystemData.rate);
+            m_spawnTimer += Time.deltaTime * m_amountMultiplier;
+            m_spawningCount = (int)(m_spawnTimer / m_pSystemData.rate);
 
-            totalSpawningCount += spawningCount;
+            m_totalSpawningCount += m_spawningCount;
 
-            if (spawnTimer > pSystemData.rate)
+            if (m_spawnTimer > m_pSystemData.rate)
             {
-                spawnTimer -= spawningCount * pSystemData.rate;
+                m_spawnTimer -= m_spawningCount * m_pSystemData.rate;
             }
 
-            for (int i = 0; i < spawningCount; i++)
+            for (int i = 0; i < m_spawningCount; i++)
             {
                 Particle2DData randomParticle = MakeRandomParticle();
                 if (randomParticle == null)
@@ -112,14 +118,14 @@ namespace Client
         Particle2DData MakeRandomParticle()
         {
             Particle2DData p = new Particle2DData();
-            p.lifeTime = pSystemData.lifeTime;
+            p.lifeTime = m_pSystemData.lifeTime;
 
             float randomX = Random.value - 0.5f;
             float randomY = Random.value - 0.5f;
 
             Vector3 randomDirection = new Vector3(randomX, randomY, 0);
 
-            if (pSystemData.bounds.size.x == 0)
+            if (m_pSystemData.bounds.size.x == 0)
             {
                 p.position = transform.position;
             }
@@ -138,33 +144,33 @@ namespace Client
                 return null;
             }
             */
-            p.velocity = (randomDirection * Random.Range(pSystemData.minVelocity, pSystemData.maxVelocity)) + (Vector3)(pSystemData.gravityModifier);
-            p.gravityScale = pSystemData.gravityScale;
+            p.velocity = (randomDirection * Random.Range(m_pSystemData.minVelocity, m_pSystemData.maxVelocity)) + (Vector3)(m_pSystemData.gravityModifier);
+            p.gravityScale = m_pSystemData.gravityScale;
 
-            p.collide = pSystemData.collide;
-            p.sprite = pSystemData.sprite;
-            p.collidingMaterial = pSystemData.collidingMaterial;
+            p.collide = m_pSystemData.collide;
+            p.sprite = m_pSystemData.sprite;
+            p.collidingMaterial = m_pSystemData.collidingMaterial;
 
-            p.material = pSystemData.material;
-            p.color = pSystemData.colors[(int)(Random.value * pSystemData.colors.Length)];
+            p.material = m_pSystemData.material;
+            p.color = m_pSystemData.colors[(int)(Random.value * m_pSystemData.colors.Length)];
 
-            p.scale = Vector3.one * (pSystemData.size / pSystemData.sprite.bounds.size.x);
+            p.scale = Vector3.one * (m_pSystemData.size / m_pSystemData.sprite.bounds.size.x);
 
             return p;
         }
 
         Vector2 FindBorder(float x, float y)
         {
-            Bounds bounds = pSystemData.bounds;
+            Bounds bounds = m_pSystemData.bounds;
             float particleInc = y / x;
-            if (Mathf.Abs(inclination) >= Mathf.Abs(particleInc))
+            if (Mathf.Abs(m_inclination) >= Mathf.Abs(particleInc))
             {
-                x = (x >= 0) ? (bounds.size.x + pSystemData.size) / 2.0f : -(bounds.size.x + pSystemData.size) / 2.0f;
+                x = (x >= 0) ? (bounds.size.x + m_pSystemData.size) / 2.0f : -(bounds.size.x + m_pSystemData.size) / 2.0f;
                 return new Vector2(x, x * particleInc);
             }
             else
             {
-                y = (y >= 0) ? (bounds.size.y + pSystemData.size) / 2.0f : -(bounds.size.y + pSystemData.size) / 2.0f;
+                y = (y >= 0) ? (bounds.size.y + m_pSystemData.size) / 2.0f : -(bounds.size.y + m_pSystemData.size) / 2.0f;
                 return new Vector2(y / particleInc, y);
             }
         }
