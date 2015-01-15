@@ -1,8 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-namespace Client
-{
     public class ParticleSystem2D : MonoBehaviour
     {
 
@@ -110,7 +108,9 @@ namespace Client
                 if (randomParticle == null)
                     continue;
 
-                Particle2D particleObj = Client.ParticleManager.Inst.particlePool.Borrow();
+                Particle2D particleObj = ParticleManager.Inst.particlePool.Borrow();
+                if (particleObj == null) return;
+
                 particleObj.Init(randomParticle);
             }
         }
@@ -175,4 +175,3 @@ namespace Client
             }
         }
     }
-}

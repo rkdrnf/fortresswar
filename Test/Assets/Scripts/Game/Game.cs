@@ -46,6 +46,7 @@ public class Game : MonoBehaviour
     SkillDataLoader skillLoader;
     
 
+    [HideInInspector]
     public Map map;
 	NetworkManager netManager;
 	MapLoader mapLoader;

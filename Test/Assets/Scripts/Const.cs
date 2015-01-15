@@ -16,6 +16,7 @@ namespace Const
         public const int PLAYER     = 1;
         public const int PROJECTILE = 2;
     }
+
     public enum ObjectType
     {
         PLAYER,
@@ -23,6 +24,15 @@ namespace Const
         PROJECTILE,
         BUILDING
     };
+
+    public enum InGameMenuType
+    {
+        TEAM_SELECTOR,
+        JOB_SELECTOR,
+        NAME_SELECTOR,
+        BUILD_MENU,
+        SCORE_BOARD
+    }
 
     public enum GameState
     {
@@ -38,7 +48,8 @@ namespace Const
         TEAM_SELECTOR,
         JOB_SELECTOR,
         NAME_SELECTOR,
-        BUILD_MENU
+        BUILD_MENU,
+        SCORE_BOARD,
     }
 
     public enum InputMouseFocus
@@ -48,7 +59,8 @@ namespace Const
         TEAM_SELECTOR,
         JOB_SELECTOR,
         NAME_SELECTOR,
-        BUILD_MENU
+        BUILD_MENU,
+        SCORE_BOARD,
     }
 
     public enum ChatState
@@ -75,6 +87,12 @@ namespace Const
         ON,
         OFF
     }
+    
+    public enum ScoreBoardState
+    {
+        ON,
+        OFF
+    }
 
     public enum MenuState
     {
@@ -90,9 +108,10 @@ namespace Const
 
     public enum Team
     {
-        NONE,
         BLUE,
-        RED
+        RED,
+
+        NONE
     }
 
     public enum Job
@@ -207,6 +226,24 @@ namespace Const
         DOWN,
         LEFT,
         RIGHT
+    }
+
+    namespace Effect
+    {
+        public enum CharacterHighlight
+        {
+            DAMAGE,
+            SELECT,
+        }
+
+        public enum AnimationEffectType
+        {
+            NONE,
+            BULLET_EXPLOSION,
+            MISSLE_EXPLOSION,
+            GRENADE_EXPLOSION,
+            BUILDING_BREAK
+        }
     }
 
     namespace Structure

@@ -17,12 +17,15 @@ public class Tile : Structure {
 
     public void Init(TileData tData, Map map)
     {
+        if (!Network.isServer) return;
+
         m_ID = tData.ID;
         m_health = tData.health;
         m_coord = tData.coord;
-        transform.localPosition = tData.coord.ToVector2();
         m_map = map;
 
+        //rendering
+        if (ServerGame.Inst.isDedicatedServer) return;
         GetSprite(m_health);
     }
 
@@ -49,6 +52,7 @@ public class Tile : Structure {
     
     public override string ToString()
     {
+        
         return transform.position.x.ToString() + "\t" + transform.position.y.ToString() + "\t" + ((int)m_tileType).ToString() + "\t" + m_health.ToString();
     }
 
@@ -56,6 +60,11 @@ public class Tile : Structure {
     {
         Destroy(m_collider);
         Destroy(rigidbody2D);
+
+        //rendering
+        if (Network.isServer && ServerGame.Inst.isDedicatedServer) return;
+
+        m_spriteRenderer.sprite = m_tileBack;
     }
 
     protected override void OnRecvBreak()

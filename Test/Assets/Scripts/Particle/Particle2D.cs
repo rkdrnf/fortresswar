@@ -5,7 +5,6 @@ using UnityEngine;
 
 public class Particle2D : MonoBehaviour
 {
-    public LayerMask collidingMask;
 
     float lifeTime;
 
@@ -21,8 +20,6 @@ public class Particle2D : MonoBehaviour
         DOWN
     }
 
-    int collisionCount;
-    
     public void Awake()
     {
         pBody = GetComponent<Rigidbody2D>();
@@ -34,7 +31,6 @@ public class Particle2D : MonoBehaviour
 
     public void Init(Particle2DData setting)
     {
-        collisionCount = 0;
         this.lifeTime = setting.lifeTime;
 
         transform.position = setting.position;

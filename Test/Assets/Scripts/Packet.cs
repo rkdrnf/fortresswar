@@ -11,82 +11,6 @@ using ProtoBuf;
 using ProtoBuf.Meta;
 namespace Packet
 {
-    public abstract class Packet<T> where T : Packet<T>
-    {
-        public byte[] SerializeToBytes()
-        {
-            MemoryStream ms = new MemoryStream();
-            Serializer.Serialize<T>(ms, (T)this);
-            return ms.ToArray();
-        }
-
-        public static T DeserializeFromBytes(byte[] arrBytes)
-        {
-            MemoryStream ms = new MemoryStream(arrBytes);
-            return Serializer.Deserialize<T>(ms);
-        }
-    }
-
-    [ProtoContract]
-    public class PacketVector2
-    {
-        [ProtoMember(1)]
-        public float x { get; set; }
-
-        [ProtoMember(2)]
-        public float y { get; set; }
-
-
-        public PacketVector2()
-        {
-            this.x = 0.0f;
-            this.y = 0.0f;
-        }
-
-        public PacketVector2(float x, float y)
-        {
-            this.x = x;
-            this.y = y;
-        }
-
-        public static implicit operator Vector3(PacketVector2 v)
-        {
-            return new Vector3(v.x, v.y, 0f);
-        }
-
-        public static implicit operator Vector2(PacketVector2 v)
-        {
-            return new Vector2(v.x, v.y);
-        }
-
-        public static implicit operator PacketVector2(Vector3 v)
-        {
-            return new PacketVector2(v.x, v.y);
-        }
-
-        public static implicit operator PacketVector2(Vector2 v)
-        {
-            return new PacketVector2(v.x, v.y);
-        }
-    }
-
-    [ProtoContract]
-    public class TileStatus
-    {
-        public TileStatus() { }
-        public TileStatus(GridCoord coord, int health)
-        {
-            this.coord = coord;
-            this.health = health;
-        }
-        [ProtoMember(1)]
-        public int packetID = -1;
-        [ProtoMember(2)]
-        public GridCoord coord;
-        [ProtoMember(3)]
-        public int health;
-    }
-
     namespace S2C
     {
         [ProtoContract]
@@ -100,12 +24,10 @@ namespace Packet
                 this.point = point;
             }
             [ProtoMember(1)]
-            public int packetID = -1;
-            [ProtoMember(2)]
             public GridCoord tileCoord;
-            [ProtoMember(3)]
+            [ProtoMember(2)]
             public int damage;
-            [ProtoMember(4)]
+            [ProtoMember(3)]
             public PacketVector2 point;
         }
 
@@ -119,8 +41,6 @@ namespace Packet
             }
 
             [ProtoMember(1)]
-            public int packetID = -1;
-            [ProtoMember(2)]
             public Vector3 position;
         }
 
@@ -134,8 +54,6 @@ namespace Packet
             }
 
             [ProtoMember(1)]
-            public int packetID = -1;
-            [ProtoMember(2)]
             public long projectileID;
         }
 
@@ -153,8 +71,6 @@ namespace Packet
                 }
             }
             [ProtoMember(1)]
-            public int packetID = -1;
-            [ProtoMember(2)]
             public List<TileStatus> tileStatusList;
         }
 
@@ -168,8 +84,6 @@ namespace Packet
             }
 
             [ProtoMember(1)]
-            public int packetID = -1;
-            [ProtoMember(2)]
             public PlayerSettingError error;
         }
 
@@ -183,9 +97,6 @@ namespace Packet
             }
 
             [ProtoMember(1)]
-            public int packetID = -1;
-
-            [ProtoMember(2)]
             public CharacterState state;
         }
 
@@ -226,15 +137,12 @@ namespace Packet
             }
             
             [ProtoMember(1)]
-            public int packetID = -1;
-
-            [ProtoMember(2)]
             public int playerID;
 
-            [ProtoMember(3)]
+            [ProtoMember(2)]
             public CharacterInfo info;
 
-            [ProtoMember(4)]
+            [ProtoMember(3)]
             public PlayerSetting setting;
         }
 
@@ -404,14 +312,12 @@ namespace Packet
             }
 
             [ProtoMember(1)]
-            public int packetID = -1;
-            [ProtoMember(2)]
             public int playerID;
-            [ProtoMember(3)]
+            [ProtoMember(2)]
             public long projectileID;
-            [ProtoMember(4)]
+            [ProtoMember(3)]
             public WeaponType weaponType;
-            [ProtoMember(5)]
+            [ProtoMember(4)]
             public PacketVector2 direction;
         }
 
@@ -426,10 +332,8 @@ namespace Packet
             }
 
             [ProtoMember(1)]
-            public int packetID = -1;
-            [ProtoMember(2)]
             public int playerID;
-            [ProtoMember(3)]
+            [ProtoMember(2)]
             public WeaponType weaponType;
         }
 
@@ -445,10 +349,8 @@ namespace Packet
 
 
             [ProtoMember(1)]
-            public int packetID = -1;
-            [ProtoMember(2)]
             public int playerID;
-            [ProtoMember(3)]
+            [ProtoMember(2)]
             public string name;
         }
 
@@ -463,10 +365,8 @@ namespace Packet
             }
 
             [ProtoMember(1)]
-            public int packetID = -1;
-            [ProtoMember(2)]
             public int playerID;
-            [ProtoMember(3)]
+            [ProtoMember(2)]
             public Team team;
         }
 
@@ -481,10 +381,8 @@ namespace Packet
             }
 
             [ProtoMember(1)]
-            public int packetID = -1;
-            [ProtoMember(2)]
             public int playerID;
-            [ProtoMember(3)]
+            [ProtoMember(2)]
             public PlayerStatus status;
         }
 
@@ -498,9 +396,6 @@ namespace Packet
             }
 
             [ProtoMember(1)]
-            public int packetID = -1;
-
-            [ProtoMember(2)]
             public Job job;
         }
 
@@ -516,12 +411,10 @@ namespace Packet
             }
 
             [ProtoMember(1)]
-            public int packetID = -1;
-            [ProtoMember(2)]
             public int casterID;
-            [ProtoMember(3)]
+            [ProtoMember(2)]
             public SkillName skillName;
-            [ProtoMember(4)]
+            [ProtoMember(3)]
             public PacketVector2 direction;
         }
 
@@ -536,10 +429,8 @@ namespace Packet
             }
 
             [ProtoMember(1)]
-            public int packetID = -1;
-            [ProtoMember(2)]
             public string buildingName;
-            [ProtoMember(3)]
+            [ProtoMember(2)]
             public PacketVector2 position;
         }
     }

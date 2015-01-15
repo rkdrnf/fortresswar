@@ -4,24 +4,25 @@ using System.Text;
 using UnityEngine;
 using System.Threading;
 using Client;
+using Effect;
 
-public abstract class MemoryPool<T>
+public abstract class MemoryPool<T> where T : MonoBehaviour
 {
-    protected GameObject prefab;
+    protected T prefab;
     private int currentIndex;
     private int poolSize;
     object poolLock = new object();
 
-    protected void Init(GameObject prefab, int size)
+    protected void Init(T prefab, int size)
     {
-        prefabs = new List<GameObject>(size);
+        prefabs = new List<T>(size);
         poolSize = size;
 
         for (int i = 0; i < size; i++)
         {
-            GameObject obj = (GameObject)MonoBehaviour.Instantiate(prefab);
+            T obj = (T)MonoBehaviour.Instantiate(prefab);
             prefabs.Add(obj);
-            obj.SetActive(false);
+            obj.gameObject.SetActive(false);
             
         }
     }
@@ -32,52 +33,53 @@ public abstract class MemoryPool<T>
         {
             int index = i % poolSize;
 
-            GameObject obj = prefabs[index];
-            if (obj.activeInHierarchy)
+            T obj = prefabs[index];
+            if (obj.gameObject.activeInHierarchy)
                 continue;
             else
             {
                 currentIndex = i;
                 lock (poolLock)
                 {
-                    obj.SetActive(true);
+                    obj.gameObject.SetActive(true);
                     return GetObject(obj);
                 }
             }
         }
 
-        Debug.Log("pool exceeded!!");
+        Debug.Log(string.Format("Pool Exceeded {0}", typeof(T)));
 
-        throw new System.Exception(string.Format("Pool Exceeded {0}", typeof(T)));
+        return default(T);
     }
 
-    public abstract T GetObject(GameObject obj);
+    public T GetObject(T obj)
+    {
+        return obj;
+    }
 
-    List<GameObject> prefabs;
+    List<T> prefabs;
 }
 
 public class ParticlePool : MemoryPool<Particle2D>
 {
-    public ParticlePool(GameObject prefab, int size)
+    public ParticlePool(Particle2D prefab, int size)
     {
         Init(prefab, size);
-    }
-
-    public override Particle2D GetObject(GameObject obj)
-    {
-        return obj.GetComponent<Particle2D>();
     }
 }
 
 public class ParticleSystem2DPool : MemoryPool<ParticleSystem2D>
 {
-    public ParticleSystem2DPool(GameObject prefab, int size)
+    public ParticleSystem2DPool(ParticleSystem2D prefab, int size)
     {
         Init (prefab, size);
     }
+}
 
-    public override ParticleSystem2D GetObject(GameObject obj)
+public class AnimationEffectPool : MemoryPool<AnimationEffect>
+{
+    public AnimationEffectPool(AnimationEffect prefab, int size)
     {
-        return obj.GetComponent<ParticleSystem2D>();
+        Init(prefab, size);
     }
 }

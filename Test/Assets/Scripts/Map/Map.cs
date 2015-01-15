@@ -71,11 +71,11 @@ public class Map : MonoBehaviour {
 
         S2C.MapInfo mapInfo = new S2C.MapInfo(tileList);
 
-        networkView.RPC("SetMapStatus", info.sender, mapInfo.SerializeToBytes());
+        networkView.RPC("RecvMapStatus", info.sender, mapInfo.SerializeToBytes());
     }
 
     [RPC]
-    void SetMapStatus(byte[] mapInfoData, NetworkMessageInfo info)
+    void RecvMapStatus(byte[] mapInfoData, NetworkMessageInfo info)
     {
         if (!Network.isClient) return;
         //CheckServer
@@ -84,13 +84,15 @@ public class Map : MonoBehaviour {
 
         S2C.MapInfo mapInfo = S2C.MapInfo.DeserializeFromBytes(mapInfoData);
 
+        /*
         foreach(var tileStatus in mapInfo.tileStatusList)
         {
             Tile tile = GetTile(tileStatus.m_coord);
             tile.SetHealth(tileStatus.m_health, Const.Structure.DestroyReason.MANUAL);
         }
+        */
 
-        Client.ClientGame.Inst.OnMapLoadCompleted(this);
+        ServerGame.Inst.OnMapLoadCompleted(this);
     }
 
     public Tile GetTile(GridCoord coord)
@@ -125,12 +127,12 @@ public class Map : MonoBehaviour {
 
         LoadBackground(mapData.backgroundImage);
 
+        if (!Network.isServer) return; // 서버만 타일 로딩.
         foreach (TileData tileData in mapData.tiles)
         {
             Tile tile = (Tile)Network.Instantiate(mapData.tileSet.tiles[(int)tileData.tileType], tileData.coord.ToVector2(), Quaternion.identity, 4);
 
             tile.Init(tileData, this);
-            
 
             AddTile(tile);
         }

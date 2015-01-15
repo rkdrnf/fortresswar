@@ -33,37 +33,49 @@ public class Building : Structure
         S2C.BuildingStatus pck = S2C.BuildingStatus.DeserializeFromBytes(pckData);
 
         m_coord = pck.m_coord;
-        m_health = pck.m_health;
+
+        SetHealth(pck.m_health, DestroyReason.MANUAL);
         
         m_direction = pck.m_direction;
-        if (pck.m_falling)
+        m_isFalling = pck.m_falling;
+
+        BuildingManager.Inst.Add(this);
+
+        if (m_isFalling)
         {
             Fall();
         }
-
     }
 
-    public void Init(GridCoord coord)
+    public void Init(BuildingData bData, GridCoord coord)
     {
+        if (!Network.isServer) return;
+
         m_coord = coord;
- 
-        if (Network.isServer)
-        {
-            BuildingManager.Inst.Add(this);
-            FillSuspension();
-            FillNeighbors();
-        }
+        m_health = m_maxHealth;
+        
+        FillSuspension();
+        FillNeighbors();
+
+        BuildingManager.Inst.Add(this);
+
+        //rendering
+        if (ServerGame.Inst.isDedicatedServer) return;
+        GetSprite(m_health);
     }
 
     public void Fall()
     {
-        //if (!Network.isServer) return;
+        BuildingManager.Inst.Remove(this);
 
         gameObject.layer = BuildingDataLoader.Inst.fallingBuildingLayer;
         rigidbody2D.isKinematic = false;
 
         collider2D.isTrigger = true;
         (collider2D as BoxCollider2D).size = (collider2D as BoxCollider2D).size * 0.9f;
+
+        if (!Network.isServer) return;
+        BroadcastFall();
     }
 
     void BroadcastFall()
@@ -75,9 +87,7 @@ public class Building : Structure
     [RPC]
     void RecvFall()
     {
-        gameObject.layer = BuildingDataLoader.Inst.fallingBuildingLayer;
-        rigidbody.isKinematic = false;
-        collider2D.isTrigger = true;
+        Fall();
     }
 
     void OnTriggerEnter2D(Collider2D targetCollider)
@@ -86,13 +96,18 @@ public class Building : Structure
         if (rigidbody2D.isKinematic) return;
 
         if (targetCollider.tag == "Building" || targetCollider.tag == "Tile")
-            OnBreak(DestroyReason.COLLIDE);
+            SetHealth(0, DestroyReason.COLLIDE);
         
         //damage target collider
     }
 
     protected override void OnBreak(DestroyReason reason)
     {
+        BuildingManager.Inst.Remove(this);
+
+        
+        if (!Network.isServer) return;
+
         switch (reason)
         {
             case DestroyReason.DAMAGE:

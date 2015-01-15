@@ -5,8 +5,6 @@ using System.Text;
 using UnityEngine;
 using Const;
 
-namespace Client
-{ 
     public class ParticleManager : MonoBehaviour
     {
         private static ParticleManager instance;
@@ -25,8 +23,8 @@ namespace Client
         [HideInInspector]
         public ParticleSystem2DPool particleSystemPool;
 
-        public GameObject particlePrefab;
-        public GameObject particleSystemPrefab;
+        public Particle2D particlePrefab;
+        public ParticleSystem2D particleSystemPrefab;
 
         public ParticleSystem2DSet particleSet;
 
@@ -45,4 +43,3 @@ namespace Client
             Physics2D.IgnoreLayerCollision(particleLayer, particleLayer);
         }
     }
-}

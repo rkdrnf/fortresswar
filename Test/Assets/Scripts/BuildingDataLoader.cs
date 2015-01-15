@@ -50,7 +50,9 @@ public class BuildingDataLoader : MonoBehaviour
 
     public BuildingDataSet buildingSet;
     private Dictionary<string, BuildingData> buildingNameMap;
+    [HideInInspector]
     public int buildingLayer;
+    [HideInInspector]
     public int fallingBuildingLayer;
     public LayerMask buildingCollidingLayers;
     public LayerMask fallingBuildingCollidingLayers;
