@@ -1,11 +1,12 @@
 ﻿using UnityEngine;
 using System.Collections;
+using Server;
 
-namespace Client
+namespace UI
 {
     public class HealthBarBehaviour : MonoBehaviour
     {
-        PlayerBehaviour player;
+        ServerPlayer player;
 
         public Texture2D texture;
 
@@ -17,18 +18,18 @@ namespace Client
         // Use this for initialization
         void Start()
         {
-            player = transform.parent.gameObject.GetComponent<PlayerBehaviour>();
+            player = transform.parent.gameObject.GetComponent<ServerPlayer>();
 
         }
 
         void OnGUI()
         {
-            if (player.jobStat == null) return;
+            if (player.GetJobStat() == null) return;
 
             Vector2 targetPos;
             targetPos = Camera.main.WorldToScreenPoint(transform.position);
 
-            float healthRate = player.health / (float)player.jobStat.MaxHealth;
+            float healthRate = player.GetHealth() / (float)player.GetJobStat().MaxHealth;
 
             GUI.color = Blend(dyingColor, fullColor, healthRate);
             GUI.DrawTexture(new Rect(targetPos.x - 20, Screen.height - targetPos.y - 10, healthRate * 40, 5), texture, ScaleMode.StretchToFill, false); //displays a healthbar

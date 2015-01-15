@@ -3,18 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
-
-namespace Client
-{
+using Server;
+namespace UI
+{ 
     public class WeaponUI : MonoBehaviour
     {
-        C_WeaponManager weaponManager;
+        WeaponManager weaponManager;
 
         const float weaponWidth = 100f;
 
         void Start()
         {
-            weaponManager = transform.parent.gameObject.GetComponent<C_WeaponManager>();
+            weaponManager = transform.parent.gameObject.GetComponent<WeaponManager>();
         }
 
         void OnGUI()
@@ -60,5 +60,4 @@ namespace Client
 
 
     }
-
 }

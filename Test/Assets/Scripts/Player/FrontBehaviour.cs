@@ -45,7 +45,7 @@ public class FrontBehaviour : MonoBehaviour {
     {
         for(int i = 0; i < detectionPoints.Length; i++)
         {
-            RaycastHit2D hit = Physics2D.Raycast(transform.position, (player.facingRight ? rayRightDirections[i] : rayLeftDirections[i]), rayDistances[i], wallLayer);
+            RaycastHit2D hit = Physics2D.Raycast(transform.position, (player.IsFacingRight() ? rayRightDirections[i] : rayLeftDirections[i]), rayDistances[i], wallLayer);
 
             if (hit.collider != null && hit.normal.x == GetNormal(facing) && hit.normal.y == 0)
             {
@@ -65,8 +65,8 @@ public class FrontBehaviour : MonoBehaviour {
 
     int GetNormal(Facing detectorFacing)
     {
-        if ((player.facingRight && detectorFacing == Facing.FRONT)
-            || ((!player.facingRight) && detectorFacing == Facing.BACK))
+        if ((player.IsFacingRight() && detectorFacing == Facing.FRONT)
+            || ((!player.IsFacingRight()) && detectorFacing == Facing.BACK))
         {
             return -1;
         }

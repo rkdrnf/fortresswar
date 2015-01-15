@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using Const;
 using Util;
+using Server;
 
 namespace Client
 {
@@ -57,7 +58,7 @@ namespace Client
         {
             if (text.Trim().Length > 0)
             {
-                networkView.RPC("BroadCastChat", RPCMode.All, ClientGame.Inst.GetID(), text);
+                networkView.RPC("BroadCastChat", RPCMode.All, ServerGame.Inst.GetID(), text);
             }
             writingMessage = "";
         }
@@ -155,11 +156,12 @@ namespace Client
 
         public override void SetState(ChatState newState)
         {
+            ServerGame game = ServerGame.Inst;
             switch (newState)
             {
                 case ChatState.NONE:
-                    ClientGame.Inst.keyFocusManager.FreeFocus(InputKeyFocus.CHAT_WINDOW);
-                    ClientGame.Inst.mouseFocusManager.FreeFocus(InputMouseFocus.CHAT_WINDOW);
+                    game.keyFocusManager.FreeFocus(InputKeyFocus.CHAT_WINDOW);
+                    game.mouseFocusManager.FreeFocus(InputMouseFocus.CHAT_WINDOW);
                     StateUtil.SetState<ChatState>(ref this.state, newState);
                     break;
 
@@ -167,15 +169,15 @@ namespace Client
 
                     if (IsNotInState(ChatState.WRITING))
                     {
-                        ClientGame.Inst.keyFocusManager.FreeFocus(InputKeyFocus.CHAT_WINDOW);
-                        ClientGame.Inst.mouseFocusManager.FreeFocus(InputMouseFocus.CHAT_WINDOW);
+                        game.keyFocusManager.FreeFocus(InputKeyFocus.CHAT_WINDOW);
+                        game.mouseFocusManager.FreeFocus(InputMouseFocus.CHAT_WINDOW);
                         StateUtil.SetState<ChatState>(ref this.state, newState);
                     }
                     break;
 
                 case ChatState.WRITING:
-                    ClientGame.Inst.keyFocusManager.FocusTo(InputKeyFocus.CHAT_WINDOW);
-                    ClientGame.Inst.mouseFocusManager.FocusTo(InputMouseFocus.CHAT_WINDOW);
+                    game.keyFocusManager.FocusTo(InputKeyFocus.CHAT_WINDOW);
+                    game.mouseFocusManager.FocusTo(InputMouseFocus.CHAT_WINDOW);
                     StateUtil.SetState<ChatState>(ref this.state, newState);
                     break;
             }

@@ -16,7 +16,7 @@ public class SkillInfo
     public SkillData skillData;
     public float coolDownTimer;
     public bool isCasting;
-    public Server.ServerPlayer caster;
+    public ServerPlayer caster;
 
     public void Cast()
     {

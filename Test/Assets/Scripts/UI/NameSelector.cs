@@ -6,9 +6,10 @@ using S2C = Packet.S2C;
 using C2S = Packet.C2S;
 using Util;
 using Const;
+using Server;
 
 
-namespace Client
+namespace InGameMenu
 {
     public class NameSelector : MonoBehaviour
     {
@@ -46,7 +47,7 @@ namespace Client
             if (GUI.Button(new Rect(Screen.width / 2 - 50, Screen.height / 2 - 20, 100f, 20f), "Enter"))
             {
                 Close();
-                ClientGame.Inst.SetPlayerName(playerName);
+                ServerGame.Inst.SetPlayerName(playerName);
 
             }
         }
@@ -56,18 +57,18 @@ namespace Client
     {
         public override void SetState(NameSelectorState newState)
         {
-            ClientGame client = ClientGame.Inst;
+            ServerGame game = ServerGame.Inst;
             switch (newState)
             {
                 case NameSelectorState.ON:
-                    client.keyFocusManager.FocusTo(InputKeyFocus.NAME_SELECTOR);
-                    client.mouseFocusManager.FocusTo(InputMouseFocus.NAME_SELECTOR);
+                    game.keyFocusManager.FocusTo(InputKeyFocus.NAME_SELECTOR);
+                    game.mouseFocusManager.FocusTo(InputMouseFocus.NAME_SELECTOR);
                     StateUtil.SetState<NameSelectorState>(ref state, newState);
                     break;
 
                 case NameSelectorState.OFF:
-                    client.keyFocusManager.FreeFocus(InputKeyFocus.NAME_SELECTOR);
-                    client.mouseFocusManager.FreeFocus(InputMouseFocus.NAME_SELECTOR);
+                    game.keyFocusManager.FreeFocus(InputKeyFocus.NAME_SELECTOR);
+                    game.mouseFocusManager.FreeFocus(InputMouseFocus.NAME_SELECTOR);
                     StateUtil.SetState<NameSelectorState>(ref state, newState);
                     break;
             }

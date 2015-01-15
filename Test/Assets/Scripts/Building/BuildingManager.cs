@@ -39,6 +39,12 @@ namespace Server
             buildingMap.Add(building.m_coord, building);
         }
 
+        public void Remove(Building building)
+        {
+            if (buildingMap.ContainsKey(building.m_coord) && buildingMap[building.m_coord] == building)
+                buildingMap.Remove(building.m_coord);
+        }
+
         public Building Get(GridCoord coord)
         {
             if (buildingMap.ContainsKey(coord))
@@ -52,7 +58,7 @@ namespace Server
             if (!CanBuild(bData, position)) return;
 
             Building building = (Building)Network.Instantiate(bData.building, position, Quaternion.identity, 3);
-            building.Init(GridCoord.ToCoord(position));
+            building.Init(bData, GridCoord.ToCoord(position));
         }
 
         public bool CanBuild(BuildingData bData, Vector2 position)

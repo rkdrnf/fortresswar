@@ -8,7 +8,8 @@ using C2S = Packet.C2S;
 using Server;
 using Const;
 using Const.Structure;
-
+using Const.Effect;
+using Effect;
 
 [System.Serializable]
 public struct spriteInfo
@@ -37,6 +38,8 @@ public abstract class Structure : MonoBehaviour
     protected SpriteRenderer m_spriteRenderer;
     protected BoxCollider2D m_collider;
 
+    public AnimationEffectType m_destructionAnim;
+
     void Awake()
     {
         m_spriteRenderer = GetComponent<SpriteRenderer>();
@@ -61,29 +64,22 @@ public abstract class Structure : MonoBehaviour
     {
         m_health = health;
 
-        BroadcastHealth(m_health, reason);
+        if (m_health < 0)
+            m_health = 0;
 
-        if (m_health < 1)
-        {
-            OnBreak(reason);
-            return;
-        }
+        if (Network.isServer) BroadcastHealth(m_health, reason);
+            
 
-        m_spriteRenderer.sprite = GetSprite(m_health);
+        AfterSetHealth(m_health, reason);
     }
 
     void BroadcastHealth(int health, DestroyReason reason)
     {
+        if (!Network.isServer) return;
+
         S2C.SetStructureHealth pck = new S2C.SetStructureHealth(health, reason);
 
-        if (!Server.ServerGame.Inst.isDedicatedServer)
-        {
-            networkView.RPC("RecvHealth", RPCMode.All, pck.SerializeToBytes());
-        }
-        else
-        {
-            networkView.RPC("RecvHealth", RPCMode.Others, pck.SerializeToBytes());
-        }
+        networkView.RPC("RecvHealth", RPCMode.Others, pck.SerializeToBytes());
     }
 
     [RPC]
@@ -94,24 +90,32 @@ public abstract class Structure : MonoBehaviour
         S2C.SetStructureHealth pck = S2C.SetStructureHealth.DeserializeFromBytes(pckData);
 
         m_health = pck.m_health;
+
+        AfterSetHealth(m_health, pck.m_reason);
+    }
+
+    void AfterSetHealth(int health, DestroyReason reason)
+    {
         m_spriteRenderer.sprite = GetSprite(m_health);
 
-        if (pck.m_reason == DestroyReason.COLLIDE || pck.m_reason == DestroyReason.DAMAGE)
+        if (m_health <= 0)
+        {
+            OnBreak(reason);
+        }
+
+        //rendering
+        if (Network.isServer && ServerGame.Inst.isDedicatedServer) return;
+
+        if (reason == DestroyReason.COLLIDE || reason == DestroyReason.DAMAGE)
         {
             int particleAmount = 1;
             if (m_health == 0)
             {
+                PlayDestructionAnimation();
                 particleAmount = 3;
             }
 
             PlaySplash(particleAmount);
-        }
-
-        if (m_health == 0)
-        { 
-            OnRecvBreak();
-
-            PlayDestructionAnimation();
         }
     }
 
@@ -151,8 +155,10 @@ public abstract class Structure : MonoBehaviour
 
     protected void PlaySplash(int amount)
     {
-        Client.ParticleSystem2D pSystem = Client.ParticleManager.Inst.particleSystemPool.Borrow();
-        ParticleSystem2DData pSysData = Client.ParticleManager.Inst.particleSet.particles[(int)m_particleType];
+        ParticleSystem2D pSystem = ParticleManager.Inst.particleSystemPool.Borrow();
+        if (pSystem == null) return;
+
+        ParticleSystem2DData pSysData = ParticleManager.Inst.particleSet.particles[(int)m_particleType];
         pSystem.Init(pSysData);
         pSystem.transform.position = transform.position;
         pSystem.ChangeAmount(amount);
@@ -161,6 +167,6 @@ public abstract class Structure : MonoBehaviour
 
     void PlayDestructionAnimation()
     {
-
+        AnimationEffectManager.Inst.PlayAnimationEffect(m_destructionAnim, transform.position);
     }
 }

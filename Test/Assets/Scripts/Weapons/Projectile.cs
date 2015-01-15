@@ -7,6 +7,9 @@ using Server;
 using C2S = Packet.C2S;
 using S2C = Packet.S2C;
 using Const;
+using Const.Effect;
+using Effect;
+using Data;
 
 [RequireComponent(typeof(NetworkView), typeof(Rigidbody2D), typeof(SpriteRenderer))]
 public abstract class Projectile : Weapon
@@ -22,7 +25,7 @@ public abstract class Projectile : Weapon
 
     protected Vector3 startPosition;
     private Vector2 direction;
-    public GameObject explosionAnimation;
+    public AnimationEffectType explosionAnimation;
 
     LayerMask tileMask;
 
@@ -32,7 +35,7 @@ public abstract class Projectile : Weapon
         networkView.group = NetworkViewGroup.PROJECTILE;
         startPosition = transform.position;
 
-        if(Network.isClient && Client.ClientGame.Inst.IsPlayerMapLoaded())
+        if(Network.isClient && ServerGame.Inst.IsPlayerMapLoaded())
         {
             OnPlayerMapLoaded();
         }
@@ -181,14 +184,17 @@ public abstract class Projectile : Weapon
     void OnDestroy()
     {
         ProjectileManager.Inst.Remove(ID);
-        if (explosionAnimation != null)
-        { 
-            GameObject explosion = (GameObject)Instantiate(explosionAnimation, transform.position, transform.rotation);
-            
-        }
+
+        PlayDestructionAnimation();
 
         OnDestroyInternal();
     }
 
     protected virtual void OnDestroyInternal() { }
+
+    void PlayDestructionAnimation()
+    {
+        AnimationEffectManager.Inst.PlayAnimationEffect(explosionAnimation, transform.position);
+        
+    }
 }
