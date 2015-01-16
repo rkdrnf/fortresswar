@@ -10,7 +10,7 @@ namespace Data
     public class AnimationEffectData : ScriptableObject
     {
         public AnimationEffectType m_type;
-        public AnimationClip m_clip;
+        public RuntimeAnimatorController m_animController;
         public float m_duration;
         public Quaternion m_quaternion;
         public Vector2 m_offset;

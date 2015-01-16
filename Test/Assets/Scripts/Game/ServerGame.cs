@@ -29,8 +29,6 @@ using InGameMenu;
         public Vector3 spawnPosition;
         public GameObject playerPrefab;
 
-        [HideInInspector]
-        public Map m_map;
         public Vector2 RevivalLocation;
 
         public bool isDedicatedServer = false;
@@ -383,7 +381,6 @@ using InGameMenu;
         {
             if (!Network.isClient) return;
 
-            m_map = map;
             mapLoaded = true;
 
             if (IsPlayerMapLoaded())

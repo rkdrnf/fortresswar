@@ -242,7 +242,8 @@ namespace Const
             BULLET_EXPLOSION,
             MISSLE_EXPLOSION,
             GRENADE_EXPLOSION,
-            BUILDING_BREAK
+            BUILDING_BREAK,
+            TILE_BREAK
         }
     }
 

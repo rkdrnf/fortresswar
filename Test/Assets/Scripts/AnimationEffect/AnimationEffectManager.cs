@@ -60,8 +60,8 @@ namespace Effect
             if (aEffect == null) return;
 
             AnimationEffectData aData = AnimationEffectManager.Inst.GetAnimationEffectData(type);
-            aEffect.Init(aData);
             aEffect.transform.position = position;
+            aEffect.Init(aData);
             aEffect.Play();
         }
     }
