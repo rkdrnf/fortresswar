@@ -8,6 +8,7 @@ using C2S = Packet.C2S;
 using Server;
 using Const;
 using Const.Structure;
+using Architecture;
 
 [RequireComponent(typeof(SpriteRenderer), typeof(Rigidbody2D), typeof(Collider2D))]
 public class Building : Structure

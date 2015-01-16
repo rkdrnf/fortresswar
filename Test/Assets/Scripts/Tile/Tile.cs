@@ -6,7 +6,7 @@ using S2C = Packet.S2C;
 using C2S = Packet.C2S;
 using System;
 using Const.Structure;
-
+using Architecture;
 
 
 public class Tile : Structure {
@@ -14,8 +14,14 @@ public class Tile : Structure {
     public Const.TileType m_tileType;
     public Sprite m_tileBack;
 
+    public void InitForMaker(TileData tData)
+    {
+        m_ID = tData.ID;
+        m_health = tData.health;
+        m_coord = tData.coord;
+    }
 
-    public void Init(TileData tData, Map map)
+    public void Init(TileData tData)
     {
         if (!Network.isServer) return;
 
@@ -48,8 +54,7 @@ public class Tile : Structure {
         SetHealth(pck.m_health, DestroyReason.MANUAL);
         m_coord = pck.m_coord;
 
-        Map.Inst.AddTile(this);
-        
+        TileManager.Inst.Add(this);
     }
     
     public override string ToString()

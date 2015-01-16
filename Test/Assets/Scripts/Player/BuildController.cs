@@ -5,6 +5,7 @@ using System.Text;
 using UnityEngine;
 using Const;
 using C2S = Packet.C2S;
+using Architecture;
 
 namespace Character
 {
@@ -64,7 +65,7 @@ namespace Character
 
             if (!CanBuild(building)) return;
 
-            Server.BuildingManager.Inst.Build(building, Map.GetGridPos(pck.position));
+            BuildingManager.Inst.Build(building, Map.GetGridPos(pck.position));
         }
     }
 }
