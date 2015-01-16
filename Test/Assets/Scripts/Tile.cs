@@ -22,7 +22,6 @@ public class Tile : Structure {
         m_ID = tData.ID;
         m_health = tData.health;
         m_coord = tData.coord;
-        m_map = map;
 
         //rendering
         if (ServerGame.Inst.isDedicatedServer) return;
@@ -48,6 +47,9 @@ public class Tile : Structure {
 
         SetHealth(pck.m_health, DestroyReason.MANUAL);
         m_coord = pck.m_coord;
+
+        Map.Inst.AddTile(this);
+        
     }
     
     public override string ToString()

@@ -64,8 +64,6 @@ public class Game : MonoBehaviour
 	}
 
     
-
-
 	public void LoadMap()
 	{
         GameObject mapPrefab = mapLoader.GetMap();
@@ -76,10 +74,5 @@ public class Game : MonoBehaviour
     public void ClearMap()
     {
         map = null;
-    }
-
-    public void SetMap(Map map)
-    {
-        this.map = map;
     }
 }

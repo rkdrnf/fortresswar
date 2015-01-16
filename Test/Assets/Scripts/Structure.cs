@@ -32,8 +32,6 @@ public abstract class Structure : MonoBehaviour
 
     [HideInInspector]
     public int m_health;
-    [HideInInspector]
-    public Map m_map;
 
     protected SpriteRenderer m_spriteRenderer;
     protected BoxCollider2D m_collider;

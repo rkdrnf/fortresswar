@@ -24,6 +24,16 @@ public class Map : MonoBehaviour {
 
     LayerMask tileLayer;
 
+    private static Map instance;
+
+    public static Map Inst
+    {
+        get
+        {
+            return instance;
+        }
+    }
+
     void Awake()
     {
         tileLayer = LayerMask.GetMask("Tile");
@@ -32,8 +42,9 @@ public class Map : MonoBehaviour {
 
     void OnNetworkInstantiate(NetworkMessageInfo info)
     {
+        instance = this;
+
         mapLoadTime = 0f;
-        Game.Inst.SetMap(this);
 
         if (Network.isServer)
         {
