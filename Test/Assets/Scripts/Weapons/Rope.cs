@@ -3,6 +3,7 @@ using System.Collections;
 using Server;
 using Const;
 using S2C = Packet.S2C;
+using Architecture;
 
 public class Rope : Projectile {
 
@@ -210,7 +211,11 @@ public class Rope : Projectile {
                 break;
 
             case ObjectType.TILE:
-                targetObj = Game.Inst.map.GetTile(Game.Inst.map.ToGridCoord((int)info.targetID)).gameObject;
+                targetObj = TileManager.Inst.Get(Game.Inst.map.ToGridCoord((int)info.targetID)).gameObject;
+                break;
+
+            case ObjectType.BUILDING:
+                targetObj = BuildingManager.Inst.Get(Game.Inst.map.ToGridCoord((int)info.targetID)).gameObject;
                 break;
 
             default:

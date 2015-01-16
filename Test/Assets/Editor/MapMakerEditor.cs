@@ -9,7 +9,6 @@ using Data;
 [CustomEditor(typeof(MapMaker))]
 public class MapMakerEditor : Editor {
 
-    Map map;
 	MapMaker maker;
 
 	int tileIndex = 0;
@@ -22,7 +21,6 @@ public class MapMakerEditor : Editor {
 	void OnEnable()
 	{
 		maker = target as MapMaker;
-        map = maker.transform.GetComponentInChildren<Map>();
         drawTimer = 0f;
 	}
 
@@ -90,25 +88,29 @@ public class MapMakerEditor : Editor {
 
     void PutTile(Vector2 point)
     {
+        GridCoord coord = new GridCoord(Mathf.FloorToInt((point.x + 0.5f) / maker.m_tileSize) * maker.m_tileSize, Mathf.FloorToInt((point.y + 0.5f) / maker.m_tileSize) * maker.m_tileSize);
+
+        if (maker.m_tiles.ContainsKey(coord)) return;
+
+        /*
         RaycastHit2D hit = Physics2D.Raycast(point, Vector2.zero, float.MaxValue, LayerMask.GetMask("Tile", "Building"));
 
         if (hit.collider != null)
         {
-            Debug.Log("Unable to locate tile");
+            //Debug.Log("Unable to locate tile");
             return;
-        }
+        }*/
 
-        PrefabType prefab = PrefabUtility.GetPrefabType(maker.tile);
+        PrefabType prefab = PrefabUtility.GetPrefabType(maker.m_brushTile);
 
         if (prefab == PrefabType.Prefab)
         {
-            Tile tile = (Tile)PrefabUtility.InstantiatePrefab(maker.tile);
-            tile.m_coord = new GridCoord(Mathf.FloorToInt((point.x + 0.5f) / maker.tileSize) * maker.tileSize, Mathf.FloorToInt((point.y + 0.5f) / maker.tileSize) * maker.tileSize);
+            Tile tile = (Tile)PrefabUtility.InstantiatePrefab(maker.m_brushTile);
+            tile.m_coord = coord;
             tile.transform.position = tile.m_coord.ToVector2();
             tile.m_health = tile.m_maxHealth;
 
-            maker.tiles.Add(tile);
-            tile.transform.parent = map.transform;
+            maker.Add(tile);
         }
     }
 
@@ -121,9 +123,7 @@ public class MapMakerEditor : Editor {
             return;
         }
 
-        maker.tiles.Remove(hit.collider.gameObject.GetComponent<Tile>());
-
-        DestroyImmediate(hit.collider.gameObject);
+        maker.Remove(hit.collider.gameObject.GetComponent<Tile>());
     }
 
     List<Vector2> GetPointsInRange(Vector2 center, float radius)
@@ -154,49 +154,40 @@ public class MapMakerEditor : Editor {
 
 	public override void OnInspectorGUI()
 	{
-        if (map == null)
-        {
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Map Object");
-            map = (Map)EditorGUILayout.ObjectField(map, typeof(Map), false);
-            GUILayout.EndHorizontal();
-            return;
-        }
-
 		GUILayout.BeginHorizontal();
 		GUILayout.Label(" Tile Size ");
-        maker.tileSize = EditorGUILayout.IntField(maker.tileSize, GUILayout.Width(100f));
+        maker.m_tileSize = EditorGUILayout.IntField(maker.m_tileSize, GUILayout.Width(100f));
 		GUILayout.EndHorizontal();
 
         GUILayout.BeginHorizontal();
         GUILayout.Label(" Map Width ");
-        maker.mapWidth = EditorGUILayout.IntField(maker.mapWidth, GUILayout.Width(100f));
+        maker.m_width = EditorGUILayout.IntField(maker.m_width, GUILayout.Width(100f));
         GUILayout.EndHorizontal();
 
         GUILayout.BeginHorizontal();
         GUILayout.Label(" Map Height ");
-        maker.mapHeight = EditorGUILayout.IntField(maker.mapHeight, GUILayout.Width(100f));
+        maker.m_height = EditorGUILayout.IntField(maker.m_height, GUILayout.Width(100f));
         GUILayout.EndHorizontal();
 
 		GUILayout.BeginHorizontal();
 		GUILayout.Label(" TileSet ");
-		maker.tileSet = (TileSet)EditorGUILayout.ObjectField (maker.tileSet, typeof(TileSet), false, GUILayout.Width(150f));
+		maker.m_tileSet = (TileSet)EditorGUILayout.ObjectField (maker.m_tileSet, typeof(TileSet), false, GUILayout.Width(150f));
 		GUILayout.EndHorizontal();
 
-		if (maker.tileSet != null) {
+		if (maker.m_tileSet != null) {
 			GUILayout.BeginHorizontal();
 			GUILayout.Label(" Tile ");
 
 			var index = EditorGUILayout.IntPopup ("Select Tile", tileIndex
-                 , maker.tileSet.tiles.Select (t => t != null ? t.name : "").ToArray ()
-                 , maker.tileSet.tiles.Select (t => ArrayUtility.IndexOf (maker.tileSet.tiles, t)).ToArray ()
+                 , maker.m_tileSet.tiles.Select (t => t != null ? t.name : "").ToArray ()
+                 , maker.m_tileSet.tiles.Select (t => ArrayUtility.IndexOf (maker.m_tileSet.tiles, t)).ToArray ()
 			);
-			if ((index != tileIndex || maker.tile == null) && maker.tileSet.tiles.Length > 0) {
+			if ((index != tileIndex || maker.m_brushTile == null) && maker.m_tileSet.tiles.Length > 0) {
 					tileIndex = index;
 
-					maker.tile = maker.tileSet.tiles [tileIndex];
+					maker.m_brushTile = maker.m_tileSet.tiles [tileIndex];
 
-					maker.tileSize = Mathf.FloorToInt(maker.tile.renderer.bounds.size.x);
+					maker.m_tileSize = Mathf.FloorToInt(maker.m_brushTile.renderer.bounds.size.x);
 
 					//move focus to first sceneview
 					if (SceneView.sceneViews.Count > 0) { SceneView sceneView = (SceneView)SceneView.sceneViews[0]; sceneView.Focus(); }
@@ -212,7 +203,7 @@ public class MapMakerEditor : Editor {
 
         GUILayout.BeginHorizontal();
         GUILayout.Label("Background");
-        maker.backgroundImage = (Sprite)EditorGUILayout.ObjectField(maker.backgroundImage, typeof(Sprite), false, GUILayout.Width(150f));
+        maker.m_backgroundImage = (Sprite)EditorGUILayout.ObjectField(maker.m_backgroundImage, typeof(Sprite), false, GUILayout.Width(150f));
         
         GUILayout.EndHorizontal();
 
@@ -221,9 +212,9 @@ public class MapMakerEditor : Editor {
         mapFileAsset = (MapData)EditorGUILayout.ObjectField(mapFileAsset, typeof(MapData), false, GUILayout.Width(100));
         GUILayout.EndVertical();
         GUILayout.BeginVertical();
-        if (GUILayout.Button("Load Map", GUILayout.MinWidth(100)))
+        if (GUILayout.Button("Load", GUILayout.MinWidth(100)))
         {
-            LoadMap();
+            Load();
         }
         GUILayout.EndVertical();
         GUILayout.EndHorizontal();
@@ -233,45 +224,45 @@ public class MapMakerEditor : Editor {
         mapFileName = EditorGUILayout.TextField(mapFileName, GUILayout.Width(100));
         GUILayout.EndVertical();
         GUILayout.BeginVertical();
-        if (GUILayout.Button("Save Map", GUILayout.MinWidth(100)))
+        if (GUILayout.Button("Save", GUILayout.MinWidth(100)))
         {
-            SaveMap();
+            Save();
         }
         GUILayout.EndVertical();
         GUILayout.EndHorizontal();
 
         GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Clear Map", GUILayout.MinWidth(100)))
+        if (GUILayout.Button("Clear", GUILayout.MinWidth(100)))
         {
-            Clear();
+            maker.Clear();
         }
-        if (GUILayout.Button("Fix Map", GUILayout.MinWidth(100)))
+        if (GUILayout.Button("Reload Tiles", GUILayout.MinWidth(100)))
         {
-            Fix();
+            maker.ReloadTiles();
         }
         if (GUILayout.Button("Apply", GUILayout.MinWidth(100)))
         {
-            Apply();
+            maker.Apply();
         }
         GUILayout.EndHorizontal();
 
 		SceneView.RepaintAll ();
 	}
 
-    public void LoadMap()
+    public void Load()
     {
-        map.Load(mapFileAsset);
+        maker.Load(mapFileAsset);
     }
 
-    public void SaveMap()
+    public void Save()
     {
-        Apply();
+        maker.Apply();
 
-        string filePath = AssetDatabase.GenerateUniqueAssetPath(string.Format("Assets/Resources/Maps/{0}.asset", mapFileName));
+        string filePath = AssetDatabase.GenerateUniqueAssetPath(string.Format("Assets/Resources/Maps/{0}.asset", maker.m_name));
 
         MapData mapAsset = CreateInstance<MapData>();
-        mapAsset.init(mapFileName, maker.mapWidth, maker.mapHeight, maker.tileSize, maker.tileSet, maker.tiles, maker.backgroundImage);
-
+        maker.InitMapData(ref mapAsset);
+        
         //mapAsset.hideFlags = HideFlags.NotEditable;
 
         AssetDatabase.CreateAsset(mapAsset, filePath);
@@ -279,33 +270,7 @@ public class MapMakerEditor : Editor {
 
         Selection.activeObject = mapAsset;
         EditorGUIUtility.PingObject(mapAsset);
-
-        Debug.Log("Map File Saved");
     }
 
-    public void Clear()
-    {
-        Fix();
-        foreach (var tile in map.GetTileList())
-        {
-            if (tile.Value != null)
-                DestroyImmediate(tile.Value.gameObject);
-        }
-        map.Clear();
-    }
-
-    public void Fix()
-    {
-        Tile[] tiles = map.GetComponentsInChildren<Tile>();
-        maker.tiles.Clear();
-        for (int i = 0; i < tiles.Length; ++i)
-        {
-            maker.tiles.Add(tiles[i]);
-        }
-    }
-
-    public void Apply()
-    {
-        map.OnApply(maker.backgroundImage, maker.mapWidth, maker.mapHeight);
-    }
+    
 }

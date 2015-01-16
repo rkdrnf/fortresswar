@@ -5,7 +5,7 @@ using System.Text;
 using UnityEngine;
 using Const;
 
-namespace Server
+namespace Architecture
 { 
     public class BuildingManager : MonoBehaviour
     {
@@ -19,36 +19,39 @@ namespace Server
                 {
                     instance = new BuildingManager();
                 }
+
                 return instance;
             }
         }
 
+        Dictionary<GridCoord, Building> m_buildingMap;
+
         void Awake()
         {
             instance = this;
-
-            buildingMap = new Dictionary<GridCoord, Building>();
-
-            
+            m_buildingMap = new Dictionary<GridCoord, Building>();
         }
 
-        Dictionary<GridCoord, Building> buildingMap;
+        public void Clear()
+        {
+            m_buildingMap.Clear();
+        }
 
         public void Add(Building building)
         {
-            buildingMap.Add(building.m_coord, building);
+            m_buildingMap.Add(building.m_coord, building);
         }
 
         public void Remove(Building building)
         {
-            if (buildingMap.ContainsKey(building.m_coord) && buildingMap[building.m_coord] == building)
-                buildingMap.Remove(building.m_coord);
+            if (m_buildingMap.ContainsKey(building.m_coord) && m_buildingMap[building.m_coord] == building)
+                m_buildingMap.Remove(building.m_coord);
         }
 
         public Building Get(GridCoord coord)
         {
-            if (buildingMap.ContainsKey(coord))
-                return buildingMap[coord];
+            if (m_buildingMap.ContainsKey(coord))
+                return m_buildingMap[coord];
             else
                 return null;
         }
@@ -88,10 +91,10 @@ namespace Server
         {
             Map map = Game.Inst.map;
 
-            suspension.center = map.GetTile(coord);
-            suspension.down = suspension.down == null ? map.GetTile(coord.Down()) : suspension.down;
-            suspension.left = suspension.left == null ? map.GetTile(coord.Left()) : suspension.left;
-            suspension.right = suspension.right == null ? map.GetTile(coord.Right()) : suspension.right;
+            suspension.center = TileManager.Inst.Get(coord);
+            suspension.down = suspension.down == null ? TileManager.Inst.Get(coord.Down()) : suspension.down;
+            suspension.left = suspension.left == null ? TileManager.Inst.Get(coord.Left()) : suspension.left;
+            suspension.right = suspension.right == null ? TileManager.Inst.Get(coord.Right()) : suspension.right;
 
             return suspension.Count;
         }
@@ -115,194 +118,7 @@ namespace Server
 
             return neighbors;
         }
-
-        
-
-        void Update()
-        {
-
-        }
     }
+}    
 
-    public struct Suspension
-    {
-        public Tile center;
-        public MonoBehaviour left;
-        public MonoBehaviour down;
-        public MonoBehaviour right;
-
-        public bool isPermanent
-        {
-            get
-            {
-                return (center != null ||
-                    left is Tile ||
-                    right is Tile ||
-                    down is Tile
-                    );
-            }
-        }
-
-        public int Count
-        {
-            get { 
-                return (center == null ? 0 : 1) + 
-                (left == null ? 0 : 1) +
-                (right == null ? 0 : 1) +
-                (down == null ? 0 : 1);
-            }
-        }
-
-        public bool HasSuspension(GridDirection direction)
-        {
-            switch (direction)
-            {
-                case GridDirection.LEFT:
-                    return left != null;
-
-                case GridDirection.RIGHT:
-                    return right != null;
-
-                case GridDirection.DOWN:
-                    return down != null;
-            }
-
-            return false;
-        }
-
-        public void DestroySuspension(GridDirection direction)
-        {
-            switch(direction)
-            {
-                case GridDirection.LEFT:
-                    left = null;
-                    break;
-
-                case GridDirection.RIGHT:
-                    right = null;
-                    break;
-
-                case GridDirection.DOWN:
-                    down = null;
-                    break;
-            }
-        }
-
-        public void Add(GridDirection direction, Building building)
-        {
-            switch (direction)
-            {
-                case GridDirection.LEFT:
-                    left = left == null ? building : left;
-                    break;
-
-                case GridDirection.RIGHT:
-                    right = right == null ? building : right;
-                    break;
-
-                case GridDirection.DOWN:
-                    down = down == null ? building : down;
-                    break;
-            }
-        }
-
-        public void DoForAll(Action<GridDirection, MonoBehaviour> action)
-        {
-            if (left != null)
-                action(GridDirection.RIGHT, left);
-
-            if (down != null)
-                action(GridDirection.UP, down);
-
-            if (right != null)
-                action(GridDirection.LEFT, right);
-        }
-
-        public override string ToString()
-        {
-            return string.Format("Center: {0} Left: {1}, Right: {2}, Down: {3}", center != null, left != null, right != null, down != null);
-        }
-    }
-
-    public struct Neighbors
-    {
-        public Building left;
-        public Building up;
-        public Building right;
-
-        public int Count
-        {
-            get
-            {
-                return (left == null ? 0 : 1) +
-                (right == null ? 0 : 1) +
-                (up == null ? 0 : 1);
-            }
-        }
-
-        public void Destroy(GridDirection direction)
-        {
-            switch (direction)
-            {
-                case GridDirection.LEFT:
-                    left = null;
-                    break;
-
-                case GridDirection.RIGHT:
-                    right = null;
-                    break;
-
-                case GridDirection.UP:
-                    up = null;
-                    break;
-            }
-        }
-
-        public void Add(GridDirection direction, Building building)
-        {
-            switch (direction)
-            {
-                case GridDirection.LEFT:
-                    left = building;
-                    break;
-
-                case GridDirection.RIGHT:
-                    right = building;
-                    break;
-
-                case GridDirection.UP:
-                    up = building;
-                    break;
-            }
-        }
-        
-        public void DoForAll(Action<GridDirection, Building> action)
-        {
-            if (left != null)
-                action(GridDirection.RIGHT, left);
-
-            if (up != null)
-                action(GridDirection.DOWN, up);
-
-            if (right != null)
-                action(GridDirection.LEFT, right);
-        }
-
-        public void DoForSide(Action<GridDirection, Building> action)
-        {
-            if (left != null)
-                action(GridDirection.RIGHT, left);
-
-            if (up != null)
-                action(GridDirection.DOWN, up);
-
-            if (right != null)
-                action(GridDirection.LEFT, right);
-        }
-
-        public override string ToString()
-        {
-            return string.Format("Left: {0}, Right: {1}, Up: {2}", left != null, right != null, up != null);
-        }
-    }
-}
+    

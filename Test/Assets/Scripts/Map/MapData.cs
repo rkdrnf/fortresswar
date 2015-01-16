@@ -13,7 +13,7 @@ public class MapData : ScriptableObject
     public TileData[] tiles = new TileData[0];
     public Sprite backgroundImage;
 
-    public void init(string mapName, int mapWidth, int mapHeight, float tileSize, TileSet tileSet, List<Tile> tileList, Sprite background)
+    public void init(string mapName, int mapWidth, int mapHeight, float tileSize, TileSet tileSet, IEnumerable<Tile> tileList, Sprite background)
     {
         this.mapName = mapName;
         this.mapWidth = mapWidth;
@@ -24,7 +24,7 @@ public class MapData : ScriptableObject
         this.backgroundImage = background;
     }
 
-    private TileData[] ImportTiles(List<Tile> tileList)
+    private TileData[] ImportTiles(IEnumerable<Tile> tileList)
     {
         List<TileData> tileDataList = new List<TileData>();
         foreach(var tile in tileList)

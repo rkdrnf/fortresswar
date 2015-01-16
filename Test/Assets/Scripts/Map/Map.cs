@@ -8,21 +8,20 @@ using C2S = Packet.C2S;
 
 using Server;
 using Const;
+using Architecture;
 
 public class Map : MonoBehaviour {
 
-    string mapName;
+    string m_name;
 
-    int mapWidth;
-    int mapHeight;
+    int m_width;
+    int m_height;
 
-    Dictionary<GridCoord, Tile> tileList = new Dictionary<GridCoord, Tile>();
+    double m_mapLoadTime;
 
-    double mapLoadTime;
+    Parallax m_backgroundPar;
 
-    Parallax backgroundPar;
-
-    LayerMask tileLayer;
+    
 
     private static Map instance;
 
@@ -36,7 +35,7 @@ public class Map : MonoBehaviour {
 
     void Awake()
     {
-        tileLayer = LayerMask.GetMask("Tile");
+        
         networkView.group = NetworkViewGroup.GAME;
     }
 
@@ -44,14 +43,14 @@ public class Map : MonoBehaviour {
     {
         instance = this;
 
-        mapLoadTime = 0f;
+        m_mapLoadTime = 0f;
 
         if (Network.isServer)
         {
             Debug.Log("[Server] map instantiated by " + info.sender);
             //Send Clients MapInfo;
 
-            OnSetMapInfo(Game.Inst.mapData.name);
+            OnSetMapInfo(Game.Inst.mapData.name, Network.time);
             networkView.RPC("SetMapInfo", RPCMode.OthersBuffered, Game.Inst.mapData.name);
         }
     }
@@ -62,113 +61,62 @@ public class Map : MonoBehaviour {
         if (!Network.isClient) return;
         //CheckServer
 
-        OnSetMapInfo(mapName);
-        networkView.RPC("RequestMapStatus", RPCMode.Server);
-    }
-
-    void OnSetMapInfo(string mapName)
-    {
-        MapData mapData = Resources.Load("Maps/" + mapName, typeof(MapData)) as MapData;
-        Load(mapData);
-
-        if (Network.isServer)
-            mapLoadTime = Network.time;
-    }
-
-    [RPC]
-    void RequestMapStatus(NetworkMessageInfo info)
-    {
-        if (!Network.isServer) return;
-
-        S2C.MapInfo mapInfo = new S2C.MapInfo(tileList);
-
-        networkView.RPC("RecvMapStatus", info.sender, mapInfo.SerializeToBytes());
-    }
-
-    [RPC]
-    void RecvMapStatus(byte[] mapInfoData, NetworkMessageInfo info)
-    {
-        if (!Network.isClient) return;
-        //CheckServer
-
-        mapLoadTime = info.timestamp;
-
-        S2C.MapInfo mapInfo = S2C.MapInfo.DeserializeFromBytes(mapInfoData);
-
-        /*
-        foreach(var tileStatus in mapInfo.tileStatusList)
-        {
-            Tile tile = GetTile(tileStatus.m_coord);
-            tile.SetHealth(tileStatus.m_health, Const.Structure.DestroyReason.MANUAL);
-        }
-        */
+        OnSetMapInfo(mapName, info.timestamp);
 
         ServerGame.Inst.OnMapLoadCompleted(this);
     }
 
-    public Tile GetTile(GridCoord coord)
+    void OnSetMapInfo(string mapName, double time)
     {
-        if (tileList.ContainsKey(coord))
-            return tileList[coord];
-        else
-            return null;
-    }
+        MapData mapData = Resources.Load("Maps/" + mapName, typeof(MapData)) as MapData;
+        Load(mapData);
 
-    public void AddTile(Tile tile)
-    {
-        tile.transform.parent = this.transform;
-        tileList.Add(tile.m_coord, tile);
-    }
-
-    public Dictionary<GridCoord, Tile> GetTileList()
-    {
-        return tileList;
-    }
-
-    public void Clear()
-    {
-        tileList.Clear();
+        m_mapLoadTime = time;
     }
 
     public void Load(MapData mapData)
     {
-        mapWidth = mapData.mapWidth;
-        mapHeight = mapData.mapHeight;
-        mapName = mapData.mapName;
+        m_width = mapData.mapWidth;
+        m_height = mapData.mapHeight;
+        m_name = mapData.mapName;
 
         LoadBackground(mapData.backgroundImage);
 
-        if (!Network.isServer) return; // 서버만 타일 로딩.
-        foreach (TileData tileData in mapData.tiles)
-        {
-            Tile tile = (Tile)Network.Instantiate(mapData.tileSet.tiles[(int)tileData.tileType], tileData.coord.ToVector2(), Quaternion.identity, 4);
-
-            tile.Init(tileData, this);
-
-            AddTile(tile);
-        }
+        if (!Network.isServer) return;
+        LoadTiles(mapData);
+        LoadBuildings();
     }
 
     public void LoadBackground(Sprite image)
     {
-        backgroundPar = GetComponentInChildren<Parallax>();
-        backgroundPar.SetImage(image, mapWidth, mapHeight);
+        m_backgroundPar = GetComponentInChildren<Parallax>();
+        m_backgroundPar.SetImage(image, m_width, m_height);
     }
 
-    public void OnApply(Sprite backgroundImage, int width, int height)
+    public void LoadTiles(MapData mapData)
     {
-        mapWidth = width;
-        mapHeight = height;
+        if (!Network.isServer) return; //서버만 데이터에서 로딩, 클라는 network로 초기화
 
-        LoadBackground(backgroundImage);
+        foreach (TileData tileData in mapData.tiles)
+        {
+            Tile tile = (Tile)Network.Instantiate(mapData.tileSet.tiles[(int)tileData.tileType], tileData.coord.ToVector2(), Quaternion.identity, 4);
+            tile.Init(tileData);
+
+            TileManager.Inst.Add(tile);
+        }
+    }
+
+    public void LoadBuildings()
+    {
+        if (!Network.isServer) return; //서버만 데이터에서 로딩, 클라는 network로 초기화
     }
 
     public bool CheckInBorder(Transform obj)
     {
-        return (obj.position.x > -mapWidth / 2f
-            && obj.position.x < mapWidth / 2f
-            && obj.position.y > -mapHeight / 2f
-            && obj.position.y < mapHeight / 2f
+        return (obj.position.x > -m_width / 2f
+            && obj.position.x < m_width / 2f
+            && obj.position.y > -m_height / 2f
+            && obj.position.y < m_height / 2f
             );
     }
 
@@ -210,18 +158,8 @@ public class Map : MonoBehaviour {
     }
 
 
-    public int GetTileIndex(Tile tile)
-    {
-        return Map.GetTileIndex(tile, mapWidth);
-    }
-
-    static public int GetTileIndex(Tile tile, int mapWidth)
-    {
-        return Mathf.FloorToInt(tile.transform.localPosition.x) + Mathf.FloorToInt(tile.transform.localPosition.y) * mapWidth;
-    }
-
     public GridCoord ToGridCoord(int index)
     {
-        return GridCoord.ToCoord(index, mapWidth);
+        return GridCoord.ToCoord(index, m_width);
     }
 }
