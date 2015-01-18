@@ -1,60 +1,126 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using Structure;
+using Data;
 
+[ExecuteInEditMode]
 public class MapMaker : MonoBehaviour {
 
     public int m_tileSize = 1;
+    public int m_chunkSize = 8;
 
     public string m_name;
     public int m_width = 320;
     public int m_height = 160;
 
     public TileSet m_tileSet;
-    public Dictionary<GridCoord, Tile> m_tiles;
+    
+    public Dictionary<GridCoord, Tile> m_tiles = new Dictionary<GridCoord,Tile>();
 
-    public Tile m_brushTile;
+    public Dictionary<GridCoord, TileChunk> m_chunks = new Dictionary<GridCoord, TileChunk>();
+
+    public TileChunk m_chunkPrefab;
+
+    public TileData m_brushTile;
     public float m_brushSize;
 
     public Sprite m_backgroundImage;
 
     bool m_showGrid = false;
 
+    void OnEnable()
+    {
+        ReloadChunks();
+
+    }
+
+    void Start()
+    {
+        
+    }
     
     public void Clear()
     {
-        Tile[] tiles = GetComponentsInChildren<Tile>();
+        TileChunk[] tileChunks = GetComponentsInChildren<TileChunk>();
 
-        foreach (var tile in tiles)
+        foreach (var chunk in tileChunks)
         {
-            if (tile != null)
-                DestroyImmediate(tile.gameObject);
+            if (chunk != null)
+                DestroyImmediate(chunk.gameObject);
         }
 
         m_tiles.Clear();
+        m_chunks.Clear();
     }
 
-    public void ReloadTiles()
+    public void ReloadChunks()
     {
-        Tile[] tiles = GetComponentsInChildren<Tile>();
+        TileChunk[] tileChunks = GetComponentsInChildren<TileChunk>();
 
-        m_tiles = new Dictionary<GridCoord, Tile>();
-        for (int i = 0; i < tiles.Length; ++i)
+        foreach (var chunk in tileChunks)
         {
-            m_tiles.Add(tiles[i].m_coord, tiles[i]);
+            m_chunks.Add(chunk.m_coord, chunk);
+            Debug.Log("coord: " + chunk.m_coord);
         }
+
+        
     }
 
     public void Add(Tile tile)
     {
         m_tiles.Add(tile.m_coord, tile);
-        tile.transform.parent = this.transform;
+
+        TileChunk chunk = FindChunk(tile.m_coord);
+
+        if (chunk == null)
+        {
+            chunk = AddChunk(ToChunkCoord(tile.m_coord));
+        }
+
+        chunk.AddBlock(tile.m_coord, tile);
     }
 
-    public void Remove(Tile tile)
+    public TileChunk AddChunk(GridCoord coord)
     {
-        m_tiles.Remove(tile.m_coord);
-        DestroyImmediate(tile.gameObject);
+        TileChunk chunk = (TileChunk)Instantiate(m_chunkPrefab, coord.ToVector2(), Quaternion.identity);
+        chunk.Init(coord, m_chunkSize);
+
+        m_chunks[coord] = chunk;
+        
+        return chunk;
+    }
+
+    public TileChunk FindChunk(GridCoord coord)
+    {
+        GridCoord chunkCoord = ToChunkCoord(coord);
+        if (m_chunks.ContainsKey(chunkCoord))
+            return m_chunks[chunkCoord];
+
+        return null;
+    }
+
+    public GridCoord ToChunkCoord(GridCoord coord)
+    {
+        return new GridCoord(coord.x - mod(coord.x, m_chunkSize), coord.y - mod(coord.y, m_chunkSize));
+    }
+
+    int mod(int a, int n)
+    {
+        int result = a % n;
+        if ((a < 0 && n > 0) || (a > 0 && n < 0))
+            result += n;
+        return result;
+    }
+
+    public void Remove(GridCoord coord)
+    {
+        if (m_tiles.ContainsKey(coord))
+        {
+            Tile tile = m_tiles[coord];
+            m_tiles.Remove(coord);
+            tile.RemoveForMaker();
+        }
     }
 
     public void Apply()
@@ -75,11 +141,8 @@ public class MapMaker : MonoBehaviour {
 
     public void LoadTiles(MapData mData)
     {
-        foreach (TileData tileData in mData.tiles)
+        foreach (Tile tile in mData.tiles)
         {
-            Tile tile = (Tile)Instantiate(mData.tileSet.tiles[(int)tileData.tileType], tileData.coord.ToVector2(), Quaternion.identity);
-            tile.InitForMaker(tileData);
-
             Add(tile);
         }
     }

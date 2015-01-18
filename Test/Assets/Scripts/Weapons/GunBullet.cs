@@ -11,7 +11,7 @@ public class GunBullet : Projectile {
         if (tile)
         {
             tile.Damage(damage, point);
-            ImpactTarget(tile.rigidbody2D, impact);
+            //ImpactTarget(tile.rigidbody2D, impact);
             DestroyFromNetwork();
         }
     }
@@ -21,7 +21,7 @@ public class GunBullet : Projectile {
         if (building)
         {
             building.Damage(damage, point);
-            ImpactTarget(building.rigidbody2D, impact);
+            //ImpactTarget(building.rigidbody2D, impact);
             DestroyFromNetwork();
         }
     }

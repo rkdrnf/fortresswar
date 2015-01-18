@@ -97,12 +97,14 @@ public class Map : MonoBehaviour {
     {
         if (!Network.isServer) return; //서버만 데이터에서 로딩, 클라는 network로 초기화
 
-        foreach (TileData tileData in mapData.tiles)
+        foreach (Tile tile in mapData.tiles)
         {
+            /*
             Tile tile = (Tile)Network.Instantiate(mapData.tileSet.tiles[(int)tileData.tileType], tileData.coord.ToVector2(), Quaternion.identity, 4);
             tile.Init(tileData);
 
             TileManager.Inst.Add(tile);
+             * */
         }
     }
 
