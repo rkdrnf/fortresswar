@@ -10,6 +10,12 @@ using System.IO;
 
 public class DataMakerEditor : Editor 
 {
+    [MenuItem("Assets/Create/Tile")]
+    static void CreateTile()
+    {
+        CreateAsset<TileData>();
+    }
+
     [MenuItem("Assets/Create/Set/TileSet")]
     static void CreateTileSet()
     {

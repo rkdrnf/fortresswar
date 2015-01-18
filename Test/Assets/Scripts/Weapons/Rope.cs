@@ -66,22 +66,26 @@ public class Rope : Projectile {
 
     protected override void OnCollideToTile(Tile tile, Vector2 point)
     {
+        /*
         if (stickInfo.isSticked) return;
 
         if (tile)
         {
             ConnectRope(tile.gameObject, tile.m_ID, ObjectType.TILE);
         }
+         * */
     }
 
     protected override void OnCollideToBuilding(Building building, Vector2 point)
     {
+        /*
         if (stickInfo.isSticked) return;
 
         if (building)
         {
             ConnectRope(building.gameObject, building.m_ID, ObjectType.BUILDING);
         }
+         * */
     }
 
     protected override void OnCollideToPlayer(ServerPlayer character, Vector2 point)
@@ -211,11 +215,11 @@ public class Rope : Projectile {
                 break;
 
             case ObjectType.TILE:
-                targetObj = TileManager.Inst.Get(Game.Inst.map.ToGridCoord((int)info.targetID)).gameObject;
+                //targetObj = TileManager.Inst.Get(Game.Inst.map.ToGridCoord((int)info.targetID)).gameObject;
                 break;
 
             case ObjectType.BUILDING:
-                targetObj = BuildingManager.Inst.Get(Game.Inst.map.ToGridCoord((int)info.targetID)).gameObject;
+                //targetObj = BuildingManager.Inst.Get(Game.Inst.map.ToGridCoord((int)info.targetID)).gameObject;
                 break;
 
             default:
@@ -224,9 +228,9 @@ public class Rope : Projectile {
 
         ropeSource = PlayerManager.Inst.Get(owner);
 
-        transform.position = targetObj.transform.TransformPoint(info.targetAnchor);
+        //transform.position = targetObj.transform.TransformPoint(info.targetAnchor);
         stickHJ = gameObject.AddComponent<HingeJoint2D>();
-        stickHJ.connectedBody = targetObj.rigidbody2D;
+        //stickHJ.connectedBody = targetObj.rigidbody2D;
         stickHJ.anchor = info.anchor;
         stickHJ.connectedAnchor = info.targetAnchor;
         rigidbody2D.velocity = new Vector2(0f, 0f);

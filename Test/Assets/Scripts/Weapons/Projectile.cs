@@ -125,11 +125,11 @@ public abstract class Projectile : Weapon
 
         if (targetCollider.gameObject.CompareTag("Tile"))
         {
-            OnCollideToTile(targetCollider.GetComponent<Tile>(), hit.point);
+            //OnCollideToTile(targetCollider.GetComponent<Tile>(), hit.point);
         }
         else if (targetCollider.gameObject.CompareTag("Building"))
         {
-            OnCollideToBuilding(targetCollider.GetComponent<Building>(), hit.point);
+            //OnCollideToBuilding(targetCollider.GetComponent<Building>(), hit.point);
         }
         else if (targetCollider.gameObject.CompareTag("Player"))
         {

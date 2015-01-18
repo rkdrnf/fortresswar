@@ -28,10 +28,12 @@ public class BuildingDataLoader : MonoBehaviour
             Vector3 worldMousePosition = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0));
             GameObject obj = Map.GetLayerObjectAt(worldMousePosition, buildingCollidingLayers);
 
+            /*
             if(obj != null && obj.GetComponent<Building>() != null)
             {
                 obj.GetComponent<Building>().LogForDebug();
             }
+             * */
         }
     }
 

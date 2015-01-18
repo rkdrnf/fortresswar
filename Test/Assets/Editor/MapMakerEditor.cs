@@ -4,7 +4,8 @@ using System.Collections;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
-using Data; 
+using Data;
+using Structure;
 
 [CustomEditor(typeof(MapMaker))]
 public class MapMakerEditor : Editor {
@@ -32,8 +33,6 @@ public class MapMakerEditor : Editor {
 		Vector3 worldMousePos = Camera.current.ScreenToWorldPoint (new Vector3(e.mousePosition.x, -e.mousePosition.y + Camera.current.pixelHeight, 0f));
 
 		Vector2 mousePos = new Vector2(worldMousePos.x, worldMousePos.y);
-		
-
 		
 		if (e.isKey && e.character == 'a') {
             if (Time.realtimeSinceStartup - drawTimer <= 0.15f)
@@ -89,41 +88,21 @@ public class MapMakerEditor : Editor {
     void PutTile(Vector2 point)
     {
         GridCoord coord = new GridCoord(Mathf.FloorToInt((point.x + 0.5f) / maker.m_tileSize) * maker.m_tileSize, Mathf.FloorToInt((point.y + 0.5f) / maker.m_tileSize) * maker.m_tileSize);
-
+         
         if (maker.m_tiles.ContainsKey(coord)) return;
 
-        /*
-        RaycastHit2D hit = Physics2D.Raycast(point, Vector2.zero, float.MaxValue, LayerMask.GetMask("Tile", "Building"));
+        Tile tile = ScriptableObject.CreateInstance<Tile>();
+        
+        tile.InitForMaker(maker.m_brushTile, coord);
 
-        if (hit.collider != null)
-        {
-            //Debug.Log("Unable to locate tile");
-            return;
-        }*/
-
-        PrefabType prefab = PrefabUtility.GetPrefabType(maker.m_brushTile);
-
-        if (prefab == PrefabType.Prefab)
-        {
-            Tile tile = (Tile)PrefabUtility.InstantiatePrefab(maker.m_brushTile);
-            tile.m_coord = coord;
-            tile.transform.position = tile.m_coord.ToVector2();
-            tile.m_health = tile.m_maxHealth;
-
-            maker.Add(tile);
-        }
+        maker.Add(tile);
     }
 
     void DeleteTile(Vector2 point)
     {
-        RaycastHit2D hit = Physics2D.Raycast(point, Vector2.zero, float.MaxValue, LayerMask.GetMask("Tile", "Building"));
-
-        if (hit.collider == null)
-        {
-            return;
-        }
-
-        maker.Remove(hit.collider.gameObject.GetComponent<Tile>());
+        GridCoord coord = new GridCoord(Mathf.FloorToInt((point.x + 0.5f) / maker.m_tileSize) * maker.m_tileSize, Mathf.FloorToInt((point.y + 0.5f) / maker.m_tileSize) * maker.m_tileSize);
+        
+        maker.Remove(coord);
     }
 
     List<Vector2> GetPointsInRange(Vector2 center, float radius)
@@ -169,6 +148,16 @@ public class MapMakerEditor : Editor {
         maker.m_height = EditorGUILayout.IntField(maker.m_height, GUILayout.Width(100f));
         GUILayout.EndHorizontal();
 
+        GUILayout.BeginHorizontal();
+        GUILayout.Label(" chunkSize ");
+        maker.m_chunkSize = EditorGUILayout.IntField(maker.m_chunkSize, GUILayout.Width(150f));
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label(" TileChunkPrefab ");
+        maker.m_chunkPrefab = (TileChunk)EditorGUILayout.ObjectField(maker.m_chunkPrefab, typeof(TileChunk), false, GUILayout.Width(150f));
+        GUILayout.EndHorizontal();
+        
 		GUILayout.BeginHorizontal();
 		GUILayout.Label(" TileSet ");
 		maker.m_tileSet = (TileSet)EditorGUILayout.ObjectField (maker.m_tileSet, typeof(TileSet), false, GUILayout.Width(150f));
@@ -187,7 +176,7 @@ public class MapMakerEditor : Editor {
 
 					maker.m_brushTile = maker.m_tileSet.tiles [tileIndex];
 
-					maker.m_tileSize = Mathf.FloorToInt(maker.m_brushTile.renderer.bounds.size.x);
+					maker.m_tileSize = Mathf.FloorToInt(maker.m_brushTile.size.x);
 
 					//move focus to first sceneview
 					if (SceneView.sceneViews.Count > 0) { SceneView sceneView = (SceneView)SceneView.sceneViews[0]; sceneView.Focus(); }
@@ -236,10 +225,7 @@ public class MapMakerEditor : Editor {
         {
             maker.Clear();
         }
-        if (GUILayout.Button("Reload Tiles", GUILayout.MinWidth(100)))
-        {
-            maker.ReloadTiles();
-        }
+        
         if (GUILayout.Button("Apply", GUILayout.MinWidth(100)))
         {
             maker.Apply();

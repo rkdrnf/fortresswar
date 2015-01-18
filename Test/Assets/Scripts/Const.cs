@@ -178,13 +178,7 @@ namespace Const
 		BACK = 1
 	};
 
-    public enum TileType
-    {
-        DIRT,
-        STONE,
-
-        MAX
-    }
+    
 
     public enum WeaponType
     {
@@ -208,11 +202,7 @@ namespace Const
         CHARGE
     }
 
-    public enum ParticleType
-    {
-        DIRT,
-        STONE
-    }
+    
 
     public enum SkillName
     {
@@ -245,16 +235,42 @@ namespace Const
             BUILDING_BREAK,
             TILE_BREAK
         }
+
+        public enum ParticleType
+        {
+            DIRT,
+            STONE
+        }
     }
 
     namespace Structure
     {
+        public enum TileType
+        {
+            AIR = 0,
+            DIRT,
+            STONE,
+
+
+            NONE = 255
+        }
+
+        public enum BuildingType
+        {
+            AIR = 0,
+            STONE_WALL,
+
+            NONE = 255
+        }
+
         public enum DestroyReason
         {
             DAMAGE,
             COLLIDE,
             MANUAL,
         }
+
+        
     }
 }
 

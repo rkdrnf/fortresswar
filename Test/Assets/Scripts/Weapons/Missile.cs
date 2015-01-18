@@ -62,7 +62,7 @@ public class Missile : Projectile {
             if (collidingObject.CompareTag("Tile"))
             {
                 RaycastHit2D hit = Physics2D.Linecast(collidingObject.transform.position, origin, tileLayer);
-                collidingObject.GetComponent<Tile>().Damage(DamageByDistance(collidingObject.transform.position), hit.point);
+                //collidingObject.GetComponent<Tile>().Damage(DamageByDistance(collidingObject.transform.position), hit.point);
             }
             else if (collidingObject.CompareTag("Player"))
             {
@@ -71,7 +71,7 @@ public class Missile : Projectile {
             }
             else if (collidingObject.CompareTag("Building"))
             {
-                collidingObject.GetComponent<Building>().Damage(DamageByDistance(collidingObject.transform.position), Vector2.zero);
+                //collidingObject.GetComponent<Building>().Damage(DamageByDistance(collidingObject.transform.position), Vector2.zero);
             }
         }
     }

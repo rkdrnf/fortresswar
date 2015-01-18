@@ -58,6 +58,7 @@ public class Grenade : Projectile {
 
     void DamageAround(Vector2 origin)
     {
+        /*
         Collider2D[] colliders =
             Physics2D.OverlapCircleAll(origin, (float)splashRange);
 
@@ -81,6 +82,7 @@ public class Grenade : Projectile {
                 collidingObject.GetComponent<Building>().Damage(DamageByDistance(collidingObject.transform.position), Vector2.zero);
             }
         }
+         * */
     }
     
     int ImpactByDistance(Vector3 targetPoint)
