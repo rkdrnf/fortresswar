@@ -34,7 +34,11 @@ public abstract class PolygonGenerator<T, DT> : MonoBehaviour
     public List<int> colTriangles = new List<int>();
     private int colCount;
 
-    private MeshCollider col;
+    public List<List<Vector2>> colPaths = new List<List<Vector2>>();
+    public int pathCount;
+
+    //private MeshCollider col;
+    private PolygonCollider2D col;
 
     private bool update = false;
 
@@ -59,7 +63,7 @@ public abstract class PolygonGenerator<T, DT> : MonoBehaviour
             mesh = meshFilter.mesh;
         }
 
-        col = GetComponent<MeshCollider>();
+        col = GetComponent<PolygonCollider2D>();
 
         //GenTerrain();
         BuildMesh();
@@ -90,14 +94,49 @@ public abstract class PolygonGenerator<T, DT> : MonoBehaviour
             {
                 if (blocks[px, py] != null)
                 {
-                    if (blocks[px, py].CanCollide())
-                        GenCollider(px, py);
+                    //if (blocks[px, py].CanCollide())
+                      //  GenCollider(px, py);
 
                     GenSquare(px, py, blocks[px, py]);
                 }
             }
         }
+
     }
+
+    void BuildCollider()
+    {
+        GridDirection
+    }
+
+    void ConnectPath(List<GridDirection direction, int px, int py)
+    {
+        foreach(GridDirection next in NextDirection(direction))
+        {
+
+        }
+    }
+
+    GridDirection[] NextDirection(GridDirection inDirection)
+    {
+        switch(inDirection)
+        {
+            case GridDirection.UP:
+                return new GridDirection[3]{GridDirection.RIGHT, GridDirection.UP, GridDirection.LEFT};
+
+            case GridDirection.RIGHT:
+                return new GridDirection[3]{GridDirection.DOWN, GridDirection.RIGHT, GridDirection.UP};
+
+            case GridDirection.DOWN:
+                return new GridDirection[3]{GridDirection.LEFT, GridDirection.DOWN, GridDirection.RIGHT};
+
+            case GridDirection.LEFT:
+                return new GridDirection[3]{GridDirection.UP, GridDirection.LEFT, GridDirection.DOWN};
+            default:
+                return new GridDirection[0];
+        }
+    }
+    
 
     protected abstract Vector2 GetTexture(T structure);
 
@@ -154,6 +193,11 @@ public abstract class PolygonGenerator<T, DT> : MonoBehaviour
         newTriangles.Clear();
         newUV.Clear();
 
+
+
+        //MESH COLLIDER
+        /* 
+         * 
         Mesh newMesh = new Mesh();
         newMesh.vertices = colVertices.ToArray();
         newMesh.triangles = colTriangles.ToArray();
@@ -162,6 +206,7 @@ public abstract class PolygonGenerator<T, DT> : MonoBehaviour
         colVertices.Clear();
         colTriangles.Clear();
         colCount = 0;
+         * */
     }
 
     void GenCollider(int px, int py)
@@ -266,6 +311,7 @@ public abstract class PolygonGenerator<T, DT> : MonoBehaviour
         if(update)
         {
             BuildMesh();
+            BuildCollider();
             UpdateMesh();
             update = false;
         }
