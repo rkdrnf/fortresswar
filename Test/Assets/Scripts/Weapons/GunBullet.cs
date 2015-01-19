@@ -8,7 +8,7 @@ public class GunBullet : Projectile {
 
     protected override void OnCollideToTile(Tile tile, Vector2 point)
     {
-        if (tile)
+        if (tile != null)
         {
             tile.Damage(damage, point);
             //ImpactTarget(tile.rigidbody2D, impact);
@@ -18,7 +18,7 @@ public class GunBullet : Projectile {
 
     protected override void OnCollideToBuilding(Building building, Vector2 point)
     {
-        if (building)
+        if (building != null)
         {
             building.Damage(damage, point);
             //ImpactTarget(building.rigidbody2D, impact);

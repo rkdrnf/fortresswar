@@ -18,8 +18,9 @@ public struct SpriteInfo
     public int HealthValue;
 }
 
+[System.Serializable]
 [RequireComponent(typeof(SpriteRenderer), typeof(NetworkView))]
-public abstract class Structure<T, DT> : ScriptableObject
+public abstract class Structure<T, DT>
     where T : Structure<T, DT>
     where DT : StructureData
 {
@@ -29,7 +30,7 @@ public abstract class Structure<T, DT> : ScriptableObject
 
     public GridCoord m_coord;
     public GridDirection m_direction;
-    public PolygonGenerator<T> m_chunk;
+    public PolygonGenerator<T, DT> m_chunk;
 
     [HideInInspector]
     public int m_health;
@@ -52,7 +53,7 @@ public abstract class Structure<T, DT> : ScriptableObject
          * */
     }
 
-    public void SetChunk(PolygonGenerator<T> chunk)
+    public void SetChunk(PolygonGenerator<T, DT> chunk)
     {
         m_chunk = chunk;
     }

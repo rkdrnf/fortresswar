@@ -14,7 +14,6 @@ public class MapMakerEditor : Editor {
 
 	int tileIndex = 0;
     
-    string mapFileName;
     MapData mapFileAsset;
 
     double drawTimer;
@@ -87,11 +86,11 @@ public class MapMakerEditor : Editor {
 
     void PutTile(Vector2 point)
     {
-        GridCoord coord = new GridCoord(Mathf.FloorToInt((point.x + 0.5f) / maker.m_tileSize) * maker.m_tileSize, Mathf.FloorToInt((point.y + 0.5f) / maker.m_tileSize) * maker.m_tileSize);
+        GridCoord coord = GridCoord.ToCoord(point);
          
         if (maker.m_tiles.ContainsKey(coord)) return;
 
-        Tile tile = ScriptableObject.CreateInstance<Tile>();
+        Tile tile = new Tile();
         
         tile.InitForMaker(maker.m_brushTile, coord);
 
@@ -210,7 +209,7 @@ public class MapMakerEditor : Editor {
 
         GUILayout.BeginHorizontal();
         GUILayout.BeginVertical();
-        mapFileName = EditorGUILayout.TextField(mapFileName, GUILayout.Width(100));
+        maker.m_name = EditorGUILayout.TextField(maker.m_name, GUILayout.Width(100));
         GUILayout.EndVertical();
         GUILayout.BeginVertical();
         if (GUILayout.Button("Save", GUILayout.MinWidth(100)))
@@ -224,6 +223,11 @@ public class MapMakerEditor : Editor {
         if (GUILayout.Button("Clear", GUILayout.MinWidth(100)))
         {
             maker.Clear();
+        }
+
+        if (GUILayout.Button("Generate", GUILayout.MinWidth(100)))
+        {
+            maker.GenTerrain();
         }
         
         if (GUILayout.Button("Apply", GUILayout.MinWidth(100)))

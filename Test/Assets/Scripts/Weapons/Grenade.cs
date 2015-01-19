@@ -22,7 +22,7 @@ public class Grenade : Projectile {
 
     protected override void OnCollideToTile(Tile tile, Vector2 point)
     {
-        if (tile)
+        if (tile != null)
         {
             DamageAround(new Vector2(transform.position.x, transform.position.y));
             DestroyFromNetwork();
@@ -31,7 +31,7 @@ public class Grenade : Projectile {
 
     protected override void OnCollideToBuilding(Building building, Vector2 point)
     {
-        if (building)
+        if (building != null)
         {
             DamageAround(new Vector2(transform.position.x, transform.position.y));
             DestroyFromNetwork();

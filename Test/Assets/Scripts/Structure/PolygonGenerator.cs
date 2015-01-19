@@ -7,7 +7,9 @@ using System;
 using System.Linq;
 
 [ExecuteInEditMode]
-public abstract class PolygonGenerator<T> : MonoBehaviour where T : class
+public abstract class PolygonGenerator<T, DT> : MonoBehaviour 
+    where T : Structure<T, DT> 
+    where DT : StructureData
 {
     public int chunkSize;
     public GridCoord m_coord;
@@ -65,6 +67,7 @@ public abstract class PolygonGenerator<T> : MonoBehaviour where T : class
     {
         m_coord = coord;
         this.chunkSize = chunkSize;
+
         blocks = new T[chunkSize, chunkSize];
         
         //meshFilter = GetComponent<MeshFilter>();
@@ -74,56 +77,6 @@ public abstract class PolygonGenerator<T> : MonoBehaviour where T : class
         //GenTerrain();
         //BuildMesh();
         //UpdateMesh();
-    }
-
-    /*
-    void GenTerrain()
-    {
-        blocks = new T[chunkSize, chunkSize];
-
-        for (int px = 0; px < blocks.GetLength(0); px++)
-        {
-            int stone = Noise(px, 0, 80, 15, 1);
-            stone += Noise(px, 0, 50, 30, 1);
-            stone += Noise(px, 0, 10, 10, 1);
-            stone += 75;
-
-            int dirt = Noise(px, 0, 100, 35, 1);
-            dirt += Noise(px, 0, 50, 30, 1);
-            dirt += 75;
-
-            for (int py = 0; py < blocks.GetLength(1); py++)
-            {
-                if (py < stone)
-                {
-                    blocks[px, py] = new Tile(); TileType.STONE;
-
-                    //The next three lines make dirt spots in random places
-                    if (Noise(px, py, 12, 16, 1) > 10)
-                    {
-                        blocks[px, py] = (byte)TileType.DIRT;
-
-                    }
-
-                    //The next three lines remove dirt and rock to make caves in certain places
-                    if (Noise(px, py * 2, 16, 14, 1) > 10)
-                    { //Caves
-                        blocks[px, py] = (byte)TileType.AIR;
-
-                    }
-
-                }
-                else if (py < dirt)
-                {
-                    blocks[px, py] = (byte)TileType.DIRT;
-                }
-            }
-        }
-    }
-    */
-    int Noise(int x, int y, float scale, float mag, float exp)
-    {
-        return (int)(Mathf.Pow((Mathf.PerlinNoise(x / scale, y / scale) * mag), (exp)));
     }
 
     void BuildMesh()
@@ -303,7 +256,21 @@ public abstract class PolygonGenerator<T> : MonoBehaviour where T : class
     // Update is called once per frame
     void Update()
     {
+        if (!Application.isPlaying) return;
+
         if(update)
+        {
+            BuildMesh();
+            UpdateMesh();
+            update = false;
+        }
+    }
+
+    void OnRenderObject()
+    {
+        if (Application.isPlaying) return;
+
+        if (update)
         {
             BuildMesh();
             UpdateMesh();

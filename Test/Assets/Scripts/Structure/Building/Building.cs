@@ -10,7 +10,7 @@ using Const;
 using Const.Structure;
 using Architecture;
 
-[RequireComponent(typeof(SpriteRenderer), typeof(Rigidbody2D), typeof(Collider2D))]
+[Serializable]
 public class Building : Structure<Building, BuildingData>
 {
     bool m_isFalling;

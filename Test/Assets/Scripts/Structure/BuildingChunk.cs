@@ -7,9 +7,8 @@ using Data;
 
 namespace Structure
 {
-    public class BuildingChunk : PolygonGenerator<Building>
+    public class BuildingChunk : PolygonGenerator<Building, BuildingData>
     {
-
         protected override Vector2 GetTexture(Building structure)
         {
             return new Vector2(0, (int)structure.m_data.type);
