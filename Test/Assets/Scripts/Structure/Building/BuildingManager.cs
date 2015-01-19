@@ -60,8 +60,8 @@ namespace Architecture
         {
             if (!CanBuild(bData, position)) return;
 
-            Building building = (Building)Network.Instantiate(bData.building, position, Quaternion.identity, 3);
-            building.Init(bData, GridCoord.ToCoord(position));
+            //Building building = (Building)Network.Instantiate(bData.building, position, Quaternion.identity, 3);
+            //building.Init(bData, GridCoord.ToCoord(position));
         }
 
         public bool CanBuild(BuildingData bData, Vector2 position)

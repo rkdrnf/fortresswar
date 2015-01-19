@@ -8,6 +8,7 @@ using Const.Structure;
 
 namespace Data
 {
+    [Serializable]
     public class StructureData : ScriptableObject
     {
         public int maxHealth;

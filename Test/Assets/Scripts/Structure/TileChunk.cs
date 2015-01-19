@@ -4,11 +4,12 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using Data;
+using Structure;
 
 namespace Structure
 {
     [ExecuteInEditMode]
-    public class TileChunk : PolygonGenerator<Tile>
+    public class TileChunk : PolygonGenerator<Tile, TileData>
     {
         protected override UnityEngine.Vector2 GetTexture(Tile structure)
         {

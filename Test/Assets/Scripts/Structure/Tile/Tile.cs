@@ -9,6 +9,7 @@ using Const.Structure;
 using Architecture;
 using Data;
 
+[Serializable]
 public class Tile : Structure<Tile, TileData> 
 {
 

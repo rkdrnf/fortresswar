@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Structure;
 using Data;
+using Const.Structure;
 
 [ExecuteInEditMode]
 public class MapMaker : MonoBehaviour {
@@ -15,6 +16,7 @@ public class MapMaker : MonoBehaviour {
     public int m_height = 160;
 
     public TileSet m_tileSet;
+    public Dictionary<TileType, TileData> m_tileTypeDic = new Dictionary<TileType, TileData>();
     
     public Dictionary<GridCoord, Tile> m_tiles = new Dictionary<GridCoord,Tile>();
 
@@ -31,8 +33,9 @@ public class MapMaker : MonoBehaviour {
 
     void OnEnable()
     {
-        ReloadChunks();
+        Clear();
 
+        
     }
 
     void Start()
@@ -50,8 +53,15 @@ public class MapMaker : MonoBehaviour {
                 DestroyImmediate(chunk.gameObject);
         }
 
+        m_tileTypeDic.Clear();
         m_tiles.Clear();
         m_chunks.Clear();
+        GetComponent<SpriteRenderer>().sprite = null;
+
+        foreach (TileData tData in m_tileSet.tiles)
+        {
+            m_tileTypeDic.Add(tData.type, tData);
+        }
     }
 
     public void ReloadChunks()
@@ -63,8 +73,6 @@ public class MapMaker : MonoBehaviour {
             m_chunks.Add(chunk.m_coord, chunk);
             Debug.Log("coord: " + chunk.m_coord);
         }
-
-        
     }
 
     public void Add(Tile tile)
@@ -72,6 +80,7 @@ public class MapMaker : MonoBehaviour {
         m_tiles.Add(tile.m_coord, tile);
 
         TileChunk chunk = FindChunk(tile.m_coord);
+
 
         if (chunk == null)
         {
@@ -87,6 +96,7 @@ public class MapMaker : MonoBehaviour {
         chunk.Init(coord, m_chunkSize);
 
         m_chunks[coord] = chunk;
+        chunk.transform.parent = transform;
         
         return chunk;
     }
@@ -110,7 +120,7 @@ public class MapMaker : MonoBehaviour {
         int result = a % n;
         if ((a < 0 && n > 0) || (a > 0 && n < 0))
             result += n;
-        return result;
+        return result % n;
     }
 
     public void Remove(GridCoord coord)
@@ -133,6 +143,10 @@ public class MapMaker : MonoBehaviour {
         m_width = mapData.mapWidth;
         m_height = mapData.mapHeight;
         m_name = mapData.mapName;
+        m_chunkSize = mapData.chunkSize;
+        m_tileSize = mapData.tileSize;
+        m_tileSet = mapData.tileSet;
+
 
         LoadBackground(mapData.backgroundImage);
         LoadTiles(mapData);
@@ -161,7 +175,7 @@ public class MapMaker : MonoBehaviour {
 
     public void InitMapData(ref MapData mapAsset)
     {
-        mapAsset.init(m_name, m_width, m_height, m_tileSize, m_tileSet, m_tiles.Values, m_backgroundImage);
+        mapAsset.init(m_name, m_width, m_height, m_chunkSize, m_tileSize, m_tileSet, m_tiles.Values, m_backgroundImage);
     }
 
     public void ToggleGrid()
@@ -203,5 +217,64 @@ public class MapMaker : MonoBehaviour {
             Gizmos.DrawLine(new Vector3(Mathf.Floor(x / m_tileSize) * m_tileSize + 0.5f, -100.0f, 0.0f),
                             new Vector3(Mathf.Floor(x / m_tileSize) * m_tileSize + 0.5f, 100.0f, 0.0f));
         }
+    }
+
+    public void GenTerrain()
+    {
+        for (int px = 0; px < m_width; px++)
+        {
+            int stone = Noise(px, 0, 80, 15, 1);
+            stone += Noise(px, 0, 50, 30, 1);
+            stone += Noise(px, 0, 10, 10, 1);
+            stone += 75;
+
+            int dirt = Noise(px, 0, 100, 35, 1);
+            dirt += Noise(px, 0, 50, 30, 1);
+            dirt += 75;
+
+            for (int py = 0; py < m_height; py++)
+            {
+                int x = px - (m_width / 2);
+                int y = py - (m_height / 2);
+
+                do
+                {
+                    if (py < stone)
+                    {
+                        //Cave
+                        if (Noise(px, py * 2, 16, 14, 1) > 10)
+                            break;
+
+                        //Dirt
+                        if (Noise(px, py, 12, 16, 1) > 10)
+                        {
+                            Add(GenTile(TileType.DIRT, new GridCoord(x, y)));
+                            break;
+                        }
+
+                        Add(GenTile(TileType.STONE, new GridCoord(x, y)));
+                        break;
+                    }
+
+                    if (py < dirt)
+                    {
+                        Add(GenTile(TileType.DIRT, new GridCoord(x, y)));
+                        break;
+                    }
+                } while (false);
+            }
+        }
+    }
+    
+    public Tile GenTile(TileType type, GridCoord coord)
+    {
+        Tile tile = new Tile();
+        tile.InitForMaker(m_tileTypeDic[type], coord);
+        return tile;
+    }
+
+    int Noise(int x, int y, float scale, float mag, float exp)
+    {
+        return (int)(Mathf.Pow((Mathf.PerlinNoise(x / scale, y / scale) * mag), (exp)));
     }
 }
