@@ -8,16 +8,55 @@ using System;
 using Const.Structure;
 using Architecture;
 using Data;
+using Maps;
 
 [Serializable]
 public class Tile : Structure<Tile, TileData> 
 {
+    private TileNetwork network
+    {
+        get { return TileNetwork.Inst; }
+    }
+    
+    public Tile()
+    {
+    }
+
+    public Tile(Tile tile)
+    {
+        m_ID = tile.m_ID;
+        m_coord = tile.m_coord;
+        m_data = tile.m_data;
+        m_direction = tile.m_direction;
+        m_health = tile.m_health;
+        m_spriteIndex = tile.m_spriteIndex;
+
+        if (m_health > 0)
+            m_collidable = true;
+    }
+
+    public Tile(S2C.TileStatus status)
+    {
+        m_ID = status.m_ID;
+        m_coord = status.m_coord;
+        m_data = TileManager.Inst.GetTileData(status.m_type);
+        m_direction = Const.GridDirection.UP;
+
+        SetHealth(status.m_health, DestroyReason.MANUAL);
+        if (m_health > 0)
+        {
+            m_collidable = true;
+        }
+    }
 
     public void InitForMaker(TileData tData, GridCoord coord)
     {
         m_data = tData;
         m_coord = coord;
         m_health = tData.maxHealth;
+
+        if (m_health > 0)
+            m_collidable = true;
 
         RefreshSprite();
     }
@@ -27,47 +66,10 @@ public class Tile : Structure<Tile, TileData>
         m_chunk.RemoveBlock(this);
     }
 
-    public void Init(TileData tData)
+    protected override void BroadcastHealth(int health, DestroyReason reason)
     {
-        /*
-        if (!Network.isServer) return;
-
-        m_ID = tData.ID;
-        m_health = tData.maxHealth;
-        m_coord = tData.coord;
-
-        //rendering
-        if (ServerGame.Inst.isDedicatedServer) return;
-        GetSprite(m_health);
-
-        TileManager.Inst.Add(this);
-         * */
+        network.BroadcastHealth(m_ID, health, reason);
     }
-
-    protected override void AfterAwake() { }
-
-    /*
-    [RPC]
-    protected override void RequestCurrentStatus(NetworkMessageInfo info)
-    {
-        if (!Network.isServer) return;
-
-        S2C.TileStatus pck = new S2C.TileStatus(m_coord, m_health);
-
-        networkView.RPC("RecvCurrentStatus", info.sender, pck.SerializeToBytes());
-    }
-
-    [RPC]
-    protected override void RecvCurrentStatus(byte[] pckData, NetworkMessageInfo info)
-    {
-        S2C.TileStatus pck = S2C.TileStatus.DeserializeFromBytes(pckData);
-
-        SetHealth(pck.m_health, DestroyReason.MANUAL);
-        m_coord = pck.m_coord;
-
-        TileManager.Inst.Add(this);
-    }
-     * */
     
     public override string ToString()
     {
@@ -77,15 +79,9 @@ public class Tile : Structure<Tile, TileData>
 
     protected override void OnBreak(DestroyReason reason)
     {
-        /*
-        Destroy(m_collider);
-        Destroy(rigidbody2D);
-
+        m_collidable = false;
         //rendering
         if (Network.isServer && ServerGame.Inst.isDedicatedServer) return;
-
-        m_spriteRenderer.sprite = m_tileBack;
-         * */
     }
 
     protected override void OnRecvBreak()

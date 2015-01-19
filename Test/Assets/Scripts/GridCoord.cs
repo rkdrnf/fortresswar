@@ -26,12 +26,6 @@ public struct GridCoord
         return x + y * mapWidth;
     }
 
-    public static GridCoord ToCoord(int index, int mapWidth)
-    {
-        int positiveIndex = index + (mapWidth / 2);
-        return new GridCoord(positiveIndex % mapWidth, positiveIndex / mapWidth);
-    }
-
     public static GridCoord ToCoord(Vector2 position)
     {
         return new GridCoord(Mathf.FloorToInt(position.x + 0.5f), Mathf.FloorToInt(position.y + 0.5f));

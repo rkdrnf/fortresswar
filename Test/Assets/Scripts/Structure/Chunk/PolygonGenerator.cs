@@ -6,6 +6,9 @@ using Data;
 using System;
 using System.Linq;
 
+
+namespace Architecture
+{ 
 [ExecuteInEditMode]
 public abstract class PolygonGenerator<T, DT> : MonoBehaviour 
     where T : Structure<T, DT> 
@@ -33,7 +36,7 @@ public abstract class PolygonGenerator<T, DT> : MonoBehaviour
 
     private MeshCollider col;
 
-    protected bool update = false;
+    private bool update = false;
 
     // Use this for initialization
     protected MeshFilter meshFilter;
@@ -87,7 +90,9 @@ public abstract class PolygonGenerator<T, DT> : MonoBehaviour
             {
                 if (blocks[px, py] != null)
                 {
-                    GenCollider(px, py);
+                    if (blocks[px, py].CanCollide())
+                        GenCollider(px, py);
+
                     GenSquare(px, py, blocks[px, py]);
                 }
             }
@@ -277,4 +282,10 @@ public abstract class PolygonGenerator<T, DT> : MonoBehaviour
             update = false;
         }
     }
+
+    public void SendUpdate()
+    {
+        update = true;
+    }
+}
 }

@@ -11,6 +11,7 @@ using S2C = Packet.S2C;
 using C2S = Packet.C2S;
 using System.Threading;
 using Character;
+using Maps;
 
     public class ServerPlayer : MonoBehaviour
     {
@@ -425,7 +426,7 @@ using Character;
                 }
             }
 
-            if (IsDead() == false && Game.Inst.map.CheckInBorder(this) == false)
+            if (IsDead() == false && Map.Inst.CheckInBorder(this) == false)
             {
                 BroadcastDie();
             }

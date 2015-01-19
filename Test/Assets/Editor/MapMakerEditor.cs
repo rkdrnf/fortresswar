@@ -5,7 +5,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using Data;
-using Structure;
+using Architecture;
 
 [CustomEditor(typeof(MapMaker))]
 public class MapMakerEditor : Editor {

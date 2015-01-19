@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using Util;
 
     public class ParticleSystem2D : MonoBehaviour
     {
@@ -134,7 +135,7 @@ using System.Collections;
                 p.position = transform.position + (Vector3)FindBorder(randomX, randomY);
             }
 
-            if (Map.IsLayerExists(p.position, ParticleManager.Inst.particleCollidingLayer))
+            if (LayerUtil.IsLayerExists(p.position, ParticleManager.Inst.particleCollidingLayer))
                 return null;
             /*
             RaycastHit2D[] hits = Physics2D.RaycastAll(transform.position, randomDirection, 1.2f, collidingMask);

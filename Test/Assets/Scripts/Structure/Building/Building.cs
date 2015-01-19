@@ -9,46 +9,43 @@ using Server;
 using Const;
 using Const.Structure;
 using Architecture;
+using Maps;
 
 [Serializable]
 public class Building : Structure<Building, BuildingData>
 {
-    bool m_isFalling;
-
-    protected override void AfterAwake()
+    private BuildingNetwork network
     {
-        //rigidbody2D.isKinematic = true;
+        get { return BuildingNetwork.Inst; }
     }
 
-    /*
-    [RPC]
-    protected override void RequestCurrentStatus(NetworkMessageInfo info)
-    {
-        S2C.BuildingStatus pck = new S2C.BuildingStatus(m_coord, m_health, m_isFalling, m_direction);
+    public bool m_isFalling;
 
-        networkView.RPC("RecvCurrentStatus", info.sender, pck.SerializeToBytes());
+    public Building()
+    { }
+
+    public Building(Building building)
+    {
+        m_ID = building.m_ID;
+        m_coord = building.m_coord;
+        m_data = building.m_data;
+        m_direction = building.m_direction;
+        m_health = building.m_health;
+        m_isFalling = building.m_isFalling;
     }
 
-    [RPC]
-    protected override void RecvCurrentStatus(byte[] pckData, NetworkMessageInfo info)
+    public Building(S2C.BuildingStatus status)
     {
-        S2C.BuildingStatus pck = S2C.BuildingStatus.DeserializeFromBytes(pckData);
-
-        m_coord = pck.m_coord;
-
-        SetHealth(pck.m_health, DestroyReason.MANUAL);
-        
-        m_direction = pck.m_direction;
-        m_isFalling = pck.m_falling;
-
-        BuildingManager.Inst.Add(this);
-
+        m_ID = status.m_ID;
+        m_coord = status.m_coord;
+        m_isFalling = status.m_falling;
+        m_direction = status.m_direction;
+        SetHealth(status.m_health, DestroyReason.MANUAL);
         if (m_isFalling)
         {
             Fall();
         }
     }
-     */
 
     public void Init(BuildingData bData, GridCoord coord)
     {
@@ -67,11 +64,20 @@ public class Building : Structure<Building, BuildingData>
         GetSprite(m_health);
     }
 
+    protected override void BroadcastHealth(int health, DestroyReason reason)
+    {
+        network.BroadcastHealth(m_ID, health, reason);
+    }
+
     public void Fall()
     {
-        /*
-        BuildingManager.Inst.Remove(this);
+        if (Network.isServer) network.BroadcastFall(m_ID);
 
+        BuildingManager.Inst.RemoveFromChunk(this);
+
+        //떨어지는 오브젝트로 새로 생성
+
+        /*
         gameObject.layer = BuildingDataLoader.Inst.fallingBuildingLayer;
         rigidbody2D.isKinematic = false;
 
@@ -83,17 +89,6 @@ public class Building : Structure<Building, BuildingData>
          * */
     }
 
-    void BroadcastFall()
-    {
-        //서버는 이미 처리 다 해서 또 보낼 필요 없음
-        //networkView.RPC("RecvFall", RPCMode.Others);
-    }
-
-    [RPC]
-    void RecvFall()
-    {
-        Fall();
-    }
 
     void OnTriggerEnter2D(Collider2D targetCollider)
     {

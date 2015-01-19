@@ -4,9 +4,8 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using Data;
-using Structure;
 
-namespace Structure
+namespace Architecture
 {
     [ExecuteInEditMode]
     public class TileChunk : PolygonGenerator<Tile, TileData>
@@ -20,13 +19,13 @@ namespace Structure
         {
             blocks[coord.x - m_coord.x, coord.y - m_coord.y] = block;
             block.SetChunk(this);
-            update = true;
+            SendUpdate();
         }
 
         public override void RemoveBlock(Tile block)
         {
             blocks[block.m_coord.x - m_coord.x, block.m_coord.y - m_coord.y] = null;
-            update = true;
+            SendUpdate();
         }
     }
 }

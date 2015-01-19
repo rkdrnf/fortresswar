@@ -8,6 +8,7 @@ using C2S = Packet.C2S;
 using S2C = Packet.S2C;
 using FocusManager;
 using InGameMenu;
+using Maps;
 
     [RequireComponent(typeof(ParticleManager), typeof(PlayerManager), typeof(ProjectileManager))]
     class ServerGame : MonoBehaviour
@@ -74,7 +75,7 @@ using InGameMenu;
         {
             RecvClearGame();
 
-            Game.Inst.LoadMap();
+            Map.Inst.Load();
 
             int ID = PlayerManager.Inst.SetID(PlayerManager.Inst.GetUniqueID(), Network.player);
             SetPlayerID(ID, new NetworkMessageInfo());
@@ -263,7 +264,7 @@ using InGameMenu;
         {
             PlayerManager.Inst.Clear();
             ProjectileManager.Inst.Clear();
-            Game.Inst.ClearMap();
+            Map.Inst.Clear();
         }
 
         void OnDisconnectedFromServer(NetworkDisconnection info)
@@ -276,12 +277,7 @@ using InGameMenu;
             PlayerManager.Inst.Clear();
             ProjectileManager.Inst.Clear();
 
-            ClearMap();
-        }
-
-        public void ClearMap()
-        {
-            Game.Inst.ClearMap();
+            Map.Inst.Clear();
         }
 
         public void OpenInGameMenu(InGameMenuType menu)

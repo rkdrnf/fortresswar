@@ -11,6 +11,8 @@ using Const.Structure;
 using Const.Effect;
 using Effect;
 using Data;
+using Util;
+using Maps;
 
 [System.Serializable]
 public struct SpriteInfo
@@ -18,12 +20,17 @@ public struct SpriteInfo
     public int HealthValue;
 }
 
+namespace Architecture
+{
 [System.Serializable]
 [RequireComponent(typeof(SpriteRenderer), typeof(NetworkView))]
 public abstract class Structure<T, DT>
     where T : Structure<T, DT>
     where DT : StructureData
 {
+    
+
+
     public int m_ID;
 
     public DT m_data;
@@ -32,36 +39,21 @@ public abstract class Structure<T, DT>
     public GridDirection m_direction;
     public PolygonGenerator<T, DT> m_chunk;
 
-    [HideInInspector]
     public int m_health;
 
     public int m_spriteIndex;
-    public AnimationEffectType m_destructionAnim;
+
+    public bool m_collidable;
 
     public Structure()
     {
         m_spriteIndex = -1;
-        
-        AfterAwake();
-
-        /*
-        if (Network.isClient)
-        {
-            RequestCurrentStatus();
-            networkView.RPC("RequestCurrentStatus", RPCMode.Server);
-        }
-         * */
     }
 
     public void SetChunk(PolygonGenerator<T, DT> chunk)
     {
         m_chunk = chunk;
     }
-
-    //protected abstract void RequestCurrentStatus(NetworkMessageInfo info);
-
-    //[RPC]
-    //protected abstract void RecvCurrentStatus(byte[] pckData, NetworkMessageInfo info);
 
     public void SetHealth(int health, DestroyReason reason)
     {
@@ -72,27 +64,14 @@ public abstract class Structure<T, DT>
 
         if (Network.isServer) BroadcastHealth(m_health, reason);
             
-
         AfterSetHealth(m_health, reason);
     }
 
-    void BroadcastHealth(int health, DestroyReason reason)
-    {
-        /*
-        if (!Network.isServer) return;
+    abstract protected void BroadcastHealth(int health, DestroyReason reason);
 
-        S2C.SetStructureHealth pck = new S2C.SetStructureHealth(health, reason);
-
-        networkView.RPC("RecvHealth", RPCMode.Others, pck.SerializeToBytes());
-         * */
-    }
-
-    [RPC]
-    void RecvHealth(byte[] pckData, NetworkMessageInfo info)
+    public void RecvHealth(S2C.SetStructureHealth pck)
     {
         //ServerCheck
-
-        S2C.SetStructureHealth pck = S2C.SetStructureHealth.DeserializeFromBytes(pckData);
 
         m_health = pck.m_health;
 
@@ -101,7 +80,14 @@ public abstract class Structure<T, DT>
 
     void AfterSetHealth(int health, DestroyReason reason)
     {
-        //m_spriteRenderer.sprite = GetSprite(m_health);
+        int oldSprite = m_spriteIndex;
+        m_spriteIndex = GetSprite(m_health);
+
+        if (oldSprite != m_spriteIndex)
+        {
+            if (m_chunk != null)
+                m_chunk.SendUpdate();
+        }
 
         if (m_health <= 0)
         {
@@ -134,8 +120,6 @@ public abstract class Structure<T, DT>
         }
     }
 
-    protected abstract void AfterAwake();
-
     protected abstract void OnBreak(DestroyReason reason);
 
     protected abstract void OnRecvBreak();
@@ -165,7 +149,7 @@ public abstract class Structure<T, DT>
     {
         int index = 0;
 
-        while (index + 1 < m_data.sprites.Length && health < m_data.sprites[index].HealthValue)
+        while (index + 1 < m_data.sprites.Length && health <= m_data.sprites[index].HealthValue)
         {
             index++;
         }
@@ -187,6 +171,12 @@ public abstract class Structure<T, DT>
 
     void PlayDestructionAnimation()
     {
-        AnimationEffectManager.Inst.PlayAnimationEffect(m_destructionAnim, m_coord.ToVector2());
+        AnimationEffectManager.Inst.PlayAnimationEffect(m_data.destructionAnimation, m_coord.ToVector2());
     }
+
+    public bool CanCollide()
+    {
+        return m_collidable;
+    }
+}
 }
