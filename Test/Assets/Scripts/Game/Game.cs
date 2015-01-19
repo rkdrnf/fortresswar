@@ -41,15 +41,12 @@ public class Game : MonoBehaviour
 
 	public GameObject netManagerObject;
     public JobSet jobSet;
-    public MapData mapData;
+    
     public WeaponSet weaponSet;
     SkillDataLoader skillLoader;
     
 
-    [HideInInspector]
-    public Map map;
 	NetworkManager netManager;
-	MapLoader mapLoader;
 
     void Init()
     {
@@ -60,19 +57,5 @@ public class Game : MonoBehaviour
 	{
         Init();
 		netManager = netManagerObject.GetComponent<NetworkManager> ();
-		mapLoader = GetComponent<MapLoader> ();
 	}
-
-    
-	public void LoadMap()
-	{
-        GameObject mapPrefab = mapLoader.GetMap();
-
-        GameObject mapObj = (GameObject)Network.Instantiate(mapPrefab, Vector3.zero, Quaternion.identity, NetworkViewGroup.GAME);
-	}
-
-    public void ClearMap()
-    {
-        map = null;
-    }
 }

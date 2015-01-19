@@ -9,10 +9,39 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
 using ProtoBuf;
 using ProtoBuf.Meta;
+using Const.Structure;
+
 namespace Packet
 {
     namespace S2C
     {
+        [ProtoContract]
+        public class MapInfo : Packet<MapInfo>
+        {
+            public MapInfo() { }
+            public MapInfo(string mapName, List<Tile> tileList, List<Building> buildingList)
+            {
+                m_mapName = mapName;
+
+                foreach(Tile tile in tileList)
+                {
+                    m_tiles.Add(new TileStatus(tile));
+                }
+                foreach(Building building in buildingList)
+                {
+                    m_buildings.Add(new BuildingStatus(building));
+                }
+            }
+            
+            [ProtoMember(1)]
+            public string m_mapName;
+            [ProtoMember(2)]
+            public List<TileStatus> m_tiles;
+            [ProtoMember(3)]
+            public List<BuildingStatus> m_buildings;
+
+        }
+
         [ProtoContract]
         public class DamageTile : Packet<DamageTile>
         {
@@ -55,23 +84,6 @@ namespace Packet
 
             [ProtoMember(1)]
             public long projectileID;
-        }
-
-        [ProtoContract]
-        public class MapInfo : Packet<MapInfo>
-        {
-            public MapInfo() { }
-            public MapInfo(Dictionary<GridCoord, Tile> tileList)
-            {
-                tileStatusList = new List<TileStatus>();
-
-                foreach(var tile in tileList)
-                {
-                    tileStatusList.Add(new TileStatus(tile.Key, tile.Value.m_health));
-                }
-            }
-            [ProtoMember(1)]
-            public List<TileStatus> tileStatusList;
         }
 
         [ProtoContract]
@@ -244,32 +256,41 @@ namespace Packet
         public class SetStructureHealth: Packet<SetStructureHealth>
         {
             public SetStructureHealth() { }
-            public SetStructureHealth(int health, Const.Structure.DestroyReason reason)
+            public SetStructureHealth(int ID, int health, Const.Structure.DestroyReason reason)
             {
                 m_health = health;
                 m_reason = reason;
+                m_ID = ID;
             }
 
             [ProtoMember(1)]
             public int m_health;
             [ProtoMember(2)]
             public Const.Structure.DestroyReason m_reason;
+            [ProtoMember(3)]
+            public int m_ID;
         }
 
         [ProtoContract]
         public class TileStatus : Packet<TileStatus>
         {
             public TileStatus() { }
-            public TileStatus(GridCoord coord, int health )
+            public TileStatus(Tile tile)
             {
-                m_coord = coord;
-                m_health = health;
+                m_ID = tile.m_ID;
+                m_type = tile.m_data.type;
+                m_coord = tile.m_coord;
+                m_health = tile.m_health;
             }
 
             [ProtoMember(1)]
             public GridCoord m_coord;
             [ProtoMember(2)]
             public int m_health;
+            [ProtoMember(3)]
+            public TileType m_type;
+            [ProtoMember(4)]
+            public int m_ID;
 
         }
 
@@ -277,12 +298,13 @@ namespace Packet
         public class BuildingStatus : Packet<BuildingStatus>
         {
             public BuildingStatus() { }
-            public BuildingStatus(GridCoord coord, int health, bool falling, GridDirection direction)
+            public BuildingStatus(Building building)
             {
-                m_coord = coord;
-                m_health = health;
-                m_falling = falling;
-                m_direction = direction;
+                m_ID = building.m_ID;
+                m_coord = building.m_coord;
+                m_health = building.m_health;
+                m_falling = building.m_isFalling;
+                m_direction = building.m_direction;
             }
 
             [ProtoMember(1)]
@@ -293,6 +315,8 @@ namespace Packet
             public bool m_falling;
             [ProtoMember(4)]
             public GridDirection m_direction;
+            [ProtoMember(5)]
+            public int m_ID;
         }
 
     }

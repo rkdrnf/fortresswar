@@ -5,7 +5,7 @@ using System.Text;
 using UnityEngine;
 using Data;
 
-namespace Structure
+namespace Architecture
 {
     public class BuildingChunk : PolygonGenerator<Building, BuildingData>
     {
@@ -19,13 +19,13 @@ namespace Structure
 
             blocks[coord.x - m_coord.x, coord.y - m_coord.y] = block;
             block.SetChunk(this);
-            update = true;
+            SendUpdate();
         }
 
         public override void RemoveBlock(Building block)
         {
             blocks[block.m_coord.x - m_coord.x, block.m_coord.y - m_coord.y] = null;
-            update = true;
+            SendUpdate();
 
         }
 

@@ -65,7 +65,7 @@ namespace Character
 
             if (!CanBuild(building)) return;
 
-            BuildingManager.Inst.Build(building, Map.GetGridPos(pck.position));
+            BuildingManager.Inst.Build(building, GridCoord.ToCoord(pck.position));
         }
     }
 }

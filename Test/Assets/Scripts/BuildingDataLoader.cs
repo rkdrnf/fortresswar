@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using Const;
+using Util;
 
 public class BuildingDataLoader : MonoBehaviour
 {
@@ -26,7 +27,7 @@ public class BuildingDataLoader : MonoBehaviour
         if(Input.GetButton("Fire1"))
         {
             Vector3 worldMousePosition = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0));
-            GameObject obj = Map.GetLayerObjectAt(worldMousePosition, buildingCollidingLayers);
+            GameObject obj = LayerUtil.GetLayerObjectAt(worldMousePosition, buildingCollidingLayers);
 
             /*
             if(obj != null && obj.GetComponent<Building>() != null)

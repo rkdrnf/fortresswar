@@ -1,9 +1,10 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using Structure;
+using Architecture;
 using Data;
 using Const.Structure;
+using Util;
 
 [ExecuteInEditMode]
 public class MapMaker : MonoBehaviour {
@@ -30,6 +31,8 @@ public class MapMaker : MonoBehaviour {
     public Sprite m_backgroundImage;
 
     bool m_showGrid = false;
+
+    public int tileID;
 
     void OnEnable()
     {
@@ -62,6 +65,8 @@ public class MapMaker : MonoBehaviour {
         {
             m_tileTypeDic.Add(tData.type, tData);
         }
+
+        tileID = 0;
     }
 
     public void ReloadChunks()
@@ -112,17 +117,10 @@ public class MapMaker : MonoBehaviour {
 
     public GridCoord ToChunkCoord(GridCoord coord)
     {
-        return new GridCoord(coord.x - mod(coord.x, m_chunkSize), coord.y - mod(coord.y, m_chunkSize));
+        return new GridCoord(coord.x - Calc.mod(coord.x, m_chunkSize), coord.y - Calc.mod(coord.y, m_chunkSize));
     }
 
-    int mod(int a, int n)
-    {
-        int result = a % n;
-        if ((a < 0 && n > 0) || (a > 0 && n < 0))
-            result += n;
-        return result % n;
-    }
-
+    
     public void Remove(GridCoord coord)
     {
         if (m_tiles.ContainsKey(coord))
@@ -269,6 +267,8 @@ public class MapMaker : MonoBehaviour {
     public Tile GenTile(TileType type, GridCoord coord)
     {
         Tile tile = new Tile();
+        tile.m_ID = tileID;
+        tileID++;
         tile.InitForMaker(m_tileTypeDic[type], coord);
         return tile;
     }

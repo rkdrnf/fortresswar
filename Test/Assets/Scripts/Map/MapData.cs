@@ -13,6 +13,7 @@ public class MapData : ScriptableObject
     public int chunkSize;
     public int tileSize = 1;
     public TileSet tileSet;
+    [HideInInspector]
     public Tile[] tiles = new Tile[0];
     public Sprite backgroundImage;
 

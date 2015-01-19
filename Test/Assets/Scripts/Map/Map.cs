@@ -10,17 +10,24 @@ using Server;
 using Const;
 using Architecture;
 
+namespace Maps
+{ 
 public class Map : MonoBehaviour {
 
     string m_name;
 
     int m_width;
     int m_height;
+    int m_chunkSize;
 
     double m_mapLoadTime;
 
     Parallax m_backgroundPar;
 
+    public TileManager m_tileManager = null; // scene init
+    public BuildingManager m_buildingManager = null; // scene init
+
+    public MapData m_mapData = null; // scene init
     
 
     private static Map instance;
@@ -35,43 +42,54 @@ public class Map : MonoBehaviour {
 
     void Awake()
     {
-        
-        networkView.group = NetworkViewGroup.GAME;
-    }
-
-    void OnNetworkInstantiate(NetworkMessageInfo info)
-    {
         instance = this;
 
+        networkView.group = NetworkViewGroup.GAME;
         m_mapLoadTime = 0f;
+    }
 
-        if (Network.isServer)
-        {
-            Debug.Log("[Server] map instantiated by " + info.sender);
-            //Send Clients MapInfo;
+    void OnPlayerConnected(NetworkPlayer player)
+    {
+        networkView.RPC("RecvMap", player, m_mapData);
+    }
 
-            OnSetMapInfo(Game.Inst.mapData.name, Network.time);
-            networkView.RPC("SetMapInfo", RPCMode.OthersBuffered, Game.Inst.mapData.name);
-        }
+    void MakeMapInfo()
+    {
+        S2C.MapInfo pck = new S2C.MapInfo(m_mapData.name, m_tileManager.GetTiles(), m_buildingManager.GetBuildings());
     }
 
     [RPC]
-    void SetMapInfo(string mapName, NetworkMessageInfo info)
+    void RecvMap(byte[] pckData, NetworkMessageInfo info)
     {
-        if (!Network.isClient) return;
-        //CheckServer
+        //ServerCheck
 
-        OnSetMapInfo(mapName, info.timestamp);
+        S2C.MapInfo pck = S2C.MapInfo.DeserializeFromBytes(pckData);
+
+        Debug.Log("[Client] map instantiated by " + info.sender);
+
+        Load(pck);
 
         ServerGame.Inst.OnMapLoadCompleted(this);
     }
 
-    void OnSetMapInfo(string mapName, double time)
+    public void Load(S2C.MapInfo mapinfo)
     {
-        MapData mapData = Resources.Load("Maps/" + mapName, typeof(MapData)) as MapData;
+        Load(mapinfo.m_mapName);
+
+        LoadTiles(mapinfo.m_tiles);
+        LoadBuildings(mapinfo.m_buildings);
+    }
+
+    public void Load(string mapName)
+    {
+        MapData mapData = (MapData)Resources.Load("Maps/" + mapName);
         Load(mapData);
 
-        m_mapLoadTime = time;
+    }
+
+    public void Load()
+    {
+        Load(m_mapData);
     }
 
     public void Load(MapData mapData)
@@ -79,38 +97,55 @@ public class Map : MonoBehaviour {
         m_width = mapData.mapWidth;
         m_height = mapData.mapHeight;
         m_name = mapData.mapName;
+        m_chunkSize = mapData.chunkSize;
 
         LoadBackground(mapData.backgroundImage);
 
         if (!Network.isServer) return;
-        LoadTiles(mapData);
-        LoadBuildings();
-    }
+        LoadTiles(mapData.tiles);
+        LoadBuildings(new List<Building>());
 
+        m_mapLoadTime = Network.time;
+    }
+    
     public void LoadBackground(Sprite image)
     {
         m_backgroundPar = GetComponentInChildren<Parallax>();
         m_backgroundPar.SetImage(image, m_width, m_height);
     }
 
-    public void LoadTiles(MapData mapData)
+    public void LoadTiles(IEnumerable<Tile> tiles)
     {
         if (!Network.isServer) return; //서버만 데이터에서 로딩, 클라는 network로 초기화
 
-        foreach (Tile tile in mapData.tiles)
+        foreach (Tile tile in tiles)
         {
-            /*
-            Tile tile = (Tile)Network.Instantiate(mapData.tileSet.tiles[(int)tileData.tileType], tileData.coord.ToVector2(), Quaternion.identity, 4);
-            tile.Init(tileData);
-
-            TileManager.Inst.Add(tile);
-             * */
+            Tile newTile = new Tile(tile);
+            m_tileManager.Add(tile);
         }
     }
 
-    public void LoadBuildings()
+    public void LoadBuildings(IEnumerable<Building> buildings)
     {
         if (!Network.isServer) return; //서버만 데이터에서 로딩, 클라는 network로 초기화
+    }
+
+    public void LoadTiles(IEnumerable<S2C.TileStatus> tiles)
+    {
+        foreach (S2C.TileStatus tile in tiles)
+        {
+            Tile newTile = new Tile(tile);
+            m_tileManager.Add(newTile);
+        }
+    }
+
+    public void LoadBuildings(IEnumerable<S2C.BuildingStatus> buildings)
+    {
+        foreach (S2C.BuildingStatus building in buildings)
+        {
+            Building newBuilding = new Building(building);
+            m_buildingManager.Add(newBuilding);
+        }
     }
 
     public bool CheckInBorder(Transform obj)
@@ -127,41 +162,12 @@ public class Map : MonoBehaviour {
         return CheckInBorder(player.transform);
     }
 
-    void OnDisconnectedFromServer(NetworkDisconnection info)
+    
+
+    public void Clear()
     {
-        Destroy(gameObject);
+        m_buildingManager.Clear();
+        m_tileManager.Clear();
     }
-
-    public static bool IsLayerExists(Vector2 pos, LayerMask mask)
-    {
-        RaycastHit2D hit = Physics2D.Raycast(pos, Vector2.zero, float.MaxValue, mask);
-
-        if (hit)
-        {
-            return true;
-        }
-        else return false;
-    }
-
-    public static GameObject GetLayerObjectAt(Vector2 pos, LayerMask mask)
-    {
-        RaycastHit2D hit = Physics2D.Raycast(pos, Vector2.zero, float.MaxValue, mask);
-
-        if (hit)
-        {
-            return hit.collider.gameObject;
-        }
-        else return null;
-    }
-
-    public static Vector2 GetGridPos(Vector2 pos)
-    {
-        return new Vector2(Mathf.Floor(pos.x + 0.5f), Mathf.Floor(pos.y + 0.5f));
-    }
-
-
-    public GridCoord ToGridCoord(int index)
-    {
-        return GridCoord.ToCoord(index, m_width);
-    }
+}
 }

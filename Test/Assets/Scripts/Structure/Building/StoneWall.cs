@@ -7,7 +7,10 @@ using S2C = Packet.S2C;
 using C2S = Packet.C2S;
 
 
+namespace Architecture
+{ 
 [RequireComponent(typeof(SpriteRenderer), typeof(Rigidbody2D), typeof(Collider2D))]
 public class StoneWall : Building
 {
+}
 }

@@ -25,28 +25,55 @@ namespace Architecture
         }
 
         Dictionary<GridCoord, Building> m_buildingMap;
+        Dictionary<int, Building> m_buildingIDMap;
+
+        int m_buildingIndex;
+
+        public BuildingChunkManager m_buildingChunkManager;
 
         void Awake()
         {
             instance = this;
+            m_buildingIndex = 0;
+            m_buildingIDMap = new Dictionary<int, Building>();
             m_buildingMap = new Dictionary<GridCoord, Building>();
         }
 
         public void Clear()
         {
             m_buildingMap.Clear();
+            m_buildingIDMap.Clear();
+            m_buildingChunkManager.Clear();
         }
 
         public void Add(Building building)
         {
             m_buildingMap.Add(building.m_coord, building);
+            m_buildingIDMap.Add(building.m_ID, building);
+
+            m_buildingChunkManager.AddBlock(building);
+
+            m_buildingIndex++;
         }
 
         public void Remove(Building building)
         {
             if (m_buildingMap.ContainsKey(building.m_coord) && m_buildingMap[building.m_coord] == building)
                 m_buildingMap.Remove(building.m_coord);
+
+            m_buildingIDMap.Remove(building.m_ID);
+
+            m_buildingChunkManager.RemoveBlock(building);
         }
+
+        public void RemoveFromChunk(Building building) //When Fall
+        {
+            if (m_buildingMap.ContainsKey(building.m_coord) && m_buildingMap[building.m_coord] == building)
+                m_buildingMap.Remove(building.m_coord);
+
+            m_buildingChunkManager.RemoveBlock(building);
+        }
+
 
         public Building Get(GridCoord coord)
         {
@@ -56,15 +83,28 @@ namespace Architecture
                 return null;
         }
 
-        public void Build(BuildingData bData, Vector2 position)
+        public Building Get(int ID)
         {
-            if (!CanBuild(bData, position)) return;
+            if (m_buildingIDMap.ContainsKey(ID))
+                return m_buildingIDMap[ID];
+            else
+                return null;
+        }
+
+        public List<Building> GetBuildings()
+        {
+            return m_buildingMap.Values.ToList();
+        }
+
+        public void Build(BuildingData bData, GridCoord coord)
+        {
+            if (!CanBuild(bData, coord)) return;
 
             //Building building = (Building)Network.Instantiate(bData.building, position, Quaternion.identity, 3);
             //building.Init(bData, GridCoord.ToCoord(position));
         }
 
-        public bool CanBuild(BuildingData bData, Vector2 position)
+        public bool CanBuild(BuildingData bData, GridCoord coord)
         {
             /*
             Collider2D[] colliders = Physics2D.OverlapAreaAll(position - (bData.building.m_size / 2 * 0.9f), position + (bData.building.m_size / 2 * 0.9f), bData.invalidLocations);
@@ -78,8 +118,6 @@ namespace Architecture
 
         public Suspension FindSuspension(GridCoord coord)
         {
-            Map map = Game.Inst.map;
-
             Suspension suspension = new Suspension();
 
             FindBuildingSuspension(coord, ref suspension);

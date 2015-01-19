@@ -31,6 +31,28 @@ namespace Util
 		{
 			return ((1 << layer) & layerArray) != 0;
 		}
+
+        public static bool IsLayerExists(Vector2 pos, LayerMask mask)
+        {
+            RaycastHit2D hit = Physics2D.Raycast(pos, Vector2.zero, float.MaxValue, mask);
+
+            if (hit)
+            {
+                return true;
+            }
+            else return false;
+        }
+
+        public static GameObject GetLayerObjectAt(Vector2 pos, LayerMask mask)
+        {
+            RaycastHit2D hit = Physics2D.Raycast(pos, Vector2.zero, float.MaxValue, mask);
+
+            if (hit)
+            {
+                return hit.collider.gameObject;
+            }
+            else return null;
+        }
 	}
 
     public abstract class StateUtil
@@ -141,6 +163,17 @@ namespace Util
             {
                 envFlag = envFlag & (~ShiftEnv(env));
             }
+        }
+    }
+
+    public abstract class Calc
+    {
+        public static int mod(int a, int n)
+        {
+            int result = a % n;
+            if ((a < 0 && n > 0) || (a > 0 && n < 0))
+                result += n;
+            return result % n;
         }
     }
 }
