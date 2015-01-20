@@ -219,7 +219,7 @@ public class MapMaker : MonoBehaviour {
 
     public void GenTerrain()
     {
-        for (int px = 0; px < m_width; px++)
+        for (int px = 0; px <= m_width; px++)
         {
             int stone = Noise(px, 0, 80, 15, 1);
             stone += Noise(px, 0, 50, 30, 1);
@@ -230,7 +230,7 @@ public class MapMaker : MonoBehaviour {
             dirt += Noise(px, 0, 50, 30, 1);
             dirt += 75;
 
-            for (int py = 0; py < m_height; py++)
+            for (int py = 0; py <= m_height; py++)
             {
                 int x = px - (m_width / 2);
                 int y = py - (m_height / 2);
