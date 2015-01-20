@@ -27,5 +27,11 @@ namespace Architecture
             blocks[block.m_coord.x - m_coord.x, block.m_coord.y - m_coord.y] = null;
             SendUpdate();
         }
+
+        [ContextMenu("Refresh")]
+        void Refresh()
+        {
+            base.Refresh();
+        }
     }
 }
