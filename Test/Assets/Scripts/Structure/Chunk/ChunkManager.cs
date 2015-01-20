@@ -63,7 +63,6 @@ namespace Architecture
 
             m_chunks[coord] = chunk;
             chunk.transform.parent = transform;
-            chunk.gameObject.layer = LayerMask.NameToLayer("Tile");
 
             return chunk;
         }

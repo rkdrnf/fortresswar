@@ -21,6 +21,11 @@ public struct GridCoord
         this.y = y;
     }
 
+    public static GridCoord operator - (GridCoord a, GridCoord b)
+    {
+        return new GridCoord(a.x - b.x, a.y - b.y);
+    }
+
     public int ToIndex(int mapWidth)
     {
         return x + y * mapWidth;
