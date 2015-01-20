@@ -10,6 +10,7 @@ using Const;
 using Const.Effect;
 using Effect;
 using Data;
+using Architecture;
 
 [RequireComponent(typeof(NetworkView), typeof(Rigidbody2D), typeof(SpriteRenderer))]
 public abstract class Projectile : Weapon
@@ -27,11 +28,11 @@ public abstract class Projectile : Weapon
     private Vector2 direction;
     public AnimationEffectType explosionAnimation;
 
-    LayerMask tileMask;
+    public LayerMask collisionLayer;
 
     void Awake()
     {
-        tileMask = LayerMask.GetMask("Tile", "Building");
+        collisionLayer = LayerMask.GetMask("Tile", "Building", "Player");
         networkView.group = NetworkViewGroup.PROJECTILE;
         startPosition = transform.position;
 
@@ -121,15 +122,17 @@ public abstract class Projectile : Weapon
     {
         if (!Network.isServer) return;
 
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, rigidbody2D.velocity, 2f, tileMask);
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, rigidbody2D.velocity, 0.5f, collisionLayer);
 
         if (targetCollider.gameObject.CompareTag("Tile"))
         {
-            //OnCollideToTile(targetCollider.GetComponent<Tile>(), hit.point);
+            Tile tile = TileManager.Inst.Get(GridCoord.ToCoord(hit.point - (hit.normal * 0.5f)));
+            OnCollideToTile(tile, hit.point);
         }
         else if (targetCollider.gameObject.CompareTag("Building"))
         {
-            //OnCollideToBuilding(targetCollider.GetComponent<Building>(), hit.point);
+            Building building = BuildingManager.Inst.Get(GridCoord.ToCoord(hit.point - (hit.normal * 0.5f)));
+            OnCollideToBuilding(building, hit.point);
         }
         else if (targetCollider.gameObject.CompareTag("Player"))
         {
