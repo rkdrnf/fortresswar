@@ -203,35 +203,65 @@ namespace Packet
         }
 
         [ProtoContract]
+        public class RopeStaticStickInfo: Packet<RopeStaticStickInfo>
+        {
+            public RopeStaticStickInfo() { }
+            public RopeStaticStickInfo(bool sticked, long targetID, ObjectType objType, Vector2 pos)
+            {
+                this.sticked = sticked;
+                this.targetID = targetID;
+                this.objType = objType;
+                this.pos = pos;
+            }
+
+            [ProtoMember(1)]
+            public bool sticked;
+            [ProtoMember(2)]
+            public long targetID;
+            [ProtoMember(3)]
+            public ObjectType objType;
+            [ProtoMember(4)]
+            public Vector2 pos;
+        }
+
+        [ProtoContract]
         public class RopeStickInfo: Packet<RopeStickInfo>
         {
             public RopeStickInfo() { }
-            public RopeStickInfo(bool sticked, long targetID, ObjectType objType, Vector2 pos, Vector2 anchor, Vector2 targetAnchor)
+            public RopeStickInfo(bool sticked, RopableID rID, Vector2 pos, Vector2 anchor, Vector2 targetAnchor)
             {
                 this.isSticked = sticked;
-                this.targetID = targetID;
-                this.objType = objType;
+                m_RID = rID;
                 this.position = pos;
+                this.isStatic = false;
                 this.anchor = anchor;
                 this.targetAnchor = targetAnchor;
             }
 
-            [ProtoMember(1)]
-            public long targetID;
+            public RopeStickInfo(bool sticked, RopableID rID, Vector2 pos)
+            {
+                this.isSticked = sticked;
+                m_RID = rID;    
+                this.position = pos;
+                this.isStatic = true;
+            }
 
-            [ProtoMember(2)]
-            public ObjectType objType;
+            [ProtoMember(1)]
+            public RopableID m_RID;
 
             [ProtoMember(3)]
             public PacketVector2 position;
 
             [ProtoMember(4)]
-            public PacketVector2 anchor;
+            public bool isStatic;
 
             [ProtoMember(5)]
-            public PacketVector2 targetAnchor;
+            public PacketVector2 anchor;
 
             [ProtoMember(6)]
+            public PacketVector2 targetAnchor;
+
+            [ProtoMember(7)]
             public bool isSticked;
         }
 
@@ -277,7 +307,7 @@ namespace Packet
             public TileStatus() { }
             public TileStatus(Tile tile)
             {
-                m_ID = tile.m_ID;
+                m_ID = tile.GetID();
                 m_type = tile.m_data.type;
                 m_coord = tile.m_coord;
                 m_health = tile.m_health;
@@ -300,7 +330,7 @@ namespace Packet
             public BuildingStatus() { }
             public BuildingStatus(Building building)
             {
-                m_ID = building.m_ID;
+                m_ID = building.GetID();
                 m_coord = building.m_coord;
                 m_health = building.m_health;
                 m_falling = building.m_isFalling;

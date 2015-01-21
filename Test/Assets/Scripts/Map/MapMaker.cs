@@ -97,7 +97,7 @@ public class MapMaker : MonoBehaviour {
 
     public TileChunk AddChunk(GridCoord coord)
     {
-        TileChunk chunk = (TileChunk)Instantiate(m_chunkPrefab, coord.ToVector2(), Quaternion.identity);
+        TileChunk chunk = (TileChunk)Instantiate(m_chunkPrefab, new Vector3(coord.x, coord.y, 3), Quaternion.identity);
         chunk.Init(coord, m_chunkSize);
 
         m_chunks[coord] = chunk;
@@ -266,8 +266,7 @@ public class MapMaker : MonoBehaviour {
     
     public Tile GenTile(TileType type, GridCoord coord)
     {
-        Tile tile = new Tile();
-        tile.m_ID = tileID;
+        Tile tile = new Tile(tileID);
         tileID++;
         tile.InitForMaker(m_tileTypeDic[type], coord);
         return tile;

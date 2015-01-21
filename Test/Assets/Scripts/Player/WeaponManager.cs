@@ -225,7 +225,7 @@ using UnityEngine;
 
                 FireInfo info = new FireInfo(player.GetOwner(), player.transform.position, fire.direction);
 
-                weapon.Fire(info);
+                weapon.Fire(player, info);
             }
         }
 

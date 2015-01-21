@@ -121,7 +121,7 @@ public class Map : MonoBehaviour {
         foreach (Tile tile in tiles)
         {
             Tile newTile = new Tile(tile);
-            m_tileManager.Add(tile);
+            m_tileManager.Add(newTile);
         }
     }
 

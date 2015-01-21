@@ -38,10 +38,10 @@ public class WeaponInfo
     public WeaponType weaponType;
     public GameObject weaponPrefab;
 
-    public void Fire(FireInfo info)
+    public void Fire(ServerPlayer player, FireInfo info)
     {
         GameObject projObj = (GameObject)Network.Instantiate(weaponPrefab, info.origin, Quaternion.identity, 2);
-        projObj.GetComponent<Projectile>().Init(this, info);
+        projObj.GetComponent<Projectile>().Init(player, this, info);
 
         fireTimer = fireRate;
         ammo--;

@@ -12,7 +12,7 @@ public class Rope : Projectile {
 
     ServerPlayer ownerPlayer;
     private ServerPlayer ropeSource;
-    GameObject ropeTarget;
+    IRopable ropeTarget;
 
     public GameObject ropeImagePrefab;
     private float imageWidth;
@@ -66,26 +66,22 @@ public class Rope : Projectile {
 
     protected override void OnCollideToTile(Tile tile, Vector2 point)
     {
-        /*
         if (stickInfo.isSticked) return;
 
-        if (tile)
+        if (tile != null)
         {
-            ConnectRope(tile.gameObject, tile.m_ID, ObjectType.TILE);
+            ConnectRope(tile);
         }
-         * */
     }
 
     protected override void OnCollideToBuilding(Building building, Vector2 point)
     {
-        /*
         if (stickInfo.isSticked) return;
 
-        if (building)
+        if (building != null)
         {
-            ConnectRope(building.gameObject, building.m_ID, ObjectType.BUILDING);
+            ConnectRope(building);
         }
-         * */
     }
 
     protected override void OnCollideToPlayer(ServerPlayer character, Vector2 point)
@@ -101,8 +97,7 @@ public class Rope : Projectile {
             if (character.IsDead())
                 return;
 
-            ConnectRope(character.gameObject, character.GetOwner(), ObjectType.PLAYER);
-            
+            ConnectRope(character);
         }
     }
 
@@ -145,16 +140,19 @@ public class Rope : Projectile {
         }
     }
 
-    void ConnectRope(GameObject target, long targetID, ObjectType objType)
+    void ConnectRope(IRopable ropable)
     {
         if (stickInfo.isSticked) return;
 
-        if (ServerGame.Inst.isDedicatedServer == false)
-            ropeSource = PlayerManager.Inst.Get(owner);
+        Stick(ropable, transform.position);
 
-        StickToTarget(target, targetID, objType);
+        ConnectToOwner();
+    }
 
+    void ConnectToOwner()
+    {
         ownerPlayer = PlayerManager.Inst.Get(owner);
+        ropeSource = PlayerManager.Inst.Get(owner);
 
         ropeSJ = gameObject.AddComponent<SpringJoint2D>();
         ropeSJ.connectedBody = ownerPlayer.rigidbody2D;
@@ -162,29 +160,27 @@ public class Rope : Projectile {
         ropeSJ.frequency = 2;
         ropeSJ.dampingRatio = 1;
 
-        ownerPlayer.Roped(this);
+        ownerPlayer.RopeFired(this);
     }
 
-    void StickToTarget(GameObject target, long targetID, ObjectType objType)
+    void Stick(IRopable ropable, Vector2 position)
     {
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, target.transform.position - transform.position, 5);
-
-        stickHJ = gameObject.AddComponent<HingeJoint2D>();
-        stickHJ.connectedBody = target.rigidbody2D;
-        stickHJ.anchor = transform.InverseTransformPoint(hit.point);
-        stickHJ.connectedAnchor = target.transform.InverseTransformPoint(hit.point);
         rigidbody2D.velocity = new Vector2(0f, 0f);
 
-        if (target.tag == "Player")
-        {
-            target.GetComponent<ServerPlayer>().RopedToMe(this);
-        }
+        ropable.Roped(this, position);
 
-        ropeTarget = target;
+        ropeTarget = ropable;
 
-
-        stickInfo = new S2C.RopeStickInfo(true, targetID, objType, transform.position, stickHJ.anchor, stickHJ.connectedAnchor);
+        stickInfo = new S2C.RopeStickInfo(true, ropable.GetRopableID(), position);
         networkView.RPC("SetRopeStuck", RPCMode.Others, stickInfo.SerializeToBytes());
+    }
+
+    public void MakeHingeJoint(Rigidbody2D targetBody, Vector2 position, Vector2 connectedPosition)
+    {
+        stickHJ = gameObject.AddComponent<HingeJoint2D>();
+        stickHJ.connectedBody = targetBody;
+        stickHJ.anchor = transform.InverseTransformPoint(position);
+        stickHJ.connectedAnchor = connectedPosition; 
     }
 
     [RPC]
@@ -202,40 +198,37 @@ public class Rope : Projectile {
         if (stickInfo.isSticked == false)
             return;
 
-        GameObject targetObj;
-
-        switch(info.objType)
+        IRopable ropable;
+        switch(info.m_RID.m_type)
         {
-            case ObjectType.PLAYER:
-                targetObj = PlayerManager.Inst.Get((int)info.targetID).gameObject;
-                break;
-
-            case ObjectType.PROJECTILE:
-                targetObj = ProjectileManager.Inst.Get(info.targetID).gameObject;
-                break;
-
             case ObjectType.TILE:
-                //targetObj = TileManager.Inst.Get(Game.Inst.map.ToGridCoord((int)info.targetID)).gameObject;
+                ropable = TileManager.Inst.Get((int)info.m_RID.m_ID);
                 break;
 
             case ObjectType.BUILDING:
-                //targetObj = BuildingManager.Inst.Get(Game.Inst.map.ToGridCoord((int)info.targetID)).gameObject;
+                ropable = BuildingManager.Inst.Get((int)info.m_RID.m_ID);
                 break;
 
+            case ObjectType.PLAYER:
+                ropable = PlayerManager.Inst.Get((int)info.m_RID.m_ID);
+                break;
+
+            case ObjectType.PROJECTILE:
+                ropable = ProjectileManager.Inst.Get(info.m_RID.m_ID);
+                break;
+        
             default:
                 return;
         }
 
-        ropeSource = PlayerManager.Inst.Get(owner);
-
-        //transform.position = targetObj.transform.TransformPoint(info.targetAnchor);
-        stickHJ = gameObject.AddComponent<HingeJoint2D>();
-        //stickHJ.connectedBody = targetObj.rigidbody2D;
-        stickHJ.anchor = info.anchor;
-        stickHJ.connectedAnchor = info.targetAnchor;
         rigidbody2D.velocity = new Vector2(0f, 0f);
+
+        ropable.Roped(this, info.position);
+
+        ropeTarget = ropable;
+
+        ropeSource = PlayerManager.Inst.Get(owner);
     }
-    
 
     public void Cut()
     {
@@ -253,9 +246,9 @@ public class Rope : Projectile {
 
         rigidbody2D.mass = 1;
 
-        if (ropeTarget.tag == "Player")
+        if (ropeTarget != null)
         {
-            ropeTarget.GetComponent<ServerPlayer>().CutInfectingRope(this);
+            ropeTarget.CutInfectingRope(this);
         }
     }
 

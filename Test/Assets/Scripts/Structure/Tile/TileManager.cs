@@ -61,7 +61,7 @@ namespace Architecture
         public void Add(Tile tile)
         {
             m_tileMap.Add(tile.m_coord, tile);
-            m_tileIDMap.Add(tile.m_ID, tile);
+            m_tileIDMap.Add(tile.GetID(), tile);
 
             m_tileChunkManager.AddBlock(tile);
 
@@ -73,7 +73,7 @@ namespace Architecture
             if (m_tileMap.ContainsKey(tile.m_coord) && m_tileMap[tile.m_coord] == tile)
                 m_tileMap.Remove(tile.m_coord);
 
-            m_tileIDMap.Remove(tile.m_ID);
+            m_tileIDMap.Remove(tile.GetID());
 
             m_tileChunkManager.RemoveBlock(tile);
         }

@@ -66,3 +66,21 @@ public struct GridCoord
         return string.Format("X: {0} Y: {1}", x, y);
     }
 }
+
+[System.Serializable]
+public struct GridCoordDist
+{
+    public GridCoord coord;
+    public float distance;
+
+    public GridCoordDist(GridCoord coord, float dist)
+    {
+        this.coord = coord;
+        this.distance = dist;
+    }
+
+    public override string ToString()
+    {
+        return string.Format("Coord: {0} Dist: {1}", coord, distance);
+    }
+}
