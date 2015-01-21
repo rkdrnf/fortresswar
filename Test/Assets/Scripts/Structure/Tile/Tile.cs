@@ -18,13 +18,14 @@ public class Tile : Structure<Tile, TileData>
         get { return TileNetwork.Inst; }
     }
     
-    public Tile()
+    public Tile(int ID)
     {
+        m_ID = ID;
     }
 
     public Tile(Tile tile)
     {
-        m_ID = tile.m_ID;
+        m_ID = tile.GetID();
         m_coord = tile.m_coord;
         m_data = tile.m_data;
         m_direction = tile.m_direction;

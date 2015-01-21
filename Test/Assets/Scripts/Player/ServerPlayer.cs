@@ -13,15 +13,15 @@ using System.Threading;
 using Character;
 using Maps;
 
-    public class ServerPlayer : MonoBehaviour
+    public class ServerPlayer : MonoBehaviour, IRopable
     {
 
-        int owner;
+        int m_owner;
         bool isOwner = false;
 
         public int GetOwner()
         {
-            return owner;
+            return m_owner;
         }
 
         public bool IsMine()
@@ -230,7 +230,7 @@ using Maps;
         [RPC]
         public void RequestCharacterStatus(NetworkMessageInfo info)
         {
-            PlayerSetting setting = PlayerManager.Inst.GetSetting(owner);
+            PlayerSetting setting = PlayerManager.Inst.GetSetting(m_owner);
             S2C.CharacterStatus pck = new S2C.CharacterStatus(setting.playerID, setting, GetInfo());
 
             networkView.RPC("SetOwner", info.sender, pck.SerializeToBytes());
@@ -267,7 +267,7 @@ using Maps;
 
         public void OnSetOwner(int playerID)
         {
-            isOwner = owner == ServerGame.Inst.GetID();
+            isOwner = m_owner == ServerGame.Inst.GetID();
 
             if (isOwner) // Set Camera to own character.
             {
@@ -298,7 +298,6 @@ using Maps;
             if (!Network.isServer) return;
 
             LoadSetting(setting);
-            
 
             LoadJob(m_job);
 
@@ -320,7 +319,7 @@ using Maps;
             //ServerCheck
 
             if (Network.isServer)
-                OnSetOwner(owner);
+                OnSetOwner(m_owner);
             else
                 networkView.RPC("RequestCharacterStatus", RPCMode.Server);
         }
@@ -353,7 +352,7 @@ using Maps;
         public void ChangeJob(byte[] pckData, NetworkMessageInfo info)
         {
             if (!Network.isServer) return;
-            if (!PlayerManager.Inst.IsValidPlayer(owner, info.sender)) return;
+            if (!PlayerManager.Inst.IsValidPlayer(m_owner, info.sender)) return;
 
             //TODO::JobChangeValidation
 
@@ -401,7 +400,9 @@ using Maps;
 
         public void LoadSetting(PlayerSetting setting)
         {
-            owner = setting.playerID;
+            m_owner = setting.playerID;
+            m_ropableID = new RopableID(ObjectType.PLAYER, setting.playerID);
+
 
             m_team = setting.team;
         }
@@ -435,7 +436,7 @@ using Maps;
         [RPC]
         public void Jump(NetworkMessageInfo info)
         {
-            if(!PlayerManager.Inst.IsValidPlayer(owner, info.sender)) return;
+            if(!PlayerManager.Inst.IsValidPlayer(m_owner, info.sender)) return;
             if (m_stateManager.IsInState(CharacterState.ROPING))
             {
                 m_ropeController.CutRope();
@@ -679,7 +680,13 @@ using Maps;
        
 
         // Ropes
+        RopableID m_ropableID;
         RopeController m_ropeController;
+
+        public RopableID GetRopableID()
+        {
+            return m_ropableID;
+        }
 
         public void CutInfectingRope(Rope rope)
         {
@@ -689,11 +696,17 @@ using Maps;
         {
             m_ropeController.StopRoping();
         }
-        public void RopedToMe(Rope newRope)
+
+        public void Roped(Rope newRope, Vector2 position)
         {
+            //RaycastHit2D hit = Physics2D.Raycast(transform.position, target.transform.position - transform.position, 5);
+
+            newRope.MakeHingeJoint(rigidbody2D, position, transform.InverseTransformPoint(position));
+
             m_ropeController.RopedToMe(newRope);
         }
-        public void Roped(Rope newRope)
+
+        public void RopeFired(Rope newRope)
         {
             m_ropeController.Roped(newRope);
         }

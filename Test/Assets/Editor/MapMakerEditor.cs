@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Data;
 using Architecture;
+using Util;
 
 [CustomEditor(typeof(MapMaker))]
 public class MapMakerEditor : Editor {
@@ -40,7 +41,7 @@ public class MapMakerEditor : Editor {
             }
             drawTimer = Time.realtimeSinceStartup;
 
-            List<Vector2> points = GetPointsInRange(worldMousePos, maker.m_brushSize);
+            List<GridCoordDist> points = USelection.GetCoordsInRange(worldMousePos, maker.m_brushSize);
 
             if (points.Count == 0)
             { 
@@ -49,9 +50,9 @@ public class MapMakerEditor : Editor {
                 return;
             }
 
-            foreach(Vector2 point in points)
+            foreach(GridCoordDist point in points)
             {
-                PutTile(point);
+                PutTile(point.coord.ToVector2());
             }
 		}
 
@@ -63,7 +64,7 @@ public class MapMakerEditor : Editor {
             }
             drawTimer = Time.realtimeSinceStartup;
 
-            List<Vector2> points = GetPointsInRange(worldMousePos, maker.m_brushSize);
+            List<GridCoordDist> points = USelection.GetCoordsInRange(worldMousePos, maker.m_brushSize);
 
             if (points.Count == 0)
             {
@@ -72,9 +73,9 @@ public class MapMakerEditor : Editor {
                 return;
             }
 
-            foreach (Vector2 point in points)
+            foreach (GridCoordDist point in points)
             {
-                DeleteTile(point);
+                DeleteTile(point.coord.ToVector2());
             }
         }
 
@@ -103,32 +104,6 @@ public class MapMakerEditor : Editor {
         
         maker.Remove(coord);
     }
-
-    List<Vector2> GetPointsInRange(Vector2 center, float radius)
-    {
-        List<Vector2> points = new List<Vector2>();
-
-        int yBottom = Mathf.CeilToInt(center.y - radius);
-        int yTop = Mathf.FloorToInt(center.y + radius);
-
-        for(int y = yBottom; y <= yTop; y++)
-        {
-            float yLength = center.y - y;
-            float xLengthSqr = (radius * radius) - (yLength * yLength);
-            float xLength = xLengthSqr < 0 ? 0 : Mathf.Sqrt(xLengthSqr);
-
-            int xLeft = Mathf.CeilToInt(center.x - xLength);
-            int xRight = Mathf.FloorToInt(center.x + xLength);
-
-            for(int x = xLeft; x <= xRight; x++)
-            {
-                points.Add(new Vector2(x, y));
-            }
-        }
-
-        return points;
-    }
-
 
 	public override void OnInspectorGUI()
 	{

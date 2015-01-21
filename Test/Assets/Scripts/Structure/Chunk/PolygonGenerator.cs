@@ -472,12 +472,12 @@ namespace Architecture
             }
             else //플레이모드
             {
-                mesh.Clear();
+                mesh.Clear(false);
             }
 
             mesh.vertices = newVertices.ToArray();
-            mesh.uv = newUV.ToArray();
             mesh.triangles = newTriangles.ToArray();
+            mesh.uv = newUV.ToArray();
 
             mesh.Optimize();
             mesh.RecalculateBounds();

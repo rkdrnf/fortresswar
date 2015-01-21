@@ -4,11 +4,6 @@ using Server;
 
 public class Missile : Projectile {
 
-    public int splashRange;
-    public int sqrSplashRange;
-    public int distDamping;
-    
-
     protected override void OnAwake()
     {
         sqrSplashRange = splashRange * splashRange;
@@ -47,66 +42,4 @@ public class Missile : Projectile {
             DestroyFromNetwork();
         }
     }
-
-
-    void DamageAround(Vector2 origin)
-    {
-        Collider2D[] colliders =
-            Physics2D.OverlapCircleAll(origin, (float)splashRange);
-
-        for (int i = 0; i < colliders.Length; ++i)
-        {
-            GameObject collidingObject = colliders[i].gameObject;
-
-            LayerMask tileLayer = LayerMask.GetMask("Tile");
-            if (collidingObject.CompareTag("Tile"))
-            {
-                RaycastHit2D hit = Physics2D.Linecast(collidingObject.transform.position, origin, tileLayer);
-                //collidingObject.GetComponent<Tile>().Damage(DamageByDistance(collidingObject.transform.position), hit.point);
-            }
-            else if (collidingObject.CompareTag("Player"))
-            {
-                collidingObject.GetComponent<ServerPlayer>().Damage(DamageByDistance(collidingObject.transform.position), new NetworkMessageInfo());
-                ImpactTargetAway(collidingObject.rigidbody2D, ImpactByDistance(collidingObject.transform.position));
-            }
-            else if (collidingObject.CompareTag("Building"))
-            {
-                //collidingObject.GetComponent<Building>().Damage(DamageByDistance(collidingObject.transform.position), Vector2.zero);
-            }
-        }
-    }
-
-    int ImpactByDistance(Vector3 targetPoint)
-    {
-        if (splashRange <= 0)
-        {
-            return impact;
-        }
-
-        Vector2 dist2D = transform.position - targetPoint;
-        int finalImpact = impact - (int)((impact * (dist2D.sqrMagnitude / sqrSplashRange)) * distDamping);
-
-        if (impact < 0)
-            return 0;
-
-        return impact;
-    }
-
-    int DamageByDistance(Vector3 targetPoint)
-    {
-        if (splashRange <= 0)
-        {
-            return damage;
-        }
-
-        Vector2 dist2D = transform.position - targetPoint;
-        int finalDamage = damage - (int)((damage * (dist2D.sqrMagnitude / sqrSplashRange)) * distDamping);
-
-        if (finalDamage < 0)
-            return 0;
-
-        return finalDamage;
-    }
-
-    
 }

@@ -49,7 +49,7 @@ namespace Architecture
         public void Add(Building building)
         {
             m_buildingMap.Add(building.m_coord, building);
-            m_buildingIDMap.Add(building.m_ID, building);
+            m_buildingIDMap.Add(building.GetID(), building);
 
             m_buildingChunkManager.AddBlock(building);
 
@@ -61,7 +61,7 @@ namespace Architecture
             if (m_buildingMap.ContainsKey(building.m_coord) && m_buildingMap[building.m_coord] == building)
                 m_buildingMap.Remove(building.m_coord);
 
-            m_buildingIDMap.Remove(building.m_ID);
+            m_buildingIDMap.Remove(building.GetID());
 
             m_buildingChunkManager.RemoveBlock(building);
         }

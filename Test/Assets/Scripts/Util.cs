@@ -11,6 +11,7 @@ using System;
 using UnityEngine;
 using Const;
 using System.Globalization;
+using System.Collections.Generic;
 
 namespace Util
 {
@@ -174,6 +175,35 @@ namespace Util
             if ((a < 0 && n > 0) || (a > 0 && n < 0))
                 result += n;
             return result % n;
+        }
+    }
+
+    public abstract class USelection
+    {
+        public static List<GridCoordDist> GetCoordsInRange(Vector2 center, float radius)
+        {
+            List<GridCoordDist> points = new List<GridCoordDist>();
+
+            int yBottom = Mathf.CeilToInt(center.y - radius);
+            int yTop = Mathf.FloorToInt(center.y + radius);
+
+            for (int y = yBottom; y <= yTop; y++)
+            {
+                float yLength = center.y - y;
+                float xLengthSqr = (radius * radius) - (yLength * yLength);
+                float xLength = xLengthSqr < 0 ? 0 : Mathf.Sqrt(xLengthSqr);
+
+                int xLeft = Mathf.CeilToInt(center.x - xLength);
+                int xRight = Mathf.FloorToInt(center.x + xLength);
+
+                for (int x = xLeft; x <= xRight; x++)
+                {
+                    float length = Mathf.Sqrt((center.x - x) * (center.x - x) + (yLength * yLength));
+                    points.Add(new GridCoordDist(new GridCoord(x, y), length));
+                }
+            }
+
+            return points;
         }
     }
 }
