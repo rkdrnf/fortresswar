@@ -12,7 +12,7 @@ using Architecture;
 using Maps;
 
 [Serializable]
-public class Building : Structure<Building, BuildingData>
+public class Building : Structure<Building, BuildingData>, ISuspension
 {
     private BuildingNetwork network
     {
@@ -24,23 +24,35 @@ public class Building : Structure<Building, BuildingData>
     public Building()
     { }
 
-    public Building(Building building)
+    public Building(int ID, BuildingData bData, GridCoord coord)
     {
-        m_ID = building.m_ID;
-        m_coord = building.m_coord;
+        Init(bData, coord);
+        SetID(ID);
+    }
+
+    public Building(int ID, Building building)
+    {
         m_data = building.m_data;
+        SetID(ID);
+        m_coord = building.m_coord;
+        
         m_direction = building.m_direction;
         m_health = building.m_health;
         m_isFalling = building.m_isFalling;
+        m_collidable = building.m_collidable;
+
     }
 
     public Building(S2C.BuildingStatus status)
     {
-        m_ID = status.m_ID;
+        m_data = BuildingManager.Inst.GetBuildingData(status.m_type);
+        SetID(status.m_ID);
         m_coord = status.m_coord;
-        m_isFalling = status.m_falling;
         m_direction = status.m_direction;
+
+        m_isFalling = status.m_falling;
         SetHealth(status.m_health, DestroyReason.MANUAL);
+
         if (m_isFalling)
         {
             Fall();
@@ -51,17 +63,18 @@ public class Building : Structure<Building, BuildingData>
     {
         if (!Network.isServer) return;
 
+        m_data = bData;
         m_coord = coord;
         m_health = m_data.maxHealth;
+        m_collidable = bData.collidable;
         
         FillSuspension();
         FillNeighbors();
 
-        BuildingManager.Inst.Add(this);
-
         //rendering
         if (ServerGame.Inst.isDedicatedServer) return;
-        GetSprite(m_health);
+        m_spriteIndex = GetSprite(m_health);
+        
     }
 
     protected override void BroadcastHealth(int health, DestroyReason reason)
@@ -73,7 +86,9 @@ public class Building : Structure<Building, BuildingData>
     {
         if (Network.isServer) network.BroadcastFall(m_ID);
 
-        BuildingManager.Inst.RemoveFromChunk(this);
+        BuildingManager.Inst.Fall(this);
+
+        
 
         //떨어지는 오브젝트로 새로 생성
 
@@ -120,16 +135,18 @@ public class Building : Structure<Building, BuildingData>
             case DestroyReason.COLLIDE:
                 break;
         }
-
-        //Network.RemoveRPCs(networkView.viewID);
-        //Network.Destroy(gameObject);
     }
 
     protected override void OnRecvBreak() { }
 
     public void PropagateDestruction()
     {
-        m_neighbors.DoForAll((GridDirection direction, Building building) => { building.DestroyNeighbor(direction); }); 
+        m_neighbors.DoForAll((GridDirection direction, Building building) => { building.DestroyNeighbor(direction); });
+        if (m_suspension.down is Building)
+        {
+            (m_suspension.down as Building).DestroyNeighbor(GridDirection.UP);
+        }
+        
     }
 
     public void DestroyNeighbor(GridDirection direction)
@@ -222,13 +239,11 @@ public class Building : Structure<Building, BuildingData>
 
     public void PropagateAsNeighbor()
     {
-        /*
-        m_suspension.DoForAll((GridDirection direction, MonoBehaviour behaviour) =>
+        m_suspension.DoForAll((GridDirection direction, ISuspension suspension) =>
         {
-            if (behaviour is Building)
-                (behaviour as Building).AddNeighbor(direction, this);
+            if (suspension is Building)
+                (suspension as Building).AddNeighbor(direction, this);
         });
-         * */
     }
 
     public void LogForDebug()

@@ -57,6 +57,10 @@ using Maps;
 
             keyFocusManager = new KeyFocusManager(InputKeyFocus.PLAYER);
             mouseFocusManager = new MouseFocusManager(InputMouseFocus.PLAYER);
+
+            int projectileLayer = LayerMask.NameToLayer("Projectile");
+            Physics2D.IgnoreLayerCollision(projectileLayer, projectileLayer);
+            Physics2D.IgnoreLayerCollision(projectileLayer, LayerMask.NameToLayer("Particle"));
         }
 
         void Start()
@@ -242,7 +246,8 @@ using Maps;
             int playerID = PlayerManager.Inst.GetID(player);
             ServerPlayer character = PlayerManager.Inst.Get(playerID);
 
-            character.RemoveCharacterFromNetwork();
+            if (character != null)
+                character.RemoveCharacterFromNetwork();
 
             networkView.RPC("RecvPlayerRemove", RPCMode.Others, playerID);
         }

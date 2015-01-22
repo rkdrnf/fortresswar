@@ -12,11 +12,5 @@ namespace Data
     {
         public TileType type;
         public Sprite tileBack;
-
-        public void Test()
-        {
-            TileData a = new TileData();
-
-        }
     }
 }

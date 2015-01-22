@@ -12,6 +12,7 @@ using C2S = Packet.C2S;
 using System.Threading;
 using Character;
 using Maps;
+using Const.Character;
 
     public class ServerPlayer : MonoBehaviour, IRopable
     {
@@ -251,7 +252,7 @@ using Maps;
 
             OnSetOwner(pck.playerID);
 
-            SetHealth(pck.info.health, info.timestamp);
+            SetHealth(pck.info.health, DamageReason.MANUAL);
             m_stateManager.SetState(pck.info.state);
 
             m_weaponManager.TryChangeWeapon(pck.info.weapon, info.timestamp);
@@ -379,9 +380,8 @@ using Maps;
             m_jobStat = newJobStat;
 
             if (Network.isServer)
-            { 
-                m_health = Mathf.Min(m_health, newJobStat.MaxHealth);
-                BroadcastHealth(m_health);
+            {
+                SetHealth(Mathf.Min(m_health, newJobStat.MaxHealth), DamageReason.MANUAL);
             }
 
             m_weaponManager.LoadWeapons(newJobStat.Weapons);
@@ -394,15 +394,13 @@ using Maps;
 
             m_characterRenderer.LoadAnimation(m_team);
 
-            if (Network.isServer)
-                BroadcastDie();
+            Die(DamageReason.MANUAL);
         }
 
         public void LoadSetting(PlayerSetting setting)
         {
             m_owner = setting.playerID;
-            m_ropableID = new RopableID(ObjectType.PLAYER, setting.playerID);
-
+            m_ropableController = new RopableController(this, new RopableID(ObjectType.PLAYER, setting.playerID));
 
             m_team = setting.team;
         }
@@ -429,7 +427,7 @@ using Maps;
 
             if (IsDead() == false && Map.Inst.CheckInBorder(this) == false)
             {
-                BroadcastDie();
+                Die(DamageReason.MANUAL);
             }
         }
 
@@ -472,91 +470,66 @@ using Maps;
             if (IsDead())
                 return;
 
-            m_health -= damage;
-            if (m_health < 0)
-            {
-                m_health = 0;
-            }
-
-            BroadcastDamage(damage);
-
-            if (m_health <= 0)
-                BroadcastDie();
+            SetHealth(m_health - damage, DamageReason.DAMAGE);
         }
 
-        void BroadcastHealth(int health)
+        void BroadcastHealth(int health, int delta, DamageReason reason)
         {
-            if (!ServerGame.Inst.isDedicatedServer)
-                networkView.RPC("RecvHealth", RPCMode.All, health);
-            else
-                networkView.RPC("RecvHealth", RPCMode.Others, health);
+            S2C.SetCharacterHealth pck = new S2C.SetCharacterHealth(health, delta, reason);
+
+            networkView.RPC("RecvHealth", RPCMode.Others, pck.SerializeToBytes());
         }
         
-        void BroadcastDamage(int damage)
-        {
-            if (!ServerGame.Inst.isDedicatedServer)
-                networkView.RPC("RecvDamage", RPCMode.All, damage);
-            else
-                networkView.RPC("RecvDamage", RPCMode.Others, damage);
-        }
-
         [RPC]
-        void RecvHealth(int health, NetworkMessageInfo info)
+        void RecvHealth(byte[] pckData, NetworkMessageInfo info)
         {
             //ServerCheck
+            S2C.SetCharacterHealth pck = S2C.SetCharacterHealth.DeserializeFromBytes(pckData);
 
-            SetHealth(health, info.timestamp);
+            SetHealth(pck.m_health, pck.m_reason);
         }
 
-        [RPC]
-        void RecvDamage(int damage, NetworkMessageInfo info)
+        void SetHealth(int health, DamageReason reason)
         {
-            //ServerCheck
-
-            if (damage == 0) return;
-
-            //old damage;
-            SetHealth(m_health - damage, info.timestamp);
-
-            m_characterRenderer.Highlight(Const.Effect.CharacterHighlight.DAMAGE);
-        }
-
-        void SetHealth(int health, double settingTime)
-        {
+            int original = m_health;
             m_health = health;
 
-            if (m_health < 0)
+            if (m_health <= 0)
             {
                 m_health = 0;
             }
+
+            if (Network.isServer)
+                BroadcastHealth(m_health, m_health - original, reason);
+
+            if (m_health == 0)
+                Die(reason);
+
+            if (Network.isClient || !ServerGame.Inst.isDedicatedServer) //rendering
+            {
+                switch(reason)
+                {
+                    case DamageReason.DAMAGE:
+                        m_characterRenderer.Highlight(Const.Effect.CharacterHighlight.DAMAGE);
+                        break;
+
+                    default:
+                        break;
+                }
+            }
         }
 
-        public void BroadcastDie()
+        void Die(DamageReason reason)
         {
-            if (!Network.isServer) return;
+            if (m_stateManager.IsInState(CharacterState.DEAD)) return;
 
-            OnDie();
-
-            if (!ServerGame.Inst.isDedicatedServer)
-                networkView.RPC("RecvDie", RPCMode.All);
-            else
-                networkView.RPC("RecvDie", RPCMode.Others);
-        }
-
-        void OnDie()
-        {
-            m_stateManager.SetState(CharacterState.DEAD);
+            m_health = 0;
             revivalTimer = REVIVAL_TIME;
+
+            if (Network.isServer)
+                m_stateManager.SetState(CharacterState.DEAD);
         }
-
-        [RPC]
-        void RecvDie(NetworkMessageInfo info)
-        {
-            //ServerCheck
-
-            SetHealth(0, info.timestamp);
-        }
-
+        
         public bool IsDead()
         {
             return m_stateManager.IsInState(CharacterState.DEAD);
@@ -603,7 +576,8 @@ using Maps;
             m_weaponManager.ReloadAll();
             m_health = m_jobStat.MaxHealth;
 
-            m_ropeController.CutRopeAll();
+            m_ropableController.CutRopeAll();
+            m_ropeController.CutRope();
 
             BroadcastRevive();
         }
@@ -656,7 +630,7 @@ using Maps;
         // Build
         public void TryBuild(BuildingData building, Vector2 location)
         {
-            C2S.Build pck = new C2S.Build(building.buildingName, location);
+            C2S.Build pck = new C2S.Build(building.type, location);
 
             if (Network.isServer)
                 Build(pck.SerializeToBytes(), new NetworkMessageInfo());
@@ -680,21 +654,16 @@ using Maps;
        
 
         // Ropes
-        RopableID m_ropableID;
-        RopeController m_ropeController;
-
+        RopableController m_ropableController;
+       
         public RopableID GetRopableID()
         {
-            return m_ropableID;
+            return m_ropableController.GetRopableID();
         }
 
         public void CutInfectingRope(Rope rope)
         {
-            m_ropeController.CutInfectingRope(rope);
-        }
-        public void StopRoping()
-        {
-            m_ropeController.StopRoping();
+            m_ropableController.CutInfectingRope(rope);
         }
 
         public void Roped(Rope newRope, Vector2 position)
@@ -703,12 +672,23 @@ using Maps;
 
             newRope.MakeHingeJoint(rigidbody2D, position, transform.InverseTransformPoint(position));
 
-            m_ropeController.RopedToMe(newRope);
+            m_ropableController.Roped(newRope);
         }
 
+        public void CutRopeAll()
+        {
+            m_ropableController.CutRopeAll();
+        }
+
+        RopeController m_ropeController;
+
+        public void StopRoping()
+        {
+            m_ropeController.StopRoping();
+        }
         public void RopeFired(Rope newRope)
         {
-            m_ropeController.Roped(newRope);
+            m_ropeController.RopeFired(newRope);
         }
         public void OnFireRope(Rope newRope)
         {

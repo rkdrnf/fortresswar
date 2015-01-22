@@ -61,11 +61,11 @@ namespace Character
 
         public void Build(C2S.Build pck)
         {
-            BuildingData building = BuildingDataLoader.Inst.GetBuilding(pck.buildingName);
+            BuildingData bData = BuildingManager.Inst.GetBuildingData(pck.m_type);
 
-            if (!CanBuild(building)) return;
+            if (!CanBuild(bData)) return;
 
-            BuildingManager.Inst.Build(building, GridCoord.ToCoord(pck.position));
+            BuildingManager.Inst.Build(bData, GridCoord.ToCoord(pck.m_position));
         }
     }
 }

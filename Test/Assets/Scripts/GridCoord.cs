@@ -36,6 +36,11 @@ public struct GridCoord
         return new GridCoord(Mathf.FloorToInt(position.x + 0.5f), Mathf.FloorToInt(position.y + 0.5f));
     }
 
+    public static GridCoord ToCoordDown(Vector2 position)
+    {
+        return new GridCoord(Mathf.FloorToInt(position.x - 0.5f), Mathf.FloorToInt(position.y - 0.5f));
+    }
+
     public Vector2 ToVector2()
     {
         return new Vector2(x, y);

@@ -22,6 +22,8 @@ namespace Packet
             public MapInfo(string mapName, List<Tile> tileList, List<Building> buildingList)
             {
                 m_mapName = mapName;
+                m_tiles = new List<TileStatus>();
+                m_buildings = new List<BuildingStatus>();
 
                 foreach(Tile tile in tileList)
                 {
@@ -283,6 +285,25 @@ namespace Packet
         }
 
         [ProtoContract]
+        public class SetCharacterHealth : Packet<SetCharacterHealth>
+        {
+            public SetCharacterHealth() { }
+            public SetCharacterHealth(int health, int delta, Const.Character.DamageReason reason)
+            {
+                m_health = health;
+                m_delta = delta;
+                m_reason = reason;
+            }
+
+            [ProtoMember(1)]
+            public int m_health;
+            [ProtoMember(2)]
+            public int m_delta;
+            [ProtoMember(3)]
+            public Const.Character.DamageReason m_reason;
+        }
+
+        [ProtoContract]
         public class SetStructureHealth: Packet<SetStructureHealth>
         {
             public SetStructureHealth() { }
@@ -335,6 +356,7 @@ namespace Packet
                 m_health = building.m_health;
                 m_falling = building.m_isFalling;
                 m_direction = building.m_direction;
+                m_type = building.m_data.type;
             }
 
             [ProtoMember(1)]
@@ -347,6 +369,8 @@ namespace Packet
             public GridDirection m_direction;
             [ProtoMember(5)]
             public int m_ID;
+            [ProtoMember(6)]
+            public BuildingType m_type;
         }
 
     }
@@ -476,16 +500,16 @@ namespace Packet
         public class Build : Packet<Build>
         {
             public Build() { }
-            public Build(string buildingName, Vector2 position)
+            public Build(BuildingType buildingType, Vector2 position)
             {
-                this.buildingName = buildingName;
-                this.position = position;
+                m_type = buildingType;
+                m_position = position;
             }
 
             [ProtoMember(1)]
-            public string buildingName;
+            public BuildingType m_type;
             [ProtoMember(2)]
-            public PacketVector2 position;
+            public PacketVector2 m_position;
         }
     }
 }

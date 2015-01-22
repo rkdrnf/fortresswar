@@ -9,10 +9,10 @@ namespace Architecture
 {
     public struct Suspension
     {
-        public Tile center;
-        public MonoBehaviour left;
-        public MonoBehaviour down;
-        public MonoBehaviour right;
+        public ISuspension center;
+        public ISuspension left;
+        public ISuspension down;
+        public ISuspension right;
 
         public bool isPermanent
         {
@@ -74,7 +74,6 @@ namespace Architecture
 
         public void Add(GridDirection direction, Building building)
         {
-            /*
             switch (direction)
             {
                 case GridDirection.LEFT:
@@ -89,10 +88,9 @@ namespace Architecture
                     down = down == null ? building : down;
                     break;
             }
-             * */
         }
 
-        public void DoForAll(Action<GridDirection, MonoBehaviour> action)
+        public void DoForAll(Action<GridDirection, ISuspension> action)
         {
             if (left != null)
                 action(GridDirection.RIGHT, left);

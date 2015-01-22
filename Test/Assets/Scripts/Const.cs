@@ -218,6 +218,17 @@ namespace Const
         RIGHT
     }
 
+    namespace Character
+    {
+        public enum DamageReason
+        {
+            DAMAGE,
+            HEAL,
+            COLLIDE,
+            MANUAL,
+        }
+    }
+
     namespace Effect
     {
         public enum CharacterHighlight

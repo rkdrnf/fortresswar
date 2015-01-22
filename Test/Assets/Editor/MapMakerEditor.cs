@@ -91,9 +91,7 @@ public class MapMakerEditor : Editor {
          
         if (maker.m_tiles.ContainsKey(coord)) return;
 
-        Tile tile = new Tile();
-        
-        tile.InitForMaker(maker.m_brushTile, coord);
+        Tile tile = maker.GenBrushTile(coord);
 
         maker.Add(tile);
     }
