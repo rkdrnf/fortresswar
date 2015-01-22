@@ -11,6 +11,7 @@ public interface IRopable
     RopableID GetRopableID();
     void Roped(Rope rope, Vector2 position);
     void CutInfectingRope(Rope rope);
+    void CutRopeAll();
 }
 
 [ProtoContract]

@@ -137,19 +137,53 @@ public abstract class Projectile : Weapon
         if (!Network.isServer) return;
 
         //RaycastHit2D hit = Physics2D.Raycast(transform.position, rigidbody2D.velocity, 0.5f, collisionLayer);
-        Debug.Log("Coll: " + coll.contacts[0].point);
-
-        ContactPoint2D contact = coll.contacts[0];
+        Debug.Log("ColObj " + LayerMask.LayerToName(coll.gameObject.layer));
+        foreach(ContactPoint2D con in coll.contacts)
+        { 
+            Debug.Log("Coll: " + con.point);
+        }
 
         if (coll.gameObject.CompareTag("Tile"))
         {
-            Tile tile = TileManager.Inst.Get(GridCoord.ToCoord(contact.point - (contact.normal * 0.5f)));
-            OnCollideToTile(tile, contact.point);
+            Tile tile = null;
+            foreach(ContactPoint2D con in coll.contacts)
+            {
+                tile = TileManager.Inst.Get(GridCoord.ToCoord(con.point - (con.normal * 0.5f)));
+                if (tile != null)
+                {
+                    OnCollideToTile(tile, con.point);
+                    return;
+                }
+
+                tile = TileManager.Inst.Get(GridCoord.ToCoordDown(con.point - (con.normal * 0.5f)));
+                if (tile != null)
+                {
+                    OnCollideToTile(tile, con.point);
+                    return;
+                }
+            }
         }
-        else if (coll.gameObject.CompareTag("Building"))
+
+        if (coll.gameObject.CompareTag("Building"))
         {
-            Building building = BuildingManager.Inst.Get(GridCoord.ToCoord(contact.point - (contact.normal * 0.5f)));
-            OnCollideToBuilding(building, contact.point);
+            Building building = null;
+            foreach (ContactPoint2D con in coll.contacts)
+            {
+                building = BuildingManager.Inst.Get(GridCoord.ToCoord(con.point - (con.normal * 0.5f)));
+                if (building != null)
+                {
+                    OnCollideToBuilding(building, con.point);
+                    return;
+                }
+
+                building = BuildingManager.Inst.Get(GridCoord.ToCoordDown(con.point - (con.normal * 0.5f)));
+                if (building != null)
+                {
+                    OnCollideToBuilding(building, con.point);
+                    return;
+                }
+            }
+                 
         }
         else if (coll.gameObject.CompareTag("Player"))
         {
@@ -161,55 +195,16 @@ public abstract class Projectile : Weapon
                 PlayerSetting targetPlayerSetting = PlayerManager.Inst.GetSetting(character.GetOwner());
 
                 if (myPlayerSetting.team == targetPlayerSetting.team)
-
                     return;
             }
 
-            OnCollideToPlayer(character, contact.point);
+            OnCollideToPlayer(character, coll.contacts[0].point);
+            return;
         }
     }
-
-    /*
-
-    void OnTriggerEnter2D(Collider2D targetCollider)
-    {
-        if (!Network.isServer) return;
-
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, rigidbody2D.velocity, 0.5f, collisionLayer);
-
-        if (targetCollider.gameObject.CompareTag("Tile"))
-        {
-            Tile tile = TileManager.Inst.Get(GridCoord.ToCoord(hit.point - (hit.normal * 0.5f)));
-            OnCollideToTile(tile, hit.point);
-        }
-        else if (targetCollider.gameObject.CompareTag("Building"))
-        {
-            Building building = BuildingManager.Inst.Get(GridCoord.ToCoord(hit.point - (hit.normal * 0.5f)));
-            OnCollideToBuilding(building, hit.point);
-        }
-        else if (targetCollider.gameObject.CompareTag("Player"))
-        {
-            ServerPlayer character = targetCollider.gameObject.GetComponent<ServerPlayer>();
-
-            if (friendlyFire == false)
-            {
-                PlayerSetting myPlayerSetting = PlayerManager.Inst.GetSetting(owner);
-                PlayerSetting targetPlayerSetting = PlayerManager.Inst.GetSetting(character.GetOwner());
-
-                if (myPlayerSetting.team == targetPlayerSetting.team)
-
-                    return;
-            }
-            
-            OnCollideToPlayer(character, hit.point);
-        }
-    }
-     * */
 
     protected abstract void OnCollideToTile(Tile tile, Vector2 point);
-
     protected abstract void OnCollideToBuilding(Building tile, Vector2 point);
-
     protected abstract void OnCollideToPlayer(ServerPlayer character, Vector2 point);
 
     protected void DamageAround(Vector2 origin)

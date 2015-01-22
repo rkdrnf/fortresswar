@@ -52,6 +52,12 @@ namespace Architecture
             return m_ID;
         }
 
+        public void SetID(int ID)
+        {
+            m_ID = ID;
+            m_ropableController = new RopableController(this, new RopableID(m_data.objectType, m_ID));
+        }
+
 
         public void SetChunk(PolygonGenerator<T, DT> chunk)
         {
@@ -105,11 +111,11 @@ namespace Architecture
                 int particleAmount = 1;
                 if (m_health == 0)
                 {
-                    PlayDestructionAnimation();
+                    PlayDestructionAnimation(m_coord.ToVector2());
                     particleAmount = 3;
                 }
 
-                PlaySplash(particleAmount);
+                PlaySplash(particleAmount, m_coord.ToVector2());
             }
         }
 
@@ -160,21 +166,21 @@ namespace Architecture
             return index;
         }
 
-        protected void PlaySplash(int amount)
+        public void PlaySplash(int amount, Vector2 location)
         {
             ParticleSystem2D pSystem = ParticleManager.Inst.particleSystemPool.Borrow();
             if (pSystem == null) return;
 
             ParticleSystem2DData pSysData = ParticleManager.Inst.particleSet.particles[(int)m_data.particleType];
             pSystem.Init(pSysData);
-            pSystem.transform.position = m_coord.ToVector2();
+            pSystem.transform.position = location;
             pSystem.ChangeAmount(amount);
             pSystem.Play();
         }
 
-        void PlayDestructionAnimation()
+        public void PlayDestructionAnimation(Vector2 location)
         {
-            AnimationEffectManager.Inst.PlayAnimationEffect(m_data.destructionAnimation, m_coord.ToVector2());
+            AnimationEffectManager.Inst.PlayAnimationEffect(m_data.destructionAnimation, location);
         }
 
         
@@ -186,20 +192,27 @@ namespace Architecture
         }
 
 
-        RopableID m_ropableID;
+        protected RopableController m_ropableController;
 
         public RopableID GetRopableID()
         {
-            return m_ropableID;
+            return m_ropableController.GetRopableID();
         }
 
         public void Roped(Rope rope, Vector2 position)
         {
             rope.rigidbody2D.isKinematic = true;
+            m_ropableController.Roped(rope);
         }
 
         public void CutInfectingRope(Rope rope)
         {
+            m_ropableController.CutInfectingRope(rope);
+        }
+
+        public void CutRopeAll()
+        {
+            m_ropableController.CutRopeAll();
         }
     }
 }

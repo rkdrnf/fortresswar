@@ -110,7 +110,7 @@ namespace Architecture
 
             timer.Stop();
             TimeSpan timespan = timer.Elapsed;
-            Debug.Log("Build Mesh Time: " + timespan);
+            //Debug.Log("Build Mesh Time: " + timespan);
         }
         /*
         void BuildCollider()
@@ -210,8 +210,6 @@ namespace Architecture
 
         void MergeBetweenPaths()
         {
-
-            Debug.Log("MergePath");
             while (colPaths.Count > 0)
             {
                 List<Vector2> path = colPaths.First();
@@ -248,11 +246,11 @@ namespace Architecture
                 colPaths.Remove(head);
                 colPaths.Remove(tail);
 
-                Debug.Log("MergePath : " + String.Join(", ", path.Select((a) => a.ToString()).ToArray()));
+                //Debug.Log("MergePath : " + String.Join(", ", path.Select((a) => a.ToString()).ToArray()));
 
                 if (head != null)
                 {
-                    Debug.Log("HeadPath : " + String.Join(", ", head.Select((a) => a.ToString()).ToArray()));
+                    //Debug.Log("HeadPath : " + String.Join(", ", head.Select((a) => a.ToString()).ToArray()));
                     if ((head[head.Count - 1] - head[head.Count - 2]).normalized == (path[1] - path[0]).normalized)
                     {
                         head.Remove(head.Last());
@@ -611,7 +609,7 @@ namespace Architecture
                 UpdateMesh();
                 update = false;
 
-                Debug.Log("mesh updated");
+                //Debug.Log("mesh updated");
             }
         }
 

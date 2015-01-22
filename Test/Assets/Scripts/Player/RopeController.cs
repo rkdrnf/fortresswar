@@ -12,16 +12,12 @@ namespace Character
         Rope m_rope;
         object m_ropeLock = new object();
 
-        List<Rope> m_InfectingRopes;
-
         ServerPlayer m_player;
         
         public RopeController(ServerPlayer player)
         {
             m_player = player;
             m_rope = null;
-            m_InfectingRopes = new List<Rope>();
-            
         }
 
         public void ModifyRopeLength(float modifier)
@@ -34,7 +30,7 @@ namespace Character
             return m_rope.GetNormalVector();
         }
 
-        public void Roped(Rope newRope)
+        public void RopeFired(Rope newRope)
         {
             lock (m_ropeLock)
             {
@@ -44,26 +40,6 @@ namespace Character
                     m_player.ToAirMaterial();
                 }
             }
-        }
-
-        public void RopedToMe(Rope newRope)
-        {
-            m_InfectingRopes.Add(newRope);
-        }
-
-        public void CutInfectingRope(Rope rope)
-        {
-            m_InfectingRopes.Remove(rope);
-        }
-
-        public void CutRopeAll()
-        {
-            foreach (Rope rope in m_InfectingRopes)
-            {
-                rope.Cut();
-            }
-
-            CutRope();
         }
 
         public void OnFireRope(Rope newRope)

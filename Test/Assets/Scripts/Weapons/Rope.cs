@@ -213,14 +213,16 @@ public class Rope : Projectile {
                 ropable = PlayerManager.Inst.Get((int)info.m_RID.m_ID);
                 break;
 
+                /*
             case ObjectType.PROJECTILE:
                 ropable = ProjectileManager.Inst.Get(info.m_RID.m_ID);
                 break;
-        
+        */
             default:
                 return;
         }
 
+        transform.position = stickInfo.position;
         rigidbody2D.velocity = new Vector2(0f, 0f);
 
         ropable.Roped(this, info.position);

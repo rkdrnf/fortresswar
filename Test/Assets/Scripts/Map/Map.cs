@@ -50,12 +50,8 @@ public class Map : MonoBehaviour {
 
     void OnPlayerConnected(NetworkPlayer player)
     {
-        networkView.RPC("RecvMap", player, m_mapData);
-    }
-
-    void MakeMapInfo()
-    {
         S2C.MapInfo pck = new S2C.MapInfo(m_mapData.name, m_tileManager.GetTiles(), m_buildingManager.GetBuildings());
+        networkView.RPC("RecvMap", player, pck.SerializeToBytes());
     }
 
     [RPC]
@@ -120,8 +116,7 @@ public class Map : MonoBehaviour {
 
         foreach (Tile tile in tiles)
         {
-            Tile newTile = new Tile(tile);
-            m_tileManager.Add(newTile);
+            m_tileManager.New(tile);
         }
     }
 
@@ -132,6 +127,7 @@ public class Map : MonoBehaviour {
 
     public void LoadTiles(IEnumerable<S2C.TileStatus> tiles)
     {
+        if (tiles == null) return;
         foreach (S2C.TileStatus tile in tiles)
         {
             Tile newTile = new Tile(tile);
@@ -141,6 +137,7 @@ public class Map : MonoBehaviour {
 
     public void LoadBuildings(IEnumerable<S2C.BuildingStatus> buildings)
     {
+        if (buildings == null) return;
         foreach (S2C.BuildingStatus building in buildings)
         {
             Building newBuilding = new Building(building);

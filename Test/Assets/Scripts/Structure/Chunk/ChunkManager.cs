@@ -58,7 +58,7 @@ namespace Architecture
 
         public CT AddChunk(GridCoord coord)
         {
-            CT chunk = (CT)MonoBehaviour.Instantiate(m_chunkPrefab, coord.ToVector2(), Quaternion.identity);
+            CT chunk = (CT)MonoBehaviour.Instantiate(m_chunkPrefab, new Vector3(coord.x, coord.y, 3), Quaternion.identity);
             chunk.Init(coord, m_chunkSize);
 
             m_chunks[coord] = chunk;

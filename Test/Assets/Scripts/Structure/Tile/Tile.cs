@@ -9,9 +9,10 @@ using Const.Structure;
 using Architecture;
 using Data;
 using Maps;
+using Const;
 
 [Serializable]
-public class Tile : Structure<Tile, TileData> 
+public class Tile : Structure<Tile, TileData>, ISuspension
 {
     private TileNetwork network
     {
@@ -20,34 +21,29 @@ public class Tile : Structure<Tile, TileData>
     
     public Tile(int ID)
     {
-        m_ID = ID;
+        SetID(ID);
     }
 
-    public Tile(Tile tile)
+    public Tile(int ID, Tile tile)
     {
-        m_ID = tile.GetID();
-        m_coord = tile.m_coord;
         m_data = tile.m_data;
+        SetID(ID);
+        m_coord = tile.m_coord;
+        
         m_direction = tile.m_direction;
         m_health = tile.m_health;
         m_spriteIndex = tile.m_spriteIndex;
-
-        if (m_health > 0)
-            m_collidable = true;
+        m_collidable = tile.m_collidable;
     }
 
     public Tile(S2C.TileStatus status)
     {
-        m_ID = status.m_ID;
-        m_coord = status.m_coord;
         m_data = TileManager.Inst.GetTileData(status.m_type);
+        SetID(status.m_ID);
+        m_coord = status.m_coord;
         m_direction = Const.GridDirection.UP;
 
         SetHealth(status.m_health, DestroyReason.MANUAL);
-        if (m_health > 0)
-        {
-            m_collidable = true;
-        }
     }
 
     public void InitForMaker(TileData tData, GridCoord coord)
@@ -55,9 +51,7 @@ public class Tile : Structure<Tile, TileData>
         m_data = tData;
         m_coord = coord;
         m_health = tData.maxHealth;
-
-        if (m_health > 0)
-            m_collidable = true;
+        m_collidable = tData.collidable;
 
         RefreshSprite();
     }

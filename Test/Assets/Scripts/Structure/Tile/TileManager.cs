@@ -28,12 +28,12 @@ namespace Architecture
 
         int m_tileIndex;
 
-        public TileSet m_tileSet; // scene init
+        public TileSet m_tileSet = null; // scene init
         private Dictionary<TileType, TileData> m_tileDataDic;
         public LayerMask m_tileLayer;
 
         public TileChunkManager m_tileChunkManager = null; // scene init
-        
+
         void Awake()
         {
             instance = this;
@@ -58,14 +58,21 @@ namespace Architecture
             m_tileChunkManager.Clear();
         }
 
+        public void New(Tile tile)
+        {
+            Tile newTile = new Tile(m_tileIndex, tile);
+
+            Add(newTile);
+
+            m_tileIndex++;
+        }
+
         public void Add(Tile tile)
         {
             m_tileMap.Add(tile.m_coord, tile);
             m_tileIDMap.Add(tile.GetID(), tile);
 
             m_tileChunkManager.AddBlock(tile);
-
-            m_tileIndex++;
         }
 
         public void Remove(Tile tile)
