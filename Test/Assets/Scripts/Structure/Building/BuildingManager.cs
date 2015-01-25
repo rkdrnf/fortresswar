@@ -5,6 +5,7 @@ using System.Text;
 using UnityEngine;
 using Const;
 using Const.Structure;
+using System.Collections;
 
 namespace Architecture
 { 
@@ -34,7 +35,7 @@ namespace Architecture
         Dictionary<BuildingType, BuildingData> m_buildingDataDic;
         public LayerMask m_buildingLayer;
 
-        public FallingBuilding m_fallingBuildingPrefab = null; // scene init
+        public FallingBuildingPool m_fallingBuildingPool;
         
         public BuildingChunkManager m_buildingChunkManager = null; // scene init
 
@@ -75,10 +76,17 @@ namespace Architecture
 
         public void Add(Building building)
         {
-            m_buildingMap.Add(building.m_coord, building);
             m_buildingIDMap.Add(building.GetID(), building);
 
-            m_buildingChunkManager.AddBlock(building);
+            if (building.m_isFalling == false)
+            {
+                m_buildingMap.Add(building.m_coord, building);
+                m_buildingChunkManager.AddBlock(building);
+            }
+            else
+            {
+
+            }
         }
 
         public void Remove(Building building)
@@ -104,12 +112,47 @@ namespace Architecture
             m_buildingIDMap.Remove(building.GetID());
         }
 
+        List<Building> m_fallingList = new List<Building>();
+
         public void Fall(Building building)
         {
+            StartCoroutine(FallInternal(building));
+            //m_fallingList.Add(building);
+            /*
             RemoveFromChunk(building);
 
-            FallingBuilding falling = (FallingBuilding)Instantiate(m_fallingBuildingPrefab, building.m_coord.ToVector2(), Quaternion.identity);
-            falling.Init(building);
+            FallingBuilding falling = m_fallingBuildingPool.Borrow();
+
+            if (falling != null)
+                falling.Init(building);
+             * */
+        }
+
+        void Update()
+        {
+            if (m_fallingList.Count > 0)
+            {
+                //StartCoroutine(FallInternal(m_fallingList.ToArray()));
+                m_fallingList.Clear();
+            }
+        }
+
+
+        IEnumerator FallInternal(Building building)
+        {
+            yield return new WaitForFixedUpdate();
+
+            Debug.Log("FallFrame: " + Time.frameCount);
+            //for(int i = 0; i < fallings.Length; i++)
+            //{
+              //  Building building = fallings[i];
+                RemoveFromChunk(building);
+
+                FallingBuilding falling = m_fallingBuildingPool.Borrow();
+
+                if (falling != null)
+                    falling.Init(building);
+            //}
         }
 
         public Building Get(GridCoord coord)
@@ -140,12 +183,17 @@ namespace Architecture
 
         public void Build(BuildingData bData, GridCoord coord)
         {
-            if (!CanBuild(bData, coord)) return;
+            if (Network.isServer)
+            {
+                if (!CanBuild(bData, coord)) return;
+            }
 
             Building building = new Building(m_buildingIndex, bData, coord);
 
             Add(building);
             m_buildingIndex++;
+
+            BuildingNetwork.Inst.BroadcastBuild(building);
         }
 
         public bool CanBuild(BuildingData bData, GridCoord coord)
@@ -200,6 +248,8 @@ namespace Architecture
             return neighbors;
         }
     }
+
+    
 }    
 
     

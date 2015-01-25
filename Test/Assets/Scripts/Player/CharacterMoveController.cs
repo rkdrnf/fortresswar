@@ -18,11 +18,6 @@ namespace Character
             get { return m_player.GetInputY(); }
         }
 
-        Vector2 m_lookingDirection
-        {
-            get { return m_player.GetInputLookingDirection(); }
-        }
-
         float m_wallWalkTimer;
         bool m_facingRight;
 
@@ -98,11 +93,11 @@ namespace Character
                 }
 
 
-                if (m_lookingDirection.x < 0 && m_facingRight)
+                if (!m_player.IsLookingRight() && m_facingRight)
                 {
                     Flip();
                 }
-                if (m_lookingDirection.x > 0 && !m_facingRight)
+                if (m_player.IsLookingRight() && !m_facingRight)
                 {
                     Flip();
                 }

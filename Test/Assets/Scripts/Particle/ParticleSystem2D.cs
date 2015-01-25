@@ -2,6 +2,8 @@
 using System.Collections;
 using Util;
 
+namespace Particle
+{ 
     public class ParticleSystem2D : MonoBehaviour
     {
 
@@ -176,3 +178,5 @@ using Util;
             }
         }
     }
+
+}

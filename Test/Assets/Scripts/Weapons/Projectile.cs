@@ -49,10 +49,12 @@ public abstract class Projectile : Weapon
             collider.isTrigger = true;
         }
 
+        /* 늦은 접속자만 OnPlayerMapLoaded로 받고, 나머지는 BufferdRPC로 바로 받자
         if(Network.isClient && ServerGame.Inst.IsPlayerMapLoaded())
         {
             OnPlayerMapLoaded();
         }
+        */
 
         OnAwake();
 
@@ -68,12 +70,15 @@ public abstract class Projectile : Weapon
 
     public virtual void Init(ServerPlayer player, WeaponInfo weapon, FireInfo info)
     {
-        long projID = ProjectileManager.Inst.GetUniqueKeyForNewProjectile();
-        ProjectileManager.Inst.Set(projID, this);
         owner = player.GetOwner();
         direction = info.direction;
         rigidbody2D.AddForce(direction * GetPower(weapon), ForceMode2D.Impulse);
+        BroadcastInit();
 
+        long projID = ProjectileManager.Inst.GetUniqueKeyForNewProjectile();
+        ProjectileManager.Inst.Set(projID, this);
+        
+        
         Physics2D.IgnoreCollision(collider, player.GetComponent<Collider2D>());
 
         OnInit();
@@ -90,6 +95,14 @@ public abstract class Projectile : Weapon
         S2C.ProjectileStatus pck = new S2C.ProjectileStatus(owner, transform.position, rigidbody2D.velocity);
 
         networkView.RPC("SetStatus", info.sender, pck.SerializeToBytes());
+    }
+
+    [RPC]
+    void BroadcastInit()
+    {
+        S2C.ProjectileStatus pck = new S2C.ProjectileStatus(owner, transform.position, rigidbody2D.velocity);
+
+        networkView.RPC("SetStatus", RPCMode.OthersBuffered, pck.SerializeToBytes());
     }
 
     [RPC]
@@ -137,70 +150,95 @@ public abstract class Projectile : Weapon
         if (!Network.isServer) return;
 
         //RaycastHit2D hit = Physics2D.Raycast(transform.position, rigidbody2D.velocity, 0.5f, collisionLayer);
-        Debug.Log("ColObj " + LayerMask.LayerToName(coll.gameObject.layer));
-        foreach(ContactPoint2D con in coll.contacts)
-        { 
-            Debug.Log("Coll: " + con.point);
-        }
+        //Debug.Log("ColObj " + LayerMask.LayerToName(coll.gameObject.layer));
 
-        if (coll.gameObject.CompareTag("Tile"))
+        if (coll.gameObject.CompareTag("Tile") && CollideToTile(coll))
         {
-            Tile tile = null;
-            foreach(ContactPoint2D con in coll.contacts)
-            {
-                tile = TileManager.Inst.Get(GridCoord.ToCoord(con.point - (con.normal * 0.5f)));
-                if (tile != null)
-                {
-                    OnCollideToTile(tile, con.point);
-                    return;
-                }
-
-                tile = TileManager.Inst.Get(GridCoord.ToCoordDown(con.point - (con.normal * 0.5f)));
-                if (tile != null)
-                {
-                    OnCollideToTile(tile, con.point);
-                    return;
-                }
-            }
-        }
-
-        if (coll.gameObject.CompareTag("Building"))
-        {
-            Building building = null;
-            foreach (ContactPoint2D con in coll.contacts)
-            {
-                building = BuildingManager.Inst.Get(GridCoord.ToCoord(con.point - (con.normal * 0.5f)));
-                if (building != null)
-                {
-                    OnCollideToBuilding(building, con.point);
-                    return;
-                }
-
-                building = BuildingManager.Inst.Get(GridCoord.ToCoordDown(con.point - (con.normal * 0.5f)));
-                if (building != null)
-                {
-                    OnCollideToBuilding(building, con.point);
-                    return;
-                }
-            }
-                 
-        }
-        else if (coll.gameObject.CompareTag("Player"))
-        {
-            ServerPlayer character = coll.gameObject.GetComponent<ServerPlayer>();
-
-            if (friendlyFire == false)
-            {
-                PlayerSetting myPlayerSetting = PlayerManager.Inst.GetSetting(owner);
-                PlayerSetting targetPlayerSetting = PlayerManager.Inst.GetSetting(character.GetOwner());
-
-                if (myPlayerSetting.team == targetPlayerSetting.team)
-                    return;
-            }
-
-            OnCollideToPlayer(character, coll.contacts[0].point);
             return;
         }
+
+        if (coll.gameObject.CompareTag("Building") && CollideToBuilding(coll))
+        {
+            return;
+        }
+
+        if (coll.gameObject.CompareTag("Player") && CollideToPlayer(coll))
+        {
+            return;
+        }
+
+        if (coll.gameObject.CompareTag("FallingBuilding") && CollideToFallingBuilding(coll))
+        {
+            return;
+        }
+    }
+
+    public bool CollideToTile(Collision2D coll)
+    {
+        Tile tile = null;
+        foreach (ContactPoint2D con in coll.contacts)
+        {
+            tile = TileManager.Inst.Get(GridCoord.ToCoord(con.point - (con.normal * 0.5f)));
+            if (tile != null && tile.CanCollide())
+            {
+                OnCollideToTile(tile, con.point);
+                return true;
+            }
+
+            tile = TileManager.Inst.Get(GridCoord.ToCoordDown(con.point - (con.normal * 0.5f)));
+            if (tile != null && tile.CanCollide())
+            {
+                OnCollideToTile(tile, con.point);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public bool CollideToBuilding(Collision2D coll)
+    {
+        Building building = null;
+        foreach (ContactPoint2D con in coll.contacts)
+        {
+            building = BuildingManager.Inst.Get(GridCoord.ToCoord(con.point - (con.normal * 0.5f)));
+            if (building != null && building.CanCollide())
+            {
+                OnCollideToBuilding(building, con.point);
+                return true;
+            }
+
+            building = BuildingManager.Inst.Get(GridCoord.ToCoordDown(con.point - (con.normal * 0.5f)));
+            if (building != null && building.CanCollide())
+            {
+                OnCollideToBuilding(building, con.point);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public bool CollideToPlayer(Collision2D coll)
+    {
+        ServerPlayer character = coll.gameObject.GetComponent<ServerPlayer>();
+
+        if (friendlyFire == false)
+        {
+            PlayerSetting myPlayerSetting = PlayerManager.Inst.GetSetting(owner);
+            PlayerSetting targetPlayerSetting = PlayerManager.Inst.GetSetting(character.GetOwner());
+
+            if (myPlayerSetting.team == targetPlayerSetting.team)
+                return false;
+        }
+
+        OnCollideToPlayer(character, coll.contacts[0].point);
+        return true;
+    }
+
+    public bool CollideToFallingBuilding(Collision2D coll)
+    {
+        FallingBuilding fBuilding = coll.gameObject.GetComponent<FallingBuilding>();
+        return true;
     }
 
     protected abstract void OnCollideToTile(Tile tile, Vector2 point);

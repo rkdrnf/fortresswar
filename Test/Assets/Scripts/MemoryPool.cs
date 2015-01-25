@@ -5,13 +5,20 @@ using UnityEngine;
 using System.Threading;
 using Client;
 using Effect;
+using Architecture;
 
-public abstract class MemoryPool<T> where T : MonoBehaviour
+public abstract class MemoryPool<T> : MonoBehaviour 
+    where T : MonoBehaviour
 {
-    protected T prefab;
+    public T prefab = null; // scene init
     private int currentIndex;
-    private int poolSize;
+    public int poolSize = 0; // scene init
     object poolLock = new object();
+
+    void Awake()
+    {
+        Init(prefab, poolSize);
+    }
 
     protected void Init(T prefab, int size)
     {
@@ -21,6 +28,7 @@ public abstract class MemoryPool<T> where T : MonoBehaviour
         for (int i = 0; i < size; i++)
         {
             T obj = (T)MonoBehaviour.Instantiate(prefab);
+            obj.transform.parent = this.transform;
             prefabs.Add(obj);
             obj.gameObject.SetActive(false);
             
@@ -60,26 +68,5 @@ public abstract class MemoryPool<T> where T : MonoBehaviour
     List<T> prefabs;
 }
 
-public class ParticlePool : MemoryPool<Particle2D>
-{
-    public ParticlePool(Particle2D prefab, int size)
-    {
-        Init(prefab, size);
-    }
-}
 
-public class ParticleSystem2DPool : MemoryPool<ParticleSystem2D>
-{
-    public ParticleSystem2DPool(ParticleSystem2D prefab, int size)
-    {
-        Init (prefab, size);
-    }
-}
 
-public class AnimationEffectPool : MemoryPool<AnimationEffect>
-{
-    public AnimationEffectPool(AnimationEffect prefab, int size)
-    {
-        Init(prefab, size);
-    }
-}

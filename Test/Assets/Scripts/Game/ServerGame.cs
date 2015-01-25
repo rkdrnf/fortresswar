@@ -9,8 +9,7 @@ using S2C = Packet.S2C;
 using FocusManager;
 using InGameMenu;
 using Maps;
-
-    [RequireComponent(typeof(ParticleManager), typeof(PlayerManager), typeof(ProjectileManager))]
+    [RequireComponent(typeof(PlayerManager), typeof(ProjectileManager))]
     class ServerGame : MonoBehaviour
     {
         private static ServerGame instance;

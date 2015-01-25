@@ -5,6 +5,8 @@ using System.Text;
 using UnityEngine;
 using Const;
 
+namespace Particle
+{ 
     public class ParticleManager : MonoBehaviour
     {
         private static ParticleManager instance;
@@ -18,13 +20,8 @@ using Const;
             }
         }
         
-        [HideInInspector]
         public ParticlePool particlePool;
-        [HideInInspector]
         public ParticleSystem2DPool particleSystemPool;
-
-        public Particle2D particlePrefab;
-        public ParticleSystem2D particleSystemPrefab;
 
         public ParticleSystem2DSet particleSet;
 
@@ -35,11 +32,13 @@ using Const;
         {
             instance = this;
 
-            particlePool = new ParticlePool(particlePrefab, 800);
-            particleSystemPool = new ParticleSystem2DPool(particleSystemPrefab, 200);
-    
             int particleLayer = LayerMask.NameToLayer("Particle");
             Physics2D.IgnoreLayerCollision(particleLayer, LayerMask.NameToLayer("Default"));
             Physics2D.IgnoreLayerCollision(particleLayer, particleLayer);
         }
     }
+
+    
+
+    
+}

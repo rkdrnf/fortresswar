@@ -14,6 +14,7 @@ namespace Character
         float m_verMov;
 
         Vector2 m_lookingDirection;
+        bool m_lookingRight;
 
         ServerPlayer m_player;
 
@@ -43,6 +44,11 @@ namespace Character
             return m_lookingDirection;
         }
 
+        public bool IsLookingRight()
+        {
+            return m_lookingRight;
+        }
+
         KeyFocusManager keyFocusManager
         {
             get { return ServerGame.Inst.keyFocusManager; }
@@ -62,11 +68,11 @@ namespace Character
                     float horMoveVal = m_horMov;
                     float verMoveVal = m_verMov;
 
-                    Vector3 lookingDirectionVal = m_lookingDirection;
+                    bool lookingRight = m_lookingDirection.x > 0;
 
                     stream.Serialize(ref horMoveVal);
                     stream.Serialize(ref verMoveVal);
-                    stream.Serialize(ref lookingDirectionVal);
+                    stream.Serialize(ref lookingRight);
                 }
             }
             else if (stream.isReading)
@@ -74,15 +80,15 @@ namespace Character
                 //Debug.Log(string.Format("[READING] player: {0}  sender: {1} time: {2}", owner, mnInfo.sender, mnInfo.timestamp));
                 float horMoveVal = 0;
                 float verMoveVal = 0;
-                Vector3 lookingDirectionVal = Vector2.right;
+                bool lookingRight = true;
 
                 stream.Serialize(ref horMoveVal);
                 stream.Serialize(ref verMoveVal);
-                stream.Serialize(ref lookingDirectionVal);
+                stream.Serialize(ref lookingRight);
 
                 m_horMov = horMoveVal;
                 m_verMov = verMoveVal;
-                m_lookingDirection = lookingDirectionVal;
+                m_lookingRight = lookingRight;
             }
         }
 
@@ -181,6 +187,7 @@ namespace Character
 
                 Vector3 worldMousePosition = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0));
                 m_lookingDirection = (worldMousePosition - m_player.transform.position);
+                m_lookingRight = (m_lookingDirection.x > 0) ? true : false;
 
             } while (false);
         }

@@ -10,6 +10,7 @@ using Const;
 using Const.Structure;
 using Architecture;
 using Maps;
+using System.Collections;
 
 [Serializable]
 public class Building : Structure<Building, BuildingData>, ISuspension
@@ -40,7 +41,6 @@ public class Building : Structure<Building, BuildingData>, ISuspension
         m_health = building.m_health;
         m_isFalling = building.m_isFalling;
         m_collidable = building.m_collidable;
-
     }
 
     public Building(S2C.BuildingStatus status)
@@ -49,7 +49,7 @@ public class Building : Structure<Building, BuildingData>, ISuspension
         SetID(status.m_ID);
         m_coord = status.m_coord;
         m_direction = status.m_direction;
-
+        m_collidable = true;
         m_isFalling = status.m_falling;
         SetHealth(status.m_health, DestroyReason.MANUAL);
 
@@ -87,23 +87,8 @@ public class Building : Structure<Building, BuildingData>, ISuspension
         if (Network.isServer) network.BroadcastFall(m_ID);
 
         BuildingManager.Inst.Fall(this);
-
         
-
-        //떨어지는 오브젝트로 새로 생성
-
-        /*
-        gameObject.layer = BuildingDataLoader.Inst.fallingBuildingLayer;
-        rigidbody2D.isKinematic = false;
-
-        collider2D.isTrigger = true;
-        (collider2D as BoxCollider2D).size = (collider2D as BoxCollider2D).size * 0.9f;
-
-        if (!Network.isServer) return;
-        BroadcastFall();
-         * */
     }
-
 
     void OnTriggerEnter2D(Collider2D targetCollider)
     {
@@ -141,13 +126,26 @@ public class Building : Structure<Building, BuildingData>, ISuspension
 
     public void PropagateDestruction()
     {
-        m_neighbors.DoForAll((GridDirection direction, Building building) => { building.DestroyNeighbor(direction); });
+        System.Diagnostics.Stopwatch watch = System.Diagnostics.Stopwatch.StartNew();
+        watch.Start();
+        //m_neighbors.DoForAll((GridDirection direction, Building building) => { building.DestroyNeighbor(direction); });
+        if (m_neighbors.left != null)
+            m_neighbors.left.DestroyNeighbor(GridDirection.RIGHT);
+        if (m_neighbors.right != null)
+            m_neighbors.right.DestroyNeighbor(GridDirection.LEFT);
+        if (m_neighbors.up != null)
+            m_neighbors.up.DestroyNeighbor(GridDirection.DOWN);
+
         if (m_suspension.down is Building)
         {
             (m_suspension.down as Building).DestroyNeighbor(GridDirection.UP);
         }
-        
+
+        watch.Stop();
+        Debug.Log("DestructionTime : " + watch.Elapsed + "Frame : " + Time.frameCount);
     }
+
+    List<int> m_checkList = new List<int>();
 
     public void DestroyNeighbor(GridDirection direction)
     {
@@ -162,9 +160,10 @@ public class Building : Structure<Building, BuildingData>, ISuspension
         m_suspension.DestroySuspension(direction);
 
         if (m_suspension.Count == 0)
-        { 
-            PropagateDestruction();
-            Fall();
+        {
+            m_checkList.Add(m_ID);
+            //PropagateDestruction();
+            //Fall();
             return;
         }
 

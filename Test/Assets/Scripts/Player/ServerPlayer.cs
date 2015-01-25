@@ -90,9 +90,15 @@ using Const.Character;
         {
             return m_inputProcessor.GetInputY();
         }
+
         public Vector2 GetInputLookingDirection()
         {
             return m_inputProcessor.GetLookingDirection();
+        }
+
+        public bool IsLookingRight()
+        {
+            return m_inputProcessor.IsLookingRight();
         }
 
         public bool IsFacingRight()
