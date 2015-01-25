@@ -304,6 +304,25 @@ namespace Packet
         }
 
         [ProtoContract]
+        public class Build : Packet<Build>
+        {
+            public Build() { }
+            public Build(int ID, BuildingType type, GridCoord coord)
+            {
+                m_ID = ID;
+                m_type = type;
+                m_coord = coord;
+            }
+
+            [ProtoMember(1)]
+            public int m_ID;
+            [ProtoMember(2)]
+            public BuildingType m_type;
+            [ProtoMember(3)]
+            public GridCoord m_coord;
+        }
+
+        [ProtoContract]
         public class SetStructureHealth: Packet<SetStructureHealth>
         {
             public SetStructureHealth() { }
@@ -371,6 +390,19 @@ namespace Packet
             public int m_ID;
             [ProtoMember(6)]
             public BuildingType m_type;
+        }
+
+        [ProtoContract]
+        public class BuildingFall : Packet<BuildingFall>
+        {
+            public BuildingFall() { }
+            public BuildingFall(List<int> ids) 
+            {
+                m_IDs = ids.ToArray();
+            }
+
+            [ProtoMember(1)]
+            public int[] m_IDs;
         }
 
     }

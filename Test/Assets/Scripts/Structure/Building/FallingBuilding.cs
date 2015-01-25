@@ -15,8 +15,9 @@ namespace Architecture
         
         public void Init (Building building)
         {
+            Debug.Log("Init Frame : " + Time.frameCount);
             m_building = building;
-
+            transform.position = building.m_coord.ToVector2();
             int tTop = m_building.m_data.spriteRowIndex * 8;
             int tLeft = m_building.m_spriteIndex * 8;
             float tWidth = m_building.m_data.size.x * 8;
@@ -28,6 +29,7 @@ namespace Architecture
 
         void OnCollisionEnter2D(Collision2D coll)
         {
+            Debug.Log("falling collision Frame: " + Time.frameCount);
             DestroyBuilding();
         }
 
@@ -39,7 +41,12 @@ namespace Architecture
             int particleAmount = 3;
             m_building.PlaySplash(particleAmount, transform.position);
 
-            Destroy(gameObject);
+            Disable();
+        }
+
+        void Disable()
+        {
+            gameObject.SetActive(false);
         }
     }
 }

@@ -27,7 +27,7 @@ public class CameraBehaviour : MonoBehaviour {
             float wantedHeight = target.position.y + height;
             float currentHeight = transform.position.y;
 
-            float wantedHorPoint = target.position.x + (target.localScale.x * 2);
+            float wantedHorPoint = target.position.x;// +(target.localScale.x * 2);
             float currentHorPoint = transform.position.x;
 
             // Damp the height

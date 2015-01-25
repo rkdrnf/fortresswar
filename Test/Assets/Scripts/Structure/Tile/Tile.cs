@@ -42,6 +42,7 @@ public class Tile : Structure<Tile, TileData>, ISuspension
         SetID(status.m_ID);
         m_coord = status.m_coord;
         m_direction = Const.GridDirection.UP;
+        m_collidable = m_data.collidable;
 
         SetHealth(status.m_health, DestroyReason.MANUAL);
     }

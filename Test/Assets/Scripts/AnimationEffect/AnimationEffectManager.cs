@@ -21,10 +21,7 @@ namespace Effect
             }
         }
 
-        [HideInInspector]
         public AnimationEffectPool m_animationEffectPool;
-
-        public AnimationEffect m_animationEffectPrefab;
 
         public AnimationEffectDataSet m_animationEffectSet;
 
@@ -48,8 +45,6 @@ namespace Effect
             {
                 m_animationEffectDic.Add(aData.m_type, aData);
             }
-
-            m_animationEffectPool = new AnimationEffectPool(m_animationEffectPrefab, 300);
         }
 
         public void PlayAnimationEffect(AnimationEffectType type, Vector2 position)
@@ -65,4 +60,6 @@ namespace Effect
             aEffect.Play();
         }
     }
+
+    
 }

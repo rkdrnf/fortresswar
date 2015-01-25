@@ -13,6 +13,7 @@ using Effect;
 using Data;
 using Util;
 using Maps;
+using Particle;
 
 [System.Serializable]
 public struct SpriteInfo
