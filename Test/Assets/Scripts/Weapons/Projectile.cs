@@ -73,8 +73,7 @@ public abstract class Projectile : Weapon
         owner = player.GetOwner();
         direction = info.direction;
         rigidbody2D.AddForce(direction * GetPower(weapon), ForceMode2D.Impulse);
-        BroadcastInit();
-
+        
         long projID = ProjectileManager.Inst.GetUniqueKeyForNewProjectile();
         ProjectileManager.Inst.Set(projID, this);
         
@@ -82,6 +81,7 @@ public abstract class Projectile : Weapon
         Physics2D.IgnoreCollision(collider, player.GetComponent<Collider2D>());
 
         OnInit();
+        BroadcastInit();
     }
 
     protected virtual float GetPower(WeaponInfo weapon)
@@ -97,8 +97,7 @@ public abstract class Projectile : Weapon
         networkView.RPC("SetStatus", info.sender, pck.SerializeToBytes());
     }
 
-    [RPC]
-    void BroadcastInit()
+    protected virtual void BroadcastInit()
     {
         S2C.ProjectileStatus pck = new S2C.ProjectileStatus(owner, transform.position, rigidbody2D.velocity);
 

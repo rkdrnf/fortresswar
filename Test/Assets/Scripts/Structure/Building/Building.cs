@@ -128,13 +128,70 @@ public class Building : Structure<Building, BuildingData>, ISuspension
     {
         System.Diagnostics.Stopwatch watch = System.Diagnostics.Stopwatch.StartNew();
         watch.Start();
-        //m_neighbors.DoForAll((GridDirection direction, Building building) => { building.DestroyNeighbor(direction); });
+
+        //int[] m_checkList = new int[]{ m_ID };
+        List<int> fallList = new List<int>();
+        List<int> noSuspensionList = new List<int>();
+        List<int> checkList = new List<int>();
+
+        PropagateDestructionInternal(ref checkList);
+
+        while(true)
+        {
+            if (checkList.Count == 0)
+                break;
+
+            fallList.Clear();
+            noSuspensionList.Clear();
+            for (int j = 0; j < checkList.Count; j++)
+            {
+                BuildingManager.Inst.Get(checkList[j]).Check(ref fallList, ref noSuspensionList);
+            }
+
+            if (fallList.Count == 0 && noSuspensionList.Count == 0)
+                break;
+
+            checkList.Clear();
+            for (int i = 0; i < fallList.Count; i++)
+            {
+                Building building = BuildingManager.Inst.Get(fallList[i]);
+                building.PropagateDestructionInternal(ref checkList);
+                building.Fall();
+            }
+
+            for (int i = 0; i < noSuspensionList.Count; i++)
+            {
+                Building building = BuildingManager.Inst.Get(noSuspensionList[i]);
+                building.PropagateAsNoSuspension(ref checkList);
+            }
+        }
+
+        watch.Stop();
+        Debug.Log("TotalDestructionTime : " + watch.Elapsed + "Frame : " + Time.frameCount);
+    }
+    public void PropagateDestructionInternal(ref List<int> checkList)
+    {
+        System.Diagnostics.Stopwatch watch = System.Diagnostics.Stopwatch.StartNew();
+        watch.Start();
+
         if (m_neighbors.left != null)
+        {
             m_neighbors.left.DestroyNeighbor(GridDirection.RIGHT);
+            if (!checkList.Contains(m_neighbors.left.GetID()))
+                checkList.Add(m_neighbors.left.GetID());
+        }
         if (m_neighbors.right != null)
+        { 
             m_neighbors.right.DestroyNeighbor(GridDirection.LEFT);
+            if (!checkList.Contains(m_neighbors.right.GetID()))
+                checkList.Add(m_neighbors.right.GetID());
+        }
         if (m_neighbors.up != null)
+        {
             m_neighbors.up.DestroyNeighbor(GridDirection.DOWN);
+            if (!checkList.Contains(m_neighbors.up.GetID()))
+                checkList.Add(m_neighbors.up.GetID());
+        }
 
         if (m_suspension.down is Building)
         {
@@ -144,8 +201,6 @@ public class Building : Structure<Building, BuildingData>, ISuspension
         watch.Stop();
         Debug.Log("DestructionTime : " + watch.Elapsed + "Frame : " + Time.frameCount);
     }
-
-    List<int> m_checkList = new List<int>();
 
     public void DestroyNeighbor(GridDirection direction)
     {
@@ -158,19 +213,25 @@ public class Building : Structure<Building, BuildingData>, ISuspension
         if (!m_suspension.HasSuspension(direction)) return;
 
         m_suspension.DestroySuspension(direction);
-
-        if (m_suspension.Count == 0)
-        {
-            m_checkList.Add(m_ID);
-            //PropagateDestruction();
-            //Fall();
-            return;
-        }
-
-        PropagateAsNoSuspension();
     }
 
-    public void PropagateAsNoSuspension()
+    public void Check(ref List<int> fallList, ref List<int> noSuspensionList)
+    {
+        if (m_suspension.Count == 0)
+        {
+            if (fallList.Contains(m_ID)) Debug.Log("FallList Already Contains ID");
+            fallList.Add(m_ID);
+            return;
+        }
+        else
+        {
+            if (noSuspensionList.Contains(m_ID)) Debug.Log("NoSusList Already Contains ID");
+            noSuspensionList.Add(m_ID);
+            return;
+        }
+    }
+
+    public void PropagateAsNoSuspension(ref List<int> checkList)
     {
         if (m_suspension.isPermanent || m_suspension.down != null)
         {
@@ -181,11 +242,13 @@ public class Building : Structure<Building, BuildingData>, ISuspension
         {
             if (m_suspension.left == null && m_neighbors.right != null)
             {
+                if (!checkList.Contains(m_neighbors.right.GetID())) checkList.Add(m_neighbors.right.GetID());
                 m_neighbors.right.DestroySuspension(GridDirection.LEFT);
             }
 
             if (m_suspension.right == null && m_neighbors.left != null)
             {
+                if (!checkList.Contains(m_neighbors.left.GetID())) checkList.Add(m_neighbors.left.GetID());
                 m_neighbors.left.DestroySuspension(GridDirection.RIGHT);
             }
         }

@@ -23,13 +23,17 @@ public class Rope : Projectile {
 
     public LayerMask groundLayer;
 
-    
+    protected override void BroadcastInit()
+    {
+        S2C.RopeStatus pck = new S2C.RopeStatus(owner, transform.position, rigidbody2D.velocity, stickInfo);
+        networkView.RPC("SetStatus", RPCMode.OthersBuffered, pck.SerializeToBytes());
+    }
 
     [RPC]
     protected override void RequestCurrentStatus(NetworkMessageInfo info)
     {
         S2C.RopeStatus pck = new S2C.RopeStatus(owner, transform.position, rigidbody2D.velocity, stickInfo);
-
+        Debug.Log("Stick: " + stickInfo);
         networkView.RPC("SetStatus", info.sender, pck.SerializeToBytes());
     }
 
@@ -53,14 +57,15 @@ public class Rope : Projectile {
         {
             PlayerManager.Inst.Get(owner).OnFireRope(this);
             ropeSource = PlayerManager.Inst.Get(owner);
+            
+            stickInfo = new S2C.RopeStickInfo();
+            stickInfo.isSticked = false;
         }
     }
 
-    void Start()
+    protected override void OnAwake()
     {
         imageWidth = ropeImagePrefab.GetComponent<SpriteRenderer>().sprite.texture.width / 8f;
-        stickInfo = new S2C.RopeStickInfo();
-        stickInfo.isSticked = false;
     }
 
 

@@ -117,15 +117,6 @@ namespace Architecture
         public void Fall(Building building)
         {
             StartCoroutine(FallInternal(building));
-            //m_fallingList.Add(building);
-            /*
-            RemoveFromChunk(building);
-
-            FallingBuilding falling = m_fallingBuildingPool.Borrow();
-
-            if (falling != null)
-                falling.Init(building);
-             * */
         }
 
         void Update()
