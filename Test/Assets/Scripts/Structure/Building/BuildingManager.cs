@@ -133,7 +133,7 @@ namespace Architecture
         {
             yield return new WaitForFixedUpdate();
 
-            Debug.Log("FallFrame: " + Time.frameCount);
+            //Debug.Log("FallFrame: " + Time.frameCount);
             //for(int i = 0; i < fallings.Length; i++)
             //{
               //  Building building = fallings[i];

@@ -152,7 +152,7 @@ namespace Util
         {
             if (IsInEnv(env) != value)
             {
-                Debug.Log("EnvSet : " + env + "   " + value);
+                //Debug.Log("EnvSet : " + env + "   " + value);
             }
 
 

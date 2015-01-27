@@ -55,7 +55,7 @@ public abstract class MemoryPool<T> : MonoBehaviour
             }
         }
 
-        Debug.Log(string.Format("Pool Exceeded {0}", typeof(T)));
+        //Debug.Log(string.Format("Pool Exceeded {0}", typeof(T)));
 
         return default(T);
     }

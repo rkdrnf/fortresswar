@@ -609,7 +609,7 @@ namespace Architecture
                 UpdateMesh();
                 update = false;
 
-                Debug.Log("mesh updated Frame: " + Time.frameCount);
+                //Debug.Log("mesh updated Frame: " + Time.frameCount);
             }
         }
 

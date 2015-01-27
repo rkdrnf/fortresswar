@@ -116,7 +116,7 @@ namespace Character
             //
             if (m_verMov > 0)
             {
-                Debug.Log("jump!!!");
+                //Debug.Log("jump!!!");
                 Jump();
 
             }
