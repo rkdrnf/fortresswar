@@ -213,7 +213,6 @@ using Const.Character;
 
             if (m_stateManager.IsInState(CharacterState.FALLING, CharacterState.WALL_JUMPING, CharacterState.WALL_WALKING))
             {
-                Debug.Log("grounded!");
                 m_stateManager.SetState(CharacterState.GROUNDED);
                 return;
             }
@@ -728,7 +727,7 @@ using Const.Character;
 
             player.BroadcastState();
 
-            Debug.Log(newState);
+            //Debug.Log(newState);
         }
     }
 

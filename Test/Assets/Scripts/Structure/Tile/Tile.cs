@@ -21,7 +21,7 @@ public class Tile : Structure<Tile, TileData>, ISuspension
     
     public Tile(int ID)
     {
-        SetID(ID);
+        m_ID = ID;
     }
 
     public Tile(int ID, Tile tile)

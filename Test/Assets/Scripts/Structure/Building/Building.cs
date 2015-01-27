@@ -199,7 +199,7 @@ public class Building : Structure<Building, BuildingData>, ISuspension
         }
 
         watch.Stop();
-        Debug.Log("DestructionTime : " + watch.Elapsed + "Frame : " + Time.frameCount);
+        //Debug.Log("DestructionTime : " + watch.Elapsed + "Frame : " + Time.frameCount);
     }
 
     public void DestroyNeighbor(GridDirection direction)

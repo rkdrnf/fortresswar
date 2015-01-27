@@ -15,7 +15,7 @@ namespace Architecture
         
         public void Init (Building building)
         {
-            Debug.Log("Init Frame : " + Time.frameCount);
+            //Debug.Log("Init Frame : " + Time.frameCount);
             m_building = building;
             transform.position = building.m_coord.ToVector2();
             int tTop = m_building.m_data.spriteRowIndex * 8;
@@ -29,7 +29,7 @@ namespace Architecture
 
         void OnCollisionEnter2D(Collision2D coll)
         {
-            Debug.Log("falling collision Frame: " + Time.frameCount);
+            //Debug.Log("falling collision Frame: " + Time.frameCount);
             DestroyBuilding();
         }
 
