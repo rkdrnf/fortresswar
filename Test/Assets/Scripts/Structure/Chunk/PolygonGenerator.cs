@@ -112,20 +112,6 @@ namespace Architecture
             TimeSpan timespan = timer.Elapsed;
             //Debug.Log("Build Mesh Time: " + timespan);
         }
-        /*
-        void BuildCollider()
-        {
-            GridDirection
-        }
-
-        void ConnectPath(List<GridDirection direction, int px, int py)
-        {
-            foreach(GridDirection next in NextDirection(direction))
-            {
-
-            }
-        }
-        */
 
         void UpdateCollider()
         {
@@ -351,86 +337,6 @@ namespace Architecture
             return path.First() == path.Last();
         }
 
-        void GenCollider2D(T block, int px, int py)
-        {
-            List<Vector2> path = new List<Vector2>();
-
-            T top = Block(px, py + 1);
-            T right = Block(px + 1, py);
-            T bottom = Block(px, py - 1);
-            T left = Block(px - 1, py);
-
-            bool canColTop = Collidable(top);
-            bool canColLeft = Collidable(left);
-            bool canColBot = Collidable(bottom);
-            bool canColRight = Collidable(right);
-
-            int length = 0;
-
-            //TopLeft
-            if (!canColTop || !canColLeft)
-            {
-                path.Add(new Vector2(px - 0.5f, py + 0.5f));
-                length++;
-            }
-
-            //TopRight
-            if (!canColTop || !canColRight)
-            {
-                path.Add(new Vector2(px + 0.5f, py + 0.5f));
-                length++;
-            }
-
-
-            //BottomRight
-            if (!canColBot || !canColRight)
-            {
-                path.Add(new Vector2(px + 0.5f, py - 0.5f));
-                length++;
-            }
-
-            //BottomLeft
-            if (!canColLeft || !canColBot)
-            {
-                path.Add(new Vector2(px - 0.5f, py - 0.5f));
-                length++;
-            }
-
-
-            if (length > 0)
-            {
-                pathCount++;
-                if (length == 2)
-                {
-                    path.Add(new Vector2(px, py));
-                }
-                colPaths.Add(path);
-            }
-        }
-
-
-
-        GridDirection[] NextDirection(GridDirection inDirection)
-        {
-            switch (inDirection)
-            {
-                case GridDirection.UP:
-                    return new GridDirection[3] { GridDirection.RIGHT, GridDirection.UP, GridDirection.LEFT };
-
-                case GridDirection.RIGHT:
-                    return new GridDirection[3] { GridDirection.DOWN, GridDirection.RIGHT, GridDirection.UP };
-
-                case GridDirection.DOWN:
-                    return new GridDirection[3] { GridDirection.LEFT, GridDirection.DOWN, GridDirection.RIGHT };
-
-                case GridDirection.LEFT:
-                    return new GridDirection[3] { GridDirection.UP, GridDirection.LEFT, GridDirection.DOWN };
-                default:
-                    return new GridDirection[0];
-            }
-        }
-
-
         protected abstract Vector2 GetTexture(T structure);
 
         void GenSquare(int px, int py, T structure)
@@ -487,85 +393,6 @@ namespace Architecture
             newUV.Clear();
 
             UpdateCollider();
-
-
-            //MESH COLLIDER
-            /* 
-             * 
-            Mesh newMesh = new Mesh();
-            newMesh.vertices = colVertices.ToArray();
-            newMesh.triangles = colTriangles.ToArray();
-            col.sharedMesh = newMesh;
-
-            colVertices.Clear();
-            colTriangles.Clear();
-            colCount = 0;
-             * */
-        }
-
-        void GenCollider(int px, int py)
-        {
-            float x = px - 0.5f;
-            float y = py - 0.5f;
-            //Top
-            if (Block(px, py + 1) == null)
-            {
-                colVertices.Add(new Vector3(x, y + 1, 1));
-                colVertices.Add(new Vector3(x + 1, y + 1, 1));
-                colVertices.Add(new Vector3(x + 1, y + 1, 0));
-                colVertices.Add(new Vector3(x, y + 1, 0));
-
-                ColliderTriangles();
-
-                colCount++;
-            }
-
-            //bot
-            if (Block(px, py - 1) == null)
-            {
-                colVertices.Add(new Vector3(x, y, 0));
-                colVertices.Add(new Vector3(x + 1, y, 0));
-                colVertices.Add(new Vector3(x + 1, y, 1));
-                colVertices.Add(new Vector3(x, y, 1));
-
-                ColliderTriangles();
-                colCount++;
-            }
-
-
-            //left
-            if (Block(px - 1, py) == null)
-            {
-                colVertices.Add(new Vector3(x, y, 1));
-                colVertices.Add(new Vector3(x, y + 1, 1));
-                colVertices.Add(new Vector3(x, y + 1, 0));
-                colVertices.Add(new Vector3(x, y, 0));
-
-                ColliderTriangles();
-                colCount++;
-            }
-
-            //right
-            if (Block(px + 1, py) == null)
-            {
-                colVertices.Add(new Vector3(x + 1, y + 1, 1));
-                colVertices.Add(new Vector3(x + 1, y, 1));
-                colVertices.Add(new Vector3(x + 1, y, 0));
-                colVertices.Add(new Vector3(x + 1, y + 1, 0));
-
-                ColliderTriangles();
-                colCount++;
-            }
-        }
-
-        void ColliderTriangles()
-        {
-            colTriangles.Add(colCount * 4);
-            colTriangles.Add((colCount * 4) + 1);
-            colTriangles.Add((colCount * 4) + 2);
-            colTriangles.Add((colCount * 4) + 0);
-            colTriangles.Add((colCount * 4) + 2);
-            colTriangles.Add((colCount * 4) + 3);
         }
 
         T Block(int x, int y)
