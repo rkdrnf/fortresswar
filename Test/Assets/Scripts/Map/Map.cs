@@ -95,11 +95,16 @@ public class Map : MonoBehaviour {
         m_name = mapData.mapName;
         m_chunkSize = mapData.chunkSize;
 
+        Lights.ShadowPane.Inst.Init(m_width, m_height);
         LoadBackground(mapData.backgroundImage);
+
+        
 
         if (!Network.isServer) return;
         LoadTiles(mapData.tiles);
         LoadBuildings(new List<Building>());
+
+
 
         m_mapLoadTime = Network.time;
     }

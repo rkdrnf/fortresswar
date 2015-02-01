@@ -5,6 +5,7 @@ using System.Text;
 using UnityEngine;
 using Data;
 using Const.Structure;
+using Lights;
 namespace Architecture
 {
     public class TileManager : MonoBehaviour
@@ -73,6 +74,8 @@ namespace Architecture
             m_tileIDMap.Add(tile.GetID(), tile);
 
             m_tileChunkManager.AddBlock(tile);
+
+            ShadowPane.Inst.UpdateLight(tile.m_coord, 0.5f);
         }
 
         public void Remove(Tile tile)
