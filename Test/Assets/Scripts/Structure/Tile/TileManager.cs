@@ -75,7 +75,7 @@ namespace Architecture
 
             m_tileChunkManager.AddBlock(tile);
 
-            ShadowPane.Inst.UpdateLight(tile.m_coord, 0.5f);
+            ShadowPane.Inst.UpdateLight(tile.m_coord, 1f);
         }
 
         public void Remove(Tile tile)

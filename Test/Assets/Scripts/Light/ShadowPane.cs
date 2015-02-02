@@ -46,6 +46,8 @@ namespace Lights
             transform.localScale = new Vector3(mapWidth + 1, mapHeight + 1, 1);
             lightMap = new Texture2D((m_width + 1) * 8, (m_height + 1) * 8, TextureFormat.Alpha8, false);
             renderer.material.SetTexture("_MainTex", lightMap);
+            renderer.material.SetFloat("_BoundX", 1f / ((m_width + 1)));
+            renderer.material.SetFloat("_BoundY", 1f / ((m_height + 1)));
 
             for(int i = 0; i < lightMap.width; i++)
             {
