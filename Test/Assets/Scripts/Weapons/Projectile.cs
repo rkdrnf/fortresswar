@@ -33,6 +33,7 @@ public abstract class Projectile : Weapon
     protected Vector3 startPosition;
     private Vector2 direction;
     public AnimationEffectType explosionAnimation;
+    public LightEffectType explosionLight;
 
     public LayerMask collisionLayer;
     private Collider2D collider;
@@ -342,6 +343,7 @@ public abstract class Projectile : Weapon
         ProjectileManager.Inst.Remove(ID);
 
         PlayDestructionAnimation();
+        EmitExplosionLight();
 
         OnDestroyInternal();
     }
@@ -351,6 +353,10 @@ public abstract class Projectile : Weapon
     void PlayDestructionAnimation()
     {
         AnimationEffectManager.Inst.PlayAnimationEffect(explosionAnimation, transform.position);
-        
+    }
+
+    void EmitExplosionLight()
+    {
+        LightEffectManager.Inst.PlayLightEffect(explosionLight, transform.position);
     }
 }

@@ -75,6 +75,8 @@ public class Tile : Structure<Tile, TileData>, ISuspension
 
     protected override void OnBreak(DestroyReason reason)
     {
+        Lights.ShadowPane.Inst.UpdateLight(m_coord);
+
         m_collidable = false;
         //rendering
         if (Network.isServer && ServerGame.Inst.isDedicatedServer) return;

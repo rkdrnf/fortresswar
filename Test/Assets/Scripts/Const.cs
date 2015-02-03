@@ -247,6 +247,14 @@ namespace Const
             TILE_BREAK
         }
 
+        public enum LightEffectType
+        {
+            NONE,
+            BULLET_EXPLOSION,
+            MISSLE_EXPLOSION,
+            GRENADE_EXPLOSION,
+        }
+
         public enum ParticleType
         {
             DIRT,

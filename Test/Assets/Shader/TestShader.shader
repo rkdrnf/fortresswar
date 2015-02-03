@@ -94,7 +94,7 @@
 				float attenuation = texCUBE(_LightTexture0, 
                   IN.posLight.xyz).a;
 
-				return float4(0, 0, 0, pow(distance, 2));
+				return float4(0, 0, 0, pow(distance, 2) * (1 + 1 / length(_LightColor0)));
 			}
 			ENDCG
 		}
