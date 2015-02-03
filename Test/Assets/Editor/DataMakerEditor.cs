@@ -100,6 +100,18 @@ public class DataMakerEditor : Editor
         CreateAsset<AnimationEffectDataSet>();
     }
 
+    [MenuItem("Assets/Create/LightEffect")]
+    static void CreateLightEffect()
+    {
+        CreateAsset<LightEffectData>();
+    }
+
+    [MenuItem("Assets/Create/Set/LightEffectSet")]
+    static void CreateLightEffectSet()
+    {
+        CreateAsset<LightEffectDataSet>();
+    }
+
     static void CreateAsset<T>() where T : ScriptableObject
     {
         T asset = CreateInstance<T>();

@@ -47,7 +47,7 @@ namespace Effect
             m_animTimer -= Time.deltaTime;
         }
 
-        void Stop()
+        public void Stop()
         {
             m_isPlaying = false;
             m_animator.StopPlayback();

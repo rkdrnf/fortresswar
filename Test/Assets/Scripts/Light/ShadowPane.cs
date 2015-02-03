@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using Architecture;
 
 namespace Lights
 { 
@@ -73,69 +74,12 @@ namespace Lights
             update = true;
         }
 
-        void UpdateMesh()
-        {
-            mesh.Clear(false);
-
-            mesh.vertices = newVertices.ToArray();
-            mesh.triangles = newTriangles.ToArray();
-            mesh.uv = newUV.ToArray();
-
-            mesh.Optimize();
-            mesh.RecalculateBounds();
-            mesh.RecalculateNormals();
-
-            squareCount = 0;
-            newVertices.Clear();
-            newTriangles.Clear();
-            newUV.Clear();
-        }
-
-        void BuildMesh()
-        {
-            System.Diagnostics.Stopwatch timer = System.Diagnostics.Stopwatch.StartNew();
-            timer.Stop();
-            TimeSpan timespan = timer.Elapsed;
-            //Debug.Log("Build Mesh Time: " + timespan);
-        }
-
-        void GenSquare(int px, int py, int intensity)
-        {
-            float x = px - 0.5f;
-            float y = py - 0.5f;
-
-            float z = 0;
-
-            newVertices.Add(new Vector3(x, y + 1, z));
-            newVertices.Add(new Vector3(x + 1, y + 1, z));
-            newVertices.Add(new Vector3(x + 1, y, z));
-            newVertices.Add(new Vector3(x, y, z));
-
-            newTriangles.Add((squareCount * 4));
-            newTriangles.Add((squareCount * 4) + 1);
-            newTriangles.Add((squareCount * 4) + 2);
-            newTriangles.Add((squareCount * 4) + 0);
-            newTriangles.Add((squareCount * 4) + 2);
-            newTriangles.Add((squareCount * 4) + 3);
-
-            newUV.Add(new Vector2(intensity, 0));
-            newUV.Add(new Vector2(intensity, 0));
-            newUV.Add(new Vector2(intensity, 0));
-            newUV.Add(new Vector2(intensity, 0));
-             
-            squareCount++;
-        }
-
         void Update()
         {
             if (update)
             {
-                //BuildMesh();
-                //BuildCollider();
-                //UpdateMesh();
                 lightMap.Apply();
                 update = false;
-
                 //Debug.Log("mesh updated Frame: " + Time.frameCount);
             }
         }
@@ -157,6 +101,29 @@ namespace Lights
             {
                 Debug.Log(e.Message);
             }
+        }
+
+        public void UpdateLight(GridCoord coord)
+        {
+            Building building = BuildingManager.Inst.Get(coord);
+
+            if (building != null)
+            { 
+                UpdateLight(coord, 1);
+                return;
+            }
+
+            Tile tile = TileManager.Inst.Get(coord);
+
+            if (tile != null)
+            {
+                UpdateLight(coord, tile.m_health == 0 ? 0.5f : 1f);
+                return;
+            }
+
+            UpdateLight(coord, 0);
+
+
         }
     }
 }

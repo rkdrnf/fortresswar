@@ -21,9 +21,8 @@ namespace Effect
             }
         }
 
-        public AnimationEffectPool m_animationEffectPool;
-
-        public AnimationEffectDataSet m_animationEffectSet;
+        public AnimationEffectPool m_animationEffectPool = null; // scene initialized.
+        public AnimationEffectDataSet m_animationEffectSet = null; // scene initialized.
 
         [HideInInspector]
         public Dictionary<AnimationEffectType, AnimationEffectData> m_animationEffectDic;
@@ -51,10 +50,12 @@ namespace Effect
         {
             if (type == AnimationEffectType.NONE) return;
 
-            AnimationEffect aEffect = AnimationEffectManager.Inst.m_animationEffectPool.Borrow();
+            AnimationEffect aEffect = m_animationEffectPool.Borrow();
             if (aEffect == null) return;
 
-            AnimationEffectData aData = AnimationEffectManager.Inst.GetAnimationEffectData(type);
+            AnimationEffectData aData = GetAnimationEffectData(type);
+            if (aData == null) { aEffect.Stop(); return; }
+
             aEffect.transform.position = position;
             aEffect.Init(aData);
             aEffect.Play();

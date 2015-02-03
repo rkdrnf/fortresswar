@@ -87,6 +87,8 @@ public class Building : Structure<Building, BuildingData>, ISuspension
         if (Network.isServer) network.BroadcastFall(m_ID);
 
         BuildingManager.Inst.Fall(this);
+
+        Lights.ShadowPane.Inst.UpdateLight(m_coord);
         
     }
 
@@ -120,6 +122,8 @@ public class Building : Structure<Building, BuildingData>, ISuspension
             case DestroyReason.COLLIDE:
                 break;
         }
+
+        Lights.ShadowPane.Inst.UpdateLight(m_coord);
     }
 
     protected override void OnRecvBreak() { }

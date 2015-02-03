@@ -82,6 +82,8 @@ namespace Architecture
             {
                 m_buildingMap.Add(building.m_coord, building);
                 m_buildingChunkManager.AddBlock(building);
+
+                Lights.ShadowPane.Inst.UpdateLight(building.m_coord, 1f);
             }
             else
             {
