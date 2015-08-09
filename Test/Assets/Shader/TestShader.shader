@@ -25,8 +25,9 @@
 			ZWrite Off
 			Fog { Mode Off }
 
-			Blend Zero One, One Zero
+			Blend Zero One, OneMinusSrcAlpha SrcAlpha
 			AlphaTest Greater 0.01
+			BlendOp RevSub
 
 			CGPROGRAM
 			#pragma vertex vert
@@ -38,12 +39,12 @@
 			uniform half _BoundX;
 			uniform half _BoundY;
 
-			sampler2D _MainTex;
+			//sampler2D _MainTex;
 
-			uniform float4 _LightColor0;
+			//uniform float4 _LightColor0;
 			uniform float4x4 _LightMatrix0; // transformation 
             // from world to light space (from Autolight.cginc)
-	        uniform samplerCUBE _LightTexture0; 
+	        uniform sampler2D _LightTexture0; 
             // cookie alpha texture map (from Autolight.cginc)
 
 			struct vertexInput 
@@ -89,12 +90,16 @@
 				float3 vertexToLightSource;
 
 				float distance = length(IN.posLight.xy);
-                  // use z coordinate in light space as signed distance
+				// In cookie, spot light, z coordinate indicate distance to light source; IN.postLight.z;
+				// In point light, calculate manually; 
 
-				float attenuation = texCUBE(_LightTexture0, 
-                  IN.posLight.xyz).a;
+				float attenuation = max(2 - (1 / distance), 0);
+				// In cookie, spot light; reference LightTexture with distance
+				//float attenuation = tex2D(_LightTexture0, float2(distance, distance)).a;
+				
 
-				return float4(0, 0, 0, pow(distance, 2) * (1 + 1 / length(_LightColor0)));
+				return float4(1, 1, 1, attenuation);
+				// pow(distance, 2) * (1 + 1 / length(_LightColor0)));
 			}
 			ENDCG
 		}
@@ -108,7 +113,8 @@
 			ZWrite Off
 			Fog { Mode Off }
 
-			Blend Zero One, SrcAlpha DstAlpha
+			//Blend Doesn't matter. Op Determines.
+			Blend One One 
 			BlendOp Min
 
 			CGPROGRAM
@@ -173,8 +179,13 @@
 				alphaSum *= tex2D(_MainTex, IN.texcoord).a;
 
 
-				half2 tendency = half2(fmod(IN.texcoord.x, 8) - 3.5, fmod(IN.texcoord.y, 8) - 3.5);
-				return float4(1, 1, 1, min(alphaSum / 8, 1 - attenuation));
+				//half2 tendency = half2(fmod(IN.texcoord.x, 8) - 3.5, fmod(IN.texcoord.y, 8) - 3.5);
+				
+				return float4(1, 1, 1, alphaSum / 8);
+
+				// calc light and lightmap in one pass. may be wrong
+				//return float4(1, 1, 1, min(alphaSum / 8, 1 - attenuation));
+
 			}
 			ENDCG
 		}
@@ -222,7 +233,7 @@
 
 			float4 frag(vertexOutput IN) : SV_Target
 			{
-				return float4(_Color.r, _Color.g, _Color.b, 1);
+				return float4(_Color.r, _Color.g, _Color.b, _Color.a);
 			}
 			ENDCG
 		}
