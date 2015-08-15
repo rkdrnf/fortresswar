@@ -2,7 +2,7 @@
 using System.Collections;
 using Server;
 using Const;
-using S2C = Packet.S2C;
+using S2C = Communication.S2C;
 using Architecture;
 
 public class Rope : Projectile {
@@ -25,16 +25,16 @@ public class Rope : Projectile {
 
     protected override void BroadcastInit()
     {
-        S2C.RopeStatus pck = new S2C.RopeStatus(owner, transform.position, rigidbody2D.velocity, stickInfo);
-        networkView.RPC("SetStatus", RPCMode.OthersBuffered, pck.SerializeToBytes());
+        S2C.RopeStatus pck = new S2C.RopeStatus(owner, transform.position, GetComponent<Rigidbody2D>().velocity, stickInfo);
+        GetComponent<NetworkView>().RPC("SetStatus", RPCMode.OthersBuffered, pck.SerializeToBytes());
     }
 
     [RPC]
     protected override void RequestCurrentStatus(NetworkMessageInfo info)
     {
-        S2C.RopeStatus pck = new S2C.RopeStatus(owner, transform.position, rigidbody2D.velocity, stickInfo);
+        S2C.RopeStatus pck = new S2C.RopeStatus(owner, transform.position, GetComponent<Rigidbody2D>().velocity, stickInfo);
         Debug.Log("Stick: " + stickInfo);
-        networkView.RPC("SetStatus", info.sender, pck.SerializeToBytes());
+        GetComponent<NetworkView>().RPC("SetStatus", info.sender, pck.SerializeToBytes());
     }
 
     [RPC]
@@ -44,7 +44,7 @@ public class Rope : Projectile {
 
         owner = pck.owner;
         transform.position = pck.position;
-        rigidbody2D.velocity = pck.velocity;
+        GetComponent<Rigidbody2D>().velocity = pck.velocity;
 
         ropeSource = PlayerManager.Inst.Get(owner);
 
@@ -160,7 +160,7 @@ public class Rope : Projectile {
         ropeSource = PlayerManager.Inst.Get(owner);
 
         ropeSJ = gameObject.AddComponent<SpringJoint2D>();
-        ropeSJ.connectedBody = ownerPlayer.rigidbody2D;
+        ropeSJ.connectedBody = ownerPlayer.GetComponent<Rigidbody2D>();
         ropeSJ.distance = 5f;
         ropeSJ.frequency = 2;
         ropeSJ.dampingRatio = 1;
@@ -170,14 +170,14 @@ public class Rope : Projectile {
 
     void Stick(IRopable ropable, Vector2 position)
     {
-        rigidbody2D.velocity = new Vector2(0f, 0f);
+        GetComponent<Rigidbody2D>().velocity = new Vector2(0f, 0f);
 
         ropable.Roped(this, position);
 
         ropeTarget = ropable;
 
         stickInfo = new S2C.RopeStickInfo(true, ropable.GetRopableID(), position);
-        networkView.RPC("SetRopeStuck", RPCMode.Others, stickInfo.SerializeToBytes());
+        GetComponent<NetworkView>().RPC("SetRopeStuck", RPCMode.Others, stickInfo.SerializeToBytes());
     }
 
     public void MakeHingeJoint(Rigidbody2D targetBody, Vector2 position, Vector2 connectedPosition)
@@ -228,7 +228,7 @@ public class Rope : Projectile {
         }
 
         transform.position = stickInfo.position;
-        rigidbody2D.velocity = new Vector2(0f, 0f);
+        GetComponent<Rigidbody2D>().velocity = new Vector2(0f, 0f);
 
         ropable.Roped(this, info.position);
 
@@ -251,7 +251,7 @@ public class Rope : Projectile {
         if (stickHJ != null)
             Destroy(stickHJ);
 
-        rigidbody2D.mass = 1;
+        GetComponent<Rigidbody2D>().mass = 1;
 
         if (ropeTarget != null)
         {

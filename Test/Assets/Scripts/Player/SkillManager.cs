@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
-using S2C = Packet.S2C;
-using C2S = Packet.C2S;
+using S2C = Communication.S2C;
+using C2S = Communication.C2S;
 using Const;
 
 namespace Server
@@ -54,7 +54,7 @@ namespace Server
             }
             else
             {
-                networkView.RPC("Cast", RPCMode.Server, cast.SerializeToBytes());
+                GetComponent<NetworkView>().RPC("Cast", RPCMode.Server, cast.SerializeToBytes());
             }
         }
 
@@ -82,11 +82,11 @@ namespace Server
             S2C.SkillCastInfo castInfo = new S2C.SkillCastInfo(info.skillData.skillName, player.GetOwner());
             if (!ServerGame.Inst.isDedicatedServer)
             {
-                networkView.RPC("RecvCast", RPCMode.All, castInfo.SerializeToBytes());
+                GetComponent<NetworkView>().RPC("RecvCast", RPCMode.All, castInfo.SerializeToBytes());
             }
             else
             {
-                networkView.RPC("RecvCast", RPCMode.Others, castInfo.SerializeToBytes());
+                GetComponent<NetworkView>().RPC("RecvCast", RPCMode.Others, castInfo.SerializeToBytes());
             }
         }
 

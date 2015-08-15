@@ -15,8 +15,8 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using Const;
 
-using S2C = Packet.S2C;
-using C2S = Packet.C2S;
+using S2C = Communication.S2C;
+using C2S = Communication.C2S;
 
 using ProtoBuf.Meta;
 using FocusManager;
@@ -46,7 +46,7 @@ public class Game : MonoBehaviour
     SkillDataLoader skillLoader;
     
 
-	NetworkManager netManager;
+	GameNetworkManager netManager;
 
     void Init()
     {
@@ -56,6 +56,6 @@ public class Game : MonoBehaviour
 	void Awake()
 	{
         Init();
-		netManager = netManagerObject.GetComponent<NetworkManager> ();
+		netManager = netManagerObject.GetComponent<GameNetworkManager> ();
 	}
 }

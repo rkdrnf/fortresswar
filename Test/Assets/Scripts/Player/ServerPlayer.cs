@@ -6,15 +6,16 @@ using System.Text;
 using UnityEngine;
 using Const;
 using Util;
-using Packet;
-using S2C = Packet.S2C;
-using C2S = Packet.C2S;
+using Communication;
+using S2C = Communication.S2C;
+using C2S = Communication.C2S;
 using System.Threading;
 using Character;
 using Maps;
 using Const.Character;
+using UnityEngine.Networking;
 
-    public class ServerPlayer : MonoBehaviour, IRopable
+    public class ServerPlayer : NetworkBehaviour, IRopable
     {
 
         int m_owner;
@@ -110,7 +111,7 @@ using Const.Character;
         {
             PlayerManager.Inst.StartLoadUser(this);
 
-            networkView.group = NetworkViewGroup.PLAYER;
+            GetComponent<NetworkView>().group = NetworkViewGroup.PLAYER;
             m_weaponManager = GetComponent<WeaponManager>();
             m_weaponManager.Init(this);
 
@@ -171,7 +172,7 @@ using Const.Character;
 
             S2C.CharacterChangeState pck = new S2C.CharacterChangeState(m_stateManager.GetState());
 
-            networkView.RPC("RecvState", RPCMode.Others, pck.SerializeToBytes());
+            GetComponent<NetworkView>().RPC("RecvState", RPCMode.Others, pck.SerializeToBytes());
         }
 
         [RPC]
@@ -200,7 +201,7 @@ using Const.Character;
             if (Network.isServer)
                 Jump(new NetworkMessageInfo());
             else
-                networkView.RPC("Jump", RPCMode.Server);
+                GetComponent<NetworkView>().RPC("Jump", RPCMode.Server);
         }
 
         public void OnTouchGround()
@@ -233,34 +234,84 @@ using Const.Character;
             }
         }
 
-        [RPC]
-        public void RequestCharacterStatus(NetworkMessageInfo info)
-        {
-            PlayerSetting setting = PlayerManager.Inst.GetSetting(m_owner);
-            S2C.CharacterStatus pck = new S2C.CharacterStatus(setting.playerID, setting, GetInfo());
+        
 
-            networkView.RPC("SetOwner", info.sender, pck.SerializeToBytes());
+        public S2C.CharacterInfo GetInfo()
+        {
+            return new S2C.CharacterInfo(m_job, m_weaponManager.GetCurrentWeaponType(), m_health, m_stateManager.GetState());
+        }
+        
+        public void Init(PlayerSetting setting)
+        {
+            if (!isServer) return;
+
+            LoadSetting(setting);
+            LoadJob(m_job);
+            OnSetOwner(m_owner);
+
+            PlayerManager.Inst.CompleteLoad(this);
+
+
+            //Unity5. Do initial synchronization in OnSerialize();
+             
+            /* Unity 4 code.
+
+            if (!ServerGame.Inst.isDedicatedServer) // own player
+            {
+                GetComponent<NetworkView>().RPC("RecvInitFinished", RPCMode.AllBuffered);
+                //newPlayer.networkView.RPC("SetOwner", RPCMode.AllBuffered, pck.SerializeToBytes());
+            }
+            else
+            {
+                GetComponent<NetworkView>().RPC("RecvInitFinished", RPCMode.OthersBuffered);
+                //newPlayer.networkView.RPC("SetOwner", RPCMode.OthersBuffered, pck.SerializeToBytes());
+            }
+             * */
         }
 
-        [RPC]
-        public void SetOwner(byte[] pckData, NetworkMessageInfo info)
+        public override bool OnSerialize(NetworkWriter writer, bool initialState)
         {
-            //ServerCheck
+            if (initialState)
+            {
+                PlayerSetting setting = PlayerManager.Inst.GetSetting(m_owner);
+                S2C.CharacterInfo info = GetInfo();
+                S2C.CharacterStatus status = new S2C.CharacterStatus(m_owner, setting, info);
+                byte[] buffer = status.SerializeToBytes();
+                writer.WriteBytesAndSize(buffer, buffer.Length);
+            }
 
-            S2C.CharacterStatus pck = S2C.CharacterStatus.DeserializeFromBytes(pckData);
+            return false;
+        }
 
-            PlayerManager.Inst.Set(pck.playerID, this);
+        public override void OnDeserialize(NetworkReader reader, bool initialState)
+        {
+            if (initialState)
+            {
+                byte[] data = reader.ReadBytesAndSize();
+                S2C.CharacterStatus status = S2C.CharacterStatus.DeserializeFromBytes(data);
+                NetworkInitializeStatus(status);
+            }
+        }
 
-            LoadSetting(pck.setting);
-            PlayerManager.Inst.SetSetting(pck.setting);
-            LoadJob(pck.info.job);
+        public void NetworkInitializeStatus(S2C.CharacterStatus status)
+        {
+            if (isServer)
+            {
+                Debug.LogError("Server Received Character Initial Status");
+                return;
+            }
 
-            OnSetOwner(pck.playerID);
+            PlayerManager.Inst.Set(status.playerID, this);
+            PlayerManager.Inst.SetSetting(status.setting);
 
-            SetHealth(pck.info.health, DamageReason.MANUAL);
-            m_stateManager.SetState(pck.info.state);
+            LoadSetting(status.setting);
+            LoadJob(status.info.job);
+            OnSetOwner(status.playerID);
 
-            m_weaponManager.TryChangeWeapon(pck.info.weapon, info.timestamp);
+            SetHealth(status.info.health, DamageReason.MANUAL);
+
+            m_stateManager.SetState(status.info.state);
+            m_weaponManager.TryChangeWeapon(status.info.weapon, Network.time);
 
             PlayerManager.Inst.CompleteLoad(this);
 
@@ -270,12 +321,9 @@ using Const.Character;
             }
         }
 
-
         public void OnSetOwner(int playerID)
         {
-            isOwner = m_owner == ServerGame.Inst.GetID();
-
-            if (isOwner) // Set Camera to own character.
+            if (isLocalPlayer) // Set Camera to own character.
             {
                 CameraBehaviour camera = GameObject.Find("Main Camera").GetComponent<CameraBehaviour>();
                 camera.target = transform;
@@ -285,7 +333,7 @@ using Const.Character;
                 m_weaponUI = weaponUIObj.AddComponent<UI.WeaponUI>();
             }
 
-            if (isOwner && !Network.isServer) // Allocating controller ID. When Network is server, ID is already allocated.
+            if (isLocalPlayer && !isServer) // Allocating controller ID. When Network is server, ID is already allocated.
             {
                 Network.RemoveRPCs(controllerView.viewID);
                 NetworkViewID controllerID = Network.AllocateViewID();
@@ -294,41 +342,10 @@ using Const.Character;
             }
         }
 
-        public S2C.CharacterInfo GetInfo()
-        {
-            return new S2C.CharacterInfo(m_job, m_weaponManager.GetCurrentWeaponType(), m_health, m_stateManager.GetState());
-        }
-        
-        public void Init(PlayerSetting setting)
-        {
-            if (!Network.isServer) return;
-
-            LoadSetting(setting);
-
-            LoadJob(m_job);
-
-            if (!ServerGame.Inst.isDedicatedServer) // own player
-            {
-                networkView.RPC("RecvInitFinished", RPCMode.AllBuffered);
-                //newPlayer.networkView.RPC("SetOwner", RPCMode.AllBuffered, pck.SerializeToBytes());
-            }
-            else
-            {
-                networkView.RPC("RecvInitFinished", RPCMode.OthersBuffered);
-                //newPlayer.networkView.RPC("SetOwner", RPCMode.OthersBuffered, pck.SerializeToBytes());
-            }
-        }
-
+        /* Unity 4 code. request server latest character status
         [RPC]
-        void RecvInitFinished(NetworkMessageInfo info)
-        {
-            //ServerCheck
-
-            if (Network.isServer)
-                OnSetOwner(m_owner);
-            else
-                networkView.RPC("RequestCharacterStatus", RPCMode.Server);
-        }
+        void RecvInitFinished(NetworkMessageInfo info);
+        */
 
         [RPC]
         public void SetControllerNetworkView(NetworkViewID viewID)
@@ -336,8 +353,6 @@ using Const.Character;
             controllerView.viewID = viewID;
             controllerView.enabled = true;
         }
-
-        
 
         public void TryChangeJob(Job newJob)
         {
@@ -350,7 +365,7 @@ using Const.Character;
             else if (Network.isClient)
             {
 
-                networkView.RPC("ChangeJob", RPCMode.Server, pck.SerializeToBytes());
+                GetComponent<NetworkView>().RPC("ChangeJob", RPCMode.Server, pck.SerializeToBytes());
             }
         }
 
@@ -358,13 +373,13 @@ using Const.Character;
         public void ChangeJob(byte[] pckData, NetworkMessageInfo info)
         {
             if (!Network.isServer) return;
-            if (!PlayerManager.Inst.IsValidPlayer(m_owner, info.sender)) return;
+            //if (!PlayerManager.Inst.IsValidPlayer(m_owner, info.sender)) return;
 
             //TODO::JobChangeValidation
 
             LoadJob(C2S.ChangeJob.DeserializeFromBytes(pckData).job);
 
-            networkView.RPC("RecvChangeJob", RPCMode.Others, pckData);
+            GetComponent<NetworkView>().RPC("RecvChangeJob", RPCMode.Others, pckData);
         }
 
         [RPC]
@@ -415,6 +430,8 @@ using Const.Character;
             m_inputProcessor.SyncInput(ref stream);
         }
 
+       
+
         void FixedUpdate()
         {
             if (!Network.isServer) return;
@@ -439,7 +456,7 @@ using Const.Character;
         [RPC]
         public void Jump(NetworkMessageInfo info)
         {
-            if(!PlayerManager.Inst.IsValidPlayer(m_owner, info.sender)) return;
+            //if(!PlayerManager.Inst.IsValidPlayer(m_owner, info.sender)) return;
             if (m_stateManager.IsInState(CharacterState.ROPING))
             {
                 m_ropeController.CutRope();
@@ -482,7 +499,7 @@ using Const.Character;
         {
             S2C.SetCharacterHealth pck = new S2C.SetCharacterHealth(health, delta, reason);
 
-            networkView.RPC("RecvHealth", RPCMode.Others, pck.SerializeToBytes());
+            GetComponent<NetworkView>().RPC("RecvHealth", RPCMode.Others, pck.SerializeToBytes());
         }
         
         [RPC]
@@ -553,9 +570,9 @@ using Const.Character;
         void BroadcastRevive()
         {
             if (!ServerGame.Inst.isDedicatedServer)
-                networkView.RPC("RecvRevive", RPCMode.All);
+                GetComponent<NetworkView>().RPC("RecvRevive", RPCMode.All);
             else
-                networkView.RPC("RecvRevive", RPCMode.Others);
+                GetComponent<NetworkView>().RPC("RecvRevive", RPCMode.Others);
         }
 
         [RPC]
@@ -574,7 +591,7 @@ using Const.Character;
             if (!Network.isServer) return;
 
             transform.position = server.RevivalLocation;
-            rigidbody2D.velocity = Vector2.zero;
+            GetComponent<Rigidbody2D>().velocity = Vector2.zero;
 
             m_stateManager.SetState(CharacterState.FALLING);
 
@@ -640,7 +657,7 @@ using Const.Character;
             if (Network.isServer)
                 Build(pck.SerializeToBytes(), new NetworkMessageInfo());
             else
-                networkView.RPC("Build", RPCMode.Server, pck.SerializeToBytes());
+                GetComponent<NetworkView>().RPC("Build", RPCMode.Server, pck.SerializeToBytes());
         }
         [RPC]
         public void Build(byte[] pckData, NetworkMessageInfo info)
@@ -675,7 +692,7 @@ using Const.Character;
         {
             //RaycastHit2D hit = Physics2D.Raycast(transform.position, target.transform.position - transform.position, 5);
 
-            newRope.MakeHingeJoint(rigidbody2D, position, transform.InverseTransformPoint(position));
+            newRope.MakeHingeJoint(GetComponent<Rigidbody2D>(), position, transform.InverseTransformPoint(position));
 
             m_ropableController.Roped(newRope);
         }

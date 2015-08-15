@@ -36,7 +36,7 @@ public class GunBullet : Projectile {
                 return;
             
             character.Damage(damage, new NetworkMessageInfo());
-            ImpactTarget(character.rigidbody2D, impact);
+            ImpactTarget(character.GetComponent<Rigidbody2D>(), impact);
 
             DestroyFromNetwork();
         }

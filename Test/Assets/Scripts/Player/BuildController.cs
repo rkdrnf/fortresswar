@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using Const;
-using C2S = Packet.C2S;
+using C2S = Communication.C2S;
 using Architecture;
 
 namespace Character

@@ -4,11 +4,11 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using ProtoBuf;
-using Packet;
+using Communication;
 using Const;
 
 [ProtoContract]
-public class PlayerSetting : Packet.Packet<PlayerSetting>
+public class PlayerSetting : Communication.Packet<PlayerSetting>
 {
     public PlayerSetting()
     { }
@@ -50,6 +50,14 @@ public class PlayerSetting : Packet.Packet<PlayerSetting>
         if (team == Team.NONE) return PlayerSettingError.TEAM;
 
         return PlayerSettingError.NONE;
+    }
+
+    public override void FillPacket(PlayerSetting packet)
+    {
+        this.playerID = packet.playerID;
+        this.name = packet.name;
+        this.team = packet.team;
+        this.status = packet.status;
     }
 }
 

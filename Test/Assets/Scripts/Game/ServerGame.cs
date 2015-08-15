@@ -4,13 +4,17 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using Const;
-using C2S = Packet.C2S;
-using S2C = Packet.S2C;
+using C2S = Communication.C2S;
+using S2C = Communication.S2C;
 using FocusManager;
 using InGameMenu;
 using Maps;
+using UnityEngine.Networking;
+using UnityEngine.Networking.NetworkSystem;
+using Communication;
+
     [RequireComponent(typeof(PlayerManager), typeof(ProjectileManager))]
-    class ServerGame : MonoBehaviour
+    class ServerGame : NetworkBehaviour
     {
         private static ServerGame instance;
 
@@ -18,10 +22,6 @@ using Maps;
         {
             get
             {
-                if (instance == null)
-                {
-                    instance = new ServerGame();
-                }
                 return instance;
             }
         }
@@ -36,6 +36,15 @@ using Maps;
         public KeyFocusManager keyFocusManager;
         public MouseFocusManager mouseFocusManager;
 
+        public Map mapPrefab;
+        public MapData mapData;
+
+        Map m_currentMap;
+        public Map CurrentMap
+        {
+            get { return m_currentMap; }
+        }
+        
         public TeamSelector teamSelector;
         public JobSelector jobSelector;
         public NameSelector nameSelector;
@@ -51,6 +60,7 @@ using Maps;
 
         void Awake()
         {
+            Debug.Log("[ServerGame] Awake");
             instance = this;
             m_teams = new CTeam[2] { new CTeam(), new CTeam() };
 
@@ -64,83 +74,87 @@ using Maps;
 
         void Start()
         {
+            Debug.Log("[ServerGame] Start");
             RevivalLocation = new Vector2(0f, 3f);
-        }
 
-        void OnServerInitialized()
-        {
-            Debug.Log("Server Initialized!");
 
-            StartServerGame();
-        }
-
-        public void StartServerGame()
-        {
             RecvClearGame();
 
-            Map.Inst.Load();
+            CreateMap();
 
-            int ID = PlayerManager.Inst.SetID(PlayerManager.Inst.GetUniqueID(), Network.player);
-            SetPlayerID(ID, new NetworkMessageInfo());
+            // if not dedicated server.
+            OnNewPlayerJoin(NetworkServer.localConnections.First());
         }
 
-        void OnPlayerConnected(NetworkPlayer player)
+        public void Run()
         {
-            if (PlayerManager.Inst.Exists(player))
+            Debug.Log("ServerGame Started!");
+        }
+        
+        void CreateMap()
+        {
+            Map newMap = (Map)Instantiate(mapPrefab, transform.position, transform.rotation);
+
+            //NetworkHash128 netHash = newMap.GetComponent<NetworkIdentity>().assetId;
+            //ClientScene.RegisterSpawnHandler(netHash, Map.SpawnHandler, Map.UnspawnHandler);
+
+            NetworkServer.Spawn(newMap.gameObject);
+
+            if (newMap.Load(mapData))
+            {
+                m_currentMap = newMap;
+            }
+        }
+
+        public void OnNewPlayerJoin(NetworkConnection conn)
+        {
+            if (PlayerManager.Inst.Exists(conn))
             {
                 //Clear previous connection;
                 return;
             }
 
-            int ID = PlayerManager.Inst.SetID(PlayerManager.Inst.GetUniqueID(), player);
-            networkView.RPC("SetPlayerID", player, ID);
-        }
+            int ID = PlayerManager.Inst.SetID(PlayerManager.Inst.GetUniqueID(), conn);
 
-        [RPC]
-        public void ServerSelectTeam(byte[] updateData, NetworkMessageInfo info)
-        {
-            if (!Network.isServer) return;
+            NetworkServer.SendToClient(conn.connectionId, (short)PacketType.SetPlayerID, new IntegerMessage(ID));
 
-            C2S.UpdatePlayerTeam update = C2S.UpdatePlayerTeam.DeserializeFromBytes(updateData);
-            if (!PlayerManager.Inst.IsValidPlayer(update.playerID, info.sender)) return;
-
-            //TODO::TeamSelect Validation (team balance)
-
-            OnRecvPlayerTeam(update);
-            
-            BroadcastPlayerTeam(updateData);
-
-            ServerPlayer player = PlayerManager.Inst.Get(update.playerID);
-            if (player == null)
+            if (m_currentMap != null && !isServer)
             {
-                ReadyToEnterCharacter(PlayerManager.Inst.GetSetting(update.playerID));
+                m_currentMap.OnNewPlayerJoin(conn);
             }
         }
 
-        void BroadcastPlayerTeam(byte[] updateData)
+        public void UpdatePlayerTeamRequest(C2S.UpdatePlayerTeam pck)
         {
-            networkView.RPC("RecvPlayerTeam", RPCMode.Others, updateData);
+            if (!isServer) return;
+
+            S2C.BroadcastPlayerTeam broadcastTeam = new S2C.BroadcastPlayerTeam(pck.playerID, pck.team);
+            NetworkServer.SendToAll((short)PacketType.BroadcastPlayerTeam, broadcastTeam);
         }
 
-        [RPC]
-        void RecvPlayerTeam(byte[] updateData, NetworkMessageInfo info)
+        public void ReceivePlayerTeam(S2C.BroadcastPlayerTeam pck)
         {
-            //ServerCheck
+            UpdatePlayerTeam(pck.playerID, pck.team);
 
-            C2S.UpdatePlayerTeam update = C2S.UpdatePlayerTeam.DeserializeFromBytes(updateData);
-
-            OnRecvPlayerTeam(update);
+            if (isServer)
+            { 
+                ServerPlayer player = PlayerManager.Inst.Get(pck.playerID);
+                if (player == null)
+                {
+                    TryEnterCharacter(pck.playerID);
+                }
+            }
         }
 
-        void OnRecvPlayerTeam(C2S.UpdatePlayerTeam update)
+        void UpdatePlayerTeam(int playerID, Team team)
         {
-            PlayerManager.Inst.UpdatePlayer(update);
+            PlayerManager.Inst.UpdatePlayerTeam(playerID, team);
 
-            ServerPlayer player = PlayerManager.Inst.Get(update.playerID);
+            ServerPlayer player = PlayerManager.Inst.Get(playerID);
             if (player != null)
             {
-                AddPlayerToTeam(player, update.team);
-                player.OnChangeTeam(update.team);
+                AddPlayerToTeam(player, team);
+                player.OnChangeTeam(team);
             }
         }
 
@@ -152,61 +166,48 @@ using Maps;
             GetTeam(team).AddPlayer(player);
         }
 
-        [RPC]
-        public void ServerSetPlayerName(byte[] updateData, NetworkMessageInfo info)
+        public void UpdatePlayerNameRequest(C2S.UpdatePlayerName pck)
         {
-            if (!Network.isServer) return;
+            if (!isServer) return;
 
-            C2S.UpdatePlayerName update = C2S.UpdatePlayerName.DeserializeFromBytes(updateData);
-            if (!PlayerManager.Inst.IsValidPlayer(update.playerID, info.sender)) return;
-
-            PlayerManager.Inst.UpdatePlayer(update);
-
-
-            if (!isDedicatedServer)
-                networkView.RPC("RecvSetPlayerName", RPCMode.All, update.SerializeToBytes());
-            else
-                networkView.RPC("RecvSetPlayerName", RPCMode.Others, update.SerializeToBytes());
-
-            ReadyToEnterCharacter(PlayerManager.Inst.GetSetting(update.playerID));
+            S2C.BroadcastPlayerName broadcastPck = new S2C.BroadcastPlayerName(pck.playerID, pck.name);
+            NetworkServer.SendToAll((short)PacketType.BroadcastPlayerName, broadcastPck);
         }
 
-        [RPC]
-        void RecvSetPlayerName(byte[] updateData)
+        public void ReceivePlayerName(S2C.BroadcastPlayerName pck)
         {
-            //ServerCheck
+            PlayerManager.Inst.UpdatePlayerName(pck.playerID, pck.name);
 
-            C2S.UpdatePlayerName update = C2S.UpdatePlayerName.DeserializeFromBytes(updateData);
-
-            PlayerManager.Inst.UpdatePlayer(update);
+            if (isServer)
+            {
+                TryEnterCharacter(pck.playerID);
+            }
         }
 
-        void ReadyToEnterCharacter(PlayerSetting setting)
+        void TryEnterCharacter(int playerID)
         {
-            if (!Network.isServer) return;
+            if (!isServer) return;
+
+            PlayerSetting setting = PlayerManager.Inst.GetSetting(playerID);
+
+            if (setting == null) return;
 
             PlayerSettingError error = setting.IsSettingCompleted();
             if (error == PlayerSettingError.NONE)
             {
-                EnterCharacter(setting);
+                OnCharacterPrepared(playerID);
                 return;
             }
 
             S2C.PlayerNotReady notReady = new S2C.PlayerNotReady(error);
-            NetworkPlayer player = PlayerManager.Inst.GetPlayer(setting.playerID);
+            NetworkConnection playerCon = PlayerManager.Inst.GetConnection(setting.playerID);
 
-            if (player == Network.player) // ServerPlayer
-                PlayerNotReadyToEnter(notReady.SerializeToBytes(), new NetworkMessageInfo());
-            else
-                networkView.RPC("PlayerNotReadyToEnter", player, notReady.SerializeToBytes());
+            NetworkServer.SendToClient(playerCon.connectionId, (short)PacketType.PlayerNotReady, notReady);
         }
 
-        [RPC]
-        public void PlayerNotReadyToEnter(byte[] notReadyData, NetworkMessageInfo info)
+        public void PreparePlayer(S2C.PlayerNotReady pck)
         {
-            S2C.PlayerNotReady notReady = S2C.PlayerNotReady.DeserializeFromBytes(notReadyData);
-
-            switch (notReady.error)
+            switch (pck.error)
             {
                 case PlayerSettingError.NAME:
                     nameSelector.Open();
@@ -216,39 +217,68 @@ using Maps;
                     teamSelector.Open();
                     break;
             }
-
         }
-    
 
-        public void EnterCharacter(PlayerSetting setting)
+        public void OnCharacterPrepared(int playerID)
         {
-            if (!Network.isServer) return;
+            if (!isServer) return;
 
-            Debug.Log(String.Format("Player Ready {0}", setting.playerID));
+            Debug.Log(String.Format("Player Ready {0}", playerID));
 
-            GameObject newPlayer = (GameObject)Network.Instantiate(playerPrefab, spawnPosition, Quaternion.identity, 1);
-            ServerPlayer serverPlayer = newPlayer.GetComponent<ServerPlayer>();
-            
-            PlayerManager.Inst.Set(setting.playerID, serverPlayer);
-            serverPlayer.Init(setting);
+            S2C.PlayerPrepared prepared = new S2C.PlayerPrepared();
+
+            NetworkConnection conn = PlayerManager.Inst.GetConnection(playerID);
+            NetworkServer.SendToClient(conn.connectionId, (short)PacketType.PlayerPrepared, prepared);
+        }
+
+        public void AddPlayerRequest()
+        {
+            Debug.Log("[Client] AddPlayerRequest. ClientScene.AddPlayer");
+            ClientScene.AddPlayer(0);
+        }
+
+        public void AddPlayerCharacter(NetworkConnection conn, short playerControllerID)
+        {
+            int playerID = PlayerManager.Inst.GetID(conn);
+            if (playerID == -1)
+            {
+                Debug.LogError(string.Format("Player ID doesn't exist for con {0}", conn.ToString()));
+                return;
+            }
+
+            PlayerSetting setting = PlayerManager.Inst.GetSetting(playerID);
+            if (setting == null)
+            {
+                Debug.LogError(string.Format("Player Setting doesn't exist for ID {0}", playerID));
+                return;
+            }
+
+
+            ServerPlayer newPlayer = (ServerPlayer)Instantiate(playerPrefab, spawnPosition, Quaternion.identity);
+
+            NetworkServer.AddPlayerForConnection(conn, newPlayer.gameObject, playerControllerID);
+
+            PlayerManager.Inst.Set(setting.playerID, newPlayer);
+            newPlayer.Init(setting);
         }
 
         /// <summary>
         /// Player Connection, Disconnection
         /// </summary>
         /// <param name="player"></param>
+        /// 
 
-        void OnPlayerDisconnected(NetworkPlayer player)
+        public void OnGamePlayerDisconnected(NetworkConnection conn)
         {
-            Debug.Log(String.Format("Player Disconnected! {0}", player));
+            Debug.Log(String.Format("Player Disconnected! {0}", conn.address));
 
-            int playerID = PlayerManager.Inst.GetID(player);
+            int playerID = PlayerManager.Inst.GetID(conn);
             ServerPlayer character = PlayerManager.Inst.Get(playerID);
 
             if (character != null)
                 character.RemoveCharacterFromNetwork();
 
-            networkView.RPC("RecvPlayerRemove", RPCMode.Others, playerID);
+            GetComponent<NetworkView>().RPC("RecvPlayerRemove", RPCMode.Others, playerID);
         }
 
         [RPC]
@@ -260,7 +290,7 @@ using Maps;
 
         public void ClearGame()
         {
-            networkView.RPC("RecvClearGame", RPCMode.All);
+            GetComponent<NetworkView>().RPC("RecvClearGame", RPCMode.All);
         }
 
         [RPC]
@@ -268,7 +298,10 @@ using Maps;
         {
             PlayerManager.Inst.Clear();
             ProjectileManager.Inst.Clear();
-            Map.Inst.Clear();
+            if (m_currentMap != null)
+            {
+                m_currentMap.Clear();
+            }
         }
 
         void OnDisconnectedFromServer(NetworkDisconnection info)
@@ -281,7 +314,10 @@ using Maps;
             PlayerManager.Inst.Clear();
             ProjectileManager.Inst.Clear();
 
-            Map.Inst.Clear();
+            if (m_currentMap != null)
+            {
+                m_currentMap.Clear();
+            }
         }
 
         public void OpenInGameMenu(InGameMenuType menu)
@@ -325,11 +361,8 @@ using Maps;
             return m_ID;
         }
 
-        [RPC]
-        public void SetPlayerID(int newID, NetworkMessageInfo info)
+        public void SetPlayerID(int newID)
         {
-            //ServerCheck
-
             SetMyID(newID);
             nameSelector.Open();
         }
@@ -337,25 +370,13 @@ using Maps;
         public void SelectTeam(Team team)
         {
             C2S.UpdatePlayerTeam selectTeam = new C2S.UpdatePlayerTeam(m_ID, team);
-
-            if (Network.isServer)
-                ServerSelectTeam(selectTeam.SerializeToBytes(), new NetworkMessageInfo());
-            else if (Network.isClient)
-                networkView.RPC("ServerSelectTeam", RPCMode.Server, selectTeam.SerializeToBytes());
+            GameNetworkManager.Inst.client.Send((short)PacketType.UpdatePlayerTeam, selectTeam);
         }
 
-        public void SetPlayerName(string name)
+        public void UpdatePlayerName(string name)
         {
             C2S.UpdatePlayerName pck = new C2S.UpdatePlayerName(m_ID, name);
-
-            if (Network.isServer)
-            {
-                ServerSetPlayerName(pck.SerializeToBytes(), new NetworkMessageInfo());
-            }
-            else if (Network.isClient)
-            {
-                networkView.RPC("ServerSetPlayerName", RPCMode.Server, pck.SerializeToBytes());
-            }
+            GameNetworkManager.Inst.client.Send((short)PacketType.UpdatePlayerName, pck);
         }
 
 

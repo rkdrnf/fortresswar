@@ -4,8 +4,8 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using Server;
-using C2S = Packet.C2S;
-using S2C = Packet.S2C;
+using C2S = Communication.C2S;
+using S2C = Communication.S2C;
 using Const;
 using Const.Effect;
 using Effect;
@@ -41,7 +41,7 @@ public abstract class Projectile : Weapon
     void Awake()
     {
         collisionLayer = LayerMask.GetMask("Tile", "Building", "Player");
-        networkView.group = NetworkViewGroup.PROJECTILE;
+        GetComponent<NetworkView>().group = NetworkViewGroup.PROJECTILE;
         startPosition = transform.position;
         collider = GetComponent<Collider2D>();
 
@@ -66,14 +66,14 @@ public abstract class Projectile : Weapon
     void OnPlayerMapLoaded()
     {
         if (Network.isClient)
-            networkView.RPC("RequestCurrentStatus", RPCMode.Server);
+            GetComponent<NetworkView>().RPC("RequestCurrentStatus", RPCMode.Server);
     }
 
     public virtual void Init(ServerPlayer player, WeaponInfo weapon, FireInfo info)
     {
         owner = player.GetOwner();
         direction = info.direction;
-        rigidbody2D.AddForce(direction * GetPower(weapon), ForceMode2D.Impulse);
+        GetComponent<Rigidbody2D>().AddForce(direction * GetPower(weapon), ForceMode2D.Impulse);
         
         long projID = ProjectileManager.Inst.GetUniqueKeyForNewProjectile();
         ProjectileManager.Inst.Set(projID, this);
@@ -93,16 +93,16 @@ public abstract class Projectile : Weapon
     [RPC]
     protected virtual void RequestCurrentStatus(NetworkMessageInfo info)
     {
-        S2C.ProjectileStatus pck = new S2C.ProjectileStatus(owner, transform.position, rigidbody2D.velocity);
+        S2C.ProjectileStatus pck = new S2C.ProjectileStatus(owner, transform.position, GetComponent<Rigidbody2D>().velocity);
 
-        networkView.RPC("SetStatus", info.sender, pck.SerializeToBytes());
+        GetComponent<NetworkView>().RPC("SetStatus", info.sender, pck.SerializeToBytes());
     }
 
     protected virtual void BroadcastInit()
     {
-        S2C.ProjectileStatus pck = new S2C.ProjectileStatus(owner, transform.position, rigidbody2D.velocity);
+        S2C.ProjectileStatus pck = new S2C.ProjectileStatus(owner, transform.position, GetComponent<Rigidbody2D>().velocity);
 
-        networkView.RPC("SetStatus", RPCMode.OthersBuffered, pck.SerializeToBytes());
+        GetComponent<NetworkView>().RPC("SetStatus", RPCMode.OthersBuffered, pck.SerializeToBytes());
     }
 
     [RPC]
@@ -112,7 +112,7 @@ public abstract class Projectile : Weapon
 
         owner = pck.owner;
         transform.position = pck.position;
-        rigidbody2D.velocity = pck.velocity;
+        GetComponent<Rigidbody2D>().velocity = pck.velocity;
     }
 
 
@@ -131,7 +131,7 @@ public abstract class Projectile : Weapon
 
     protected void Rotate()
     {
-        Quaternion rot = Quaternion.FromToRotation(Vector3.right, new Vector3(rigidbody2D.velocity.x, rigidbody2D.velocity.y));
+        Quaternion rot = Quaternion.FromToRotation(Vector3.right, new Vector3(GetComponent<Rigidbody2D>().velocity.x, GetComponent<Rigidbody2D>().velocity.y));
         transform.rotation = rot;
     }
 
@@ -270,7 +270,7 @@ public abstract class Projectile : Weapon
             if (collidingObject.CompareTag("Player"))
             {
                 collidingObject.GetComponent<ServerPlayer>().Damage(DamageByDistance(collidingObject.transform.position), new NetworkMessageInfo());
-                ImpactTargetAway(collidingObject.rigidbody2D, ImpactByDistance(collidingObject.transform.position));
+                ImpactTargetAway(collidingObject.GetComponent<Rigidbody2D>(), ImpactByDistance(collidingObject.transform.position));
             }
         }
     }
@@ -315,7 +315,7 @@ public abstract class Projectile : Weapon
     protected void ImpactTarget(Rigidbody2D targetBody, int impact)
     {
         const int multiplier = 100;
-        targetBody.AddForce(rigidbody2D.velocity.normalized * impact * multiplier, ForceMode2D.Impulse);
+        targetBody.AddForce(GetComponent<Rigidbody2D>().velocity.normalized * impact * multiplier, ForceMode2D.Impulse);
     }
 
     protected void ImpactTargetAway(Rigidbody2D targetBody, int impact)
@@ -333,7 +333,7 @@ public abstract class Projectile : Weapon
     {
         if (Network.isServer)
         {
-            Network.RemoveRPCs(networkView.viewID);
+            Network.RemoveRPCs(GetComponent<NetworkView>().viewID);
             Network.Destroy(gameObject);
         }
     }

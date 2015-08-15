@@ -441,7 +441,7 @@ namespace Architecture
         }
 
         [ContextMenu("Refresh")]
-        protected void Refresh()
+        virtual protected void Refresh()
         {
             BuildMesh();
             UpdateMesh();

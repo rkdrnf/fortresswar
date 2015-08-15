@@ -58,7 +58,7 @@ namespace Client
         {
             if (text.Trim().Length > 0)
             {
-                networkView.RPC("BroadCastChat", RPCMode.All, ServerGame.Inst.GetID(), text);
+                GetComponent<NetworkView>().RPC("BroadCastChat", RPCMode.All, ServerGame.Inst.GetID(), text);
             }
             writingMessage = "";
         }

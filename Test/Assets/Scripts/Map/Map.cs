@@ -3,16 +3,18 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 
-using S2C = Packet.S2C;
-using C2S = Packet.C2S;
-
+using Communication;
 using Server;
 using Const;
 using Architecture;
+using UnityEngine.Networking;
+
+using S2C = Communication.S2C;
+using C2S = Communication.C2S;
 
 namespace Maps
 { 
-public class Map : MonoBehaviour {
+public class Map : NetworkBehaviour {
 
     string m_name;
 
@@ -44,52 +46,74 @@ public class Map : MonoBehaviour {
     {
         instance = this;
 
-        networkView.group = NetworkViewGroup.GAME;
         m_mapLoadTime = 0f;
     }
 
-    void OnPlayerConnected(NetworkPlayer player)
+    void Start()
     {
-        S2C.MapInfo pck = new S2C.MapInfo(m_mapData.name, m_tileManager.GetTiles(), m_buildingManager.GetBuildings());
-        networkView.RPC("RecvMap", player, pck.SerializeToBytes());
+        Debug.Log("[Map] Start");
     }
 
-    [RPC]
-    void RecvMap(byte[] pckData, NetworkMessageInfo info)
+    public void SetMap(string mapName)
     {
-        //ServerCheck
+        m_name = mapName;
+    }
 
-        S2C.MapInfo pck = S2C.MapInfo.DeserializeFromBytes(pckData);
+    public override void OnStartClient()
+    {
+        base.OnStartClient();
+        Debug.Log("[Map] OnStartClient");
+    }
 
-        Debug.Log("[Client] map instantiated by " + info.sender);
+    public void OnNewPlayerJoin(NetworkConnection conn)
+    {
+        Debug.Log("[Map] PlayerConnect");
 
-        Load(pck);
+        SendCurrentMapData(conn);
+    }
+
+    void SendCurrentMapData(NetworkConnection conn)
+    {
+        S2C.MapInfo pck = new S2C.MapInfo(); 
+
+        pck.m_mapName = m_mapData.name;
+        pck.m_tiles = new List<S2C.TileStatus>();
+        pck.m_buildings = new List<S2C.BuildingStatus>();
+
+        foreach (Tile tile in m_tileManager.GetTiles())
+        {
+            pck.m_tiles.Add(new S2C.TileStatus(tile));
+        }
+        foreach (Building building in m_buildingManager.GetBuildings())
+        {
+            pck.m_buildings.Add(new S2C.BuildingStatus(building));
+        }
+
+        NetworkServer.SendToClient(conn.connectionId, (int)PacketType.SendMapInfo, pck);
+    }
+
+    public void ReceiveMapInfo(S2C.MapInfo mapInfo)
+    {
+        Debug.Log("[Client] map instantiated");
+
+        Load(mapInfo);
 
         ServerGame.Inst.OnMapLoadCompleted(this);
     }
 
-    public void Load(S2C.MapInfo mapinfo)
+    public void Load(S2C.MapInfo mapInfo)
     {
-        Load(mapinfo.m_mapName);
-
-        LoadTiles(mapinfo.m_tiles);
-        LoadBuildings(mapinfo.m_buildings);
-    }
-
-    public void Load(string mapName)
-    {
-        MapData mapData = (MapData)Resources.Load("Maps/" + mapName);
+        MapData mapData = (MapData)Resources.Load("Maps/" + mapInfo.m_mapName);
         Load(mapData);
 
+        LoadTiles(mapInfo.m_tiles);
+        LoadBuildings(mapInfo.m_buildings);
     }
 
-    public void Load()
+    public bool Load(MapData mapData)
     {
-        Load(m_mapData);
-    }
+        m_mapData = mapData;
 
-    public void Load(MapData mapData)
-    {
         m_width = mapData.mapWidth;
         m_height = mapData.mapHeight;
         m_name = mapData.mapName;
@@ -98,15 +122,18 @@ public class Map : MonoBehaviour {
         Lights.ShadowPane.Inst.Init(m_width, m_height);
         LoadBackground(mapData.backgroundImage);
 
-        
+        if (!isServer)
+        {
+            Debug.Log("Not server. Remote Client will receive map data from server.");
+            return true;
+        }
 
-        if (!Network.isServer) return;
         LoadTiles(mapData.tiles);
         LoadBuildings(new List<Building>());
-
-
-
+        
         m_mapLoadTime = Network.time;
+
+        return true;
     }
     
     public void LoadBackground(Sprite image)
@@ -117,7 +144,7 @@ public class Map : MonoBehaviour {
 
     public void LoadTiles(IEnumerable<Tile> tiles)
     {
-        if (!Network.isServer) return; //서버만 데이터에서 로딩, 클라는 network로 초기화
+        if (!isServer) return; //서버만 데이터에서 로딩, 클라는 network로 초기화
 
         foreach (Tile tile in tiles)
         {
@@ -127,7 +154,7 @@ public class Map : MonoBehaviour {
 
     public void LoadBuildings(IEnumerable<Building> buildings)
     {
-        if (!Network.isServer) return; //서버만 데이터에서 로딩, 클라는 network로 초기화
+        if (!isServer) return; //서버만 데이터에서 로딩, 클라는 network로 초기화
     }
 
     public void LoadTiles(IEnumerable<S2C.TileStatus> tiles)

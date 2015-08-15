@@ -2,8 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 
-using S2C = Packet.S2C;
-using C2S = Packet.C2S;
+using S2C = Communication.S2C;
+using C2S = Communication.C2S;
 using System;
 using Const.Structure;
 using Architecture;

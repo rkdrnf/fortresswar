@@ -127,22 +127,22 @@ namespace Character
             const int multiplier = 300;
             if (m_horMov != 0)
             {
-                if (m_horMov * m_player.rigidbody2D.velocity.x < 0) // 다른방향
+                if (m_horMov * m_player.GetComponent<Rigidbody2D>().velocity.x < 0) // 다른방향
                 {
-                    m_player.rigidbody2D.AddForce(new Vector2(m_horMov * jobStat.MovingSpeed * multiplier, 0));
+                    m_player.GetComponent<Rigidbody2D>().AddForce(new Vector2(m_horMov * jobStat.MovingSpeed * multiplier, 0));
                 }
                 else // 같은 방향
                 {
-                    m_player.rigidbody2D.AddForce(new Vector2(m_horMov * jobStat.MovingSpeed * multiplier, 0));
-                    if (m_player.rigidbody2D.velocity.x > jobStat.MovingSpeed || m_player.rigidbody2D.velocity.x < -jobStat.MovingSpeed) //초과시 최대스피드로
+                    m_player.GetComponent<Rigidbody2D>().AddForce(new Vector2(m_horMov * jobStat.MovingSpeed * multiplier, 0));
+                    if (m_player.GetComponent<Rigidbody2D>().velocity.x > jobStat.MovingSpeed || m_player.GetComponent<Rigidbody2D>().velocity.x < -jobStat.MovingSpeed) //초과시 최대스피드로
                     {
-                        m_player.rigidbody2D.velocity = new Vector2(m_horMov * jobStat.MovingSpeed, m_player.rigidbody2D.velocity.y);
+                        m_player.GetComponent<Rigidbody2D>().velocity = new Vector2(m_horMov * jobStat.MovingSpeed, m_player.GetComponent<Rigidbody2D>().velocity.y);
                     }
                 }
             }
             else
             {
-                m_player.rigidbody2D.velocity = Vector2.Lerp(m_player.rigidbody2D.velocity, new Vector2(0, m_player.rigidbody2D.velocity.y), Time.deltaTime * 4);
+                m_player.GetComponent<Rigidbody2D>().velocity = Vector2.Lerp(m_player.GetComponent<Rigidbody2D>().velocity, new Vector2(0, m_player.GetComponent<Rigidbody2D>().velocity.y), Time.deltaTime * 4);
             }
         }
 
@@ -151,22 +151,22 @@ namespace Character
             const int multiplier = 200;
             if (m_horMov != 0)
             {
-                if (m_horMov * m_player.rigidbody2D.velocity.x < 0) // 다른방향
+                if (m_horMov * m_player.GetComponent<Rigidbody2D>().velocity.x < 0) // 다른방향
                 {
-                    m_player.rigidbody2D.AddForce(new Vector2(m_horMov * jobStat.MovingSpeed * multiplier, 0));
+                    m_player.GetComponent<Rigidbody2D>().AddForce(new Vector2(m_horMov * jobStat.MovingSpeed * multiplier, 0));
                 }
                 else // 같은 방향
                 {
-                    m_player.rigidbody2D.AddForce(new Vector2(m_horMov * jobStat.MovingSpeed * multiplier, 0));
-                    if (m_player.rigidbody2D.velocity.x > jobStat.MovingSpeed || m_player.rigidbody2D.velocity.x < -jobStat.MovingSpeed) //초과시 최대스피드로
+                    m_player.GetComponent<Rigidbody2D>().AddForce(new Vector2(m_horMov * jobStat.MovingSpeed * multiplier, 0));
+                    if (m_player.GetComponent<Rigidbody2D>().velocity.x > jobStat.MovingSpeed || m_player.GetComponent<Rigidbody2D>().velocity.x < -jobStat.MovingSpeed) //초과시 최대스피드로
                     {
-                        m_player.rigidbody2D.velocity = new Vector2(m_horMov * jobStat.MovingSpeed, m_player.rigidbody2D.velocity.y);
+                        m_player.GetComponent<Rigidbody2D>().velocity = new Vector2(m_horMov * jobStat.MovingSpeed, m_player.GetComponent<Rigidbody2D>().velocity.y);
                     }
                 }
             }
             else
             {
-                m_player.rigidbody2D.velocity = Vector2.Lerp(m_player.rigidbody2D.velocity, new Vector2(0, m_player.rigidbody2D.velocity.y), Time.deltaTime * 4);
+                m_player.GetComponent<Rigidbody2D>().velocity = Vector2.Lerp(m_player.GetComponent<Rigidbody2D>().velocity, new Vector2(0, m_player.GetComponent<Rigidbody2D>().velocity.y), Time.deltaTime * 4);
             }
         }
 
@@ -175,17 +175,17 @@ namespace Character
             const int multiplier = 200;
             if (m_horMov != 0)
             {
-                if (m_horMov * m_player.rigidbody2D.velocity.x < 0) // 다른방향
+                if (m_horMov * m_player.GetComponent<Rigidbody2D>().velocity.x < 0) // 다른방향
                 {
-                    m_player.rigidbody2D.AddForce(new Vector2(m_horMov * jobStat.MovingSpeed * multiplier, 0));
+                    m_player.GetComponent<Rigidbody2D>().AddForce(new Vector2(m_horMov * jobStat.MovingSpeed * multiplier, 0));
                 }
                 else // 같은 방향
                 {
-                    m_player.rigidbody2D.AddForce(new Vector2(m_horMov * jobStat.MovingSpeed * multiplier, 0));
-                    if (m_player.rigidbody2D.velocity.x > maxSpeed || m_player.rigidbody2D.velocity.x < -maxSpeed) //초과시 최대스피드로
+                    m_player.GetComponent<Rigidbody2D>().AddForce(new Vector2(m_horMov * jobStat.MovingSpeed * multiplier, 0));
+                    if (m_player.GetComponent<Rigidbody2D>().velocity.x > maxSpeed || m_player.GetComponent<Rigidbody2D>().velocity.x < -maxSpeed) //초과시 최대스피드로
                     {
-                        m_player.rigidbody2D.velocity = new Vector2(m_horMov * maxSpeed, m_player.rigidbody2D.velocity.y);
-                        Debug.Log("MaxSpeed: " + m_player.rigidbody2D.velocity);
+                        m_player.GetComponent<Rigidbody2D>().velocity = new Vector2(m_horMov * maxSpeed, m_player.GetComponent<Rigidbody2D>().velocity.y);
+                        Debug.Log("MaxSpeed: " + m_player.GetComponent<Rigidbody2D>().velocity);
                     }
                 }
             }
@@ -210,9 +210,9 @@ namespace Character
 
         void StopJumping()
         {
-            if (m_player.rigidbody2D.velocity.y > 0)
+            if (m_player.GetComponent<Rigidbody2D>().velocity.y > 0)
             {
-                m_player.rigidbody2D.velocity = Vector2.Lerp(m_player.rigidbody2D.velocity, new Vector2(m_player.rigidbody2D.velocity.x, 0), Time.deltaTime * 4);
+                m_player.GetComponent<Rigidbody2D>().velocity = Vector2.Lerp(m_player.GetComponent<Rigidbody2D>().velocity, new Vector2(m_player.GetComponent<Rigidbody2D>().velocity.x, 0), Time.deltaTime * 4);
             }
         }
 
@@ -230,7 +230,7 @@ namespace Character
                 StopJumping();
             }
 
-            if (m_player.rigidbody2D.velocity.y <= 0f)
+            if (m_player.GetComponent<Rigidbody2D>().velocity.y <= 0f)
             {
                 m_player.SetState(CharacterState.FALLING);
             }
@@ -279,14 +279,14 @@ namespace Character
                 //Fall to ground.
                 if (m_verMov <= 0f)
                 {
-                    m_player.rigidbody2D.velocity = new Vector2(m_horMov * jobStat.MovingSpeed, m_player.rigidbody2D.velocity.y);
+                    m_player.GetComponent<Rigidbody2D>().velocity = new Vector2(m_horMov * jobStat.MovingSpeed, m_player.GetComponent<Rigidbody2D>().velocity.y);
 
 
                     m_player.SetState(CharacterState.FALLING);
                     return;
                 }
 
-                m_player.rigidbody2D.velocity = new Vector2(m_horMov * jobStat.MovingSpeed, m_player.rigidbody2D.velocity.y);
+                m_player.GetComponent<Rigidbody2D>().velocity = new Vector2(m_horMov * jobStat.MovingSpeed, m_player.GetComponent<Rigidbody2D>().velocity.y);
             }
         }
 
@@ -311,7 +311,7 @@ namespace Character
         void Jump()
         {
             m_player.SetState(CharacterState.JUMPING_UP);
-            m_player.rigidbody2D.velocity = new Vector2(m_player.rigidbody2D.velocity.x, jobStat.JumpingSpeed);
+            m_player.GetComponent<Rigidbody2D>().velocity = new Vector2(m_player.GetComponent<Rigidbody2D>().velocity.x, jobStat.JumpingSpeed);
         }
 
         void WallWalk(Direction direction)
@@ -333,7 +333,7 @@ namespace Character
                 return;
             }
 
-            m_player.rigidbody2D.velocity = new Vector2(m_player.rigidbody2D.velocity.x, jobStat.WallWalkingSpeed);
+            m_player.GetComponent<Rigidbody2D>().velocity = new Vector2(m_player.GetComponent<Rigidbody2D>().velocity.x, jobStat.WallWalkingSpeed);
         }
 
         void EndWallWalk()
@@ -355,7 +355,7 @@ namespace Character
         {
             do
             {
-                if (m_player.rigidbody2D.velocity.y < -6f)
+                if (m_player.GetComponent<Rigidbody2D>().velocity.y < -6f)
                     return false;
                 //Check Wall and moving direction
 
@@ -396,7 +396,7 @@ namespace Character
             EndWallWalk();
 
             m_player.SetState(CharacterState.WALL_JUMPING);
-            m_player.rigidbody2D.velocity = new Vector2(direction == Direction.RIGHT ? jobStat.WallJumpingSpeed.x : -jobStat.WallJumpingSpeed.x, jobStat.WallJumpingSpeed.y);
+            m_player.GetComponent<Rigidbody2D>().velocity = new Vector2(direction == Direction.RIGHT ? jobStat.WallJumpingSpeed.x : -jobStat.WallJumpingSpeed.x, jobStat.WallJumpingSpeed.y);
         }
 
         void WhenRoping()
@@ -415,7 +415,7 @@ namespace Character
 
                 perpendicular.Normalize();
 
-                m_player.rigidbody2D.AddForce(perpendicular * jobStat.RopeMovingSpeed * 70);
+                m_player.GetComponent<Rigidbody2D>().AddForce(perpendicular * jobStat.RopeMovingSpeed * 70);
             }
         }
 

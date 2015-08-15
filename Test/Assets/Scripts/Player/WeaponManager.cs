@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using C2S = Packet.C2S;
+using C2S = Communication.C2S;
 using Const;
 using Server;
 using UnityEngine;
@@ -180,7 +180,7 @@ using UnityEngine;
             }
             else
             {
-                networkView.RPC("Fire", RPCMode.Server, fire.SerializeToBytes());
+                GetComponent<NetworkView>().RPC("Fire", RPCMode.Server, fire.SerializeToBytes());
             }
         }
 
@@ -202,7 +202,7 @@ using UnityEngine;
                 }
                 else
                 {
-                    player.networkView.RPC("ServerCharge", RPCMode.Server, charge.SerializeToBytes());
+                    player.GetComponent<NetworkView>().RPC("ServerCharge", RPCMode.Server, charge.SerializeToBytes());
                 }
             }
         }
@@ -211,7 +211,7 @@ using UnityEngine;
         public void Fire(byte[] fireData, NetworkMessageInfo msgInfo)
         {
             if (!Network.isServer) return;
-            if (!PlayerManager.Inst.IsValidPlayer(player.GetOwner(), msgInfo.sender)) return;
+            //if (!PlayerManager.Inst.IsValidPlayer(player.GetOwner(), msgInfo.sender)) return;
 
             C2S.Fire fire = C2S.Fire.DeserializeFromBytes(fireData);
 
@@ -233,7 +233,7 @@ using UnityEngine;
         public void ServerCharge(byte[] pckData, NetworkMessageInfo info)
         {
             if (!Network.isServer) return;
-            if (!PlayerManager.Inst.IsValidPlayer(player.GetOwner(), info.sender)) return;
+            //if (!PlayerManager.Inst.IsValidPlayer(player.GetOwner(), info.sender)) return;
 
             C2S.ChargeWeapon charge = C2S.ChargeWeapon.DeserializeFromBytes(pckData);
 

@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
-using S2C = Packet.S2C;
-using C2S = Packet.C2S;
+using S2C = Communication.S2C;
+using C2S = Communication.C2S;
 using Server;
 using Const;
 using Const.Structure;
@@ -202,7 +202,7 @@ namespace Architecture
 
         public void Roped(Rope rope, Vector2 position)
         {
-            rope.rigidbody2D.isKinematic = true;
+            rope.GetComponent<Rigidbody2D>().isKinematic = true;
             m_ropableController.Roped(rope);
         }
 

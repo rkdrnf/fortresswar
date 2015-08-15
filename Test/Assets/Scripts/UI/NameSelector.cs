@@ -2,8 +2,8 @@
 using System.Collections;
 using System.Text;
 using System;
-using S2C = Packet.S2C;
-using C2S = Packet.C2S;
+using S2C = Communication.S2C;
+using C2S = Communication.C2S;
 using Util;
 using Const;
 using Server;
@@ -17,13 +17,17 @@ namespace InGameMenu
 
         string playerName;
 
+        public NameSelector()
+        {
+            Debug.Log("Start nameConstructor");
+            stateManager = new NameSelectorSM();
+            playerName = "";
+        }
+
 
         void Start()
         {
-            stateManager = new NameSelectorSM();
             stateManager.SetState(NameSelectorState.OFF);
-
-            playerName = "";
         }
 
         public void Open()
@@ -47,7 +51,7 @@ namespace InGameMenu
             if (GUI.Button(new Rect(Screen.width / 2 - 50, Screen.height / 2 - 20, 100f, 20f), "Enter"))
             {
                 Close();
-                ServerGame.Inst.SetPlayerName(playerName);
+                ServerGame.Inst.UpdatePlayerName(playerName);
 
             }
         }

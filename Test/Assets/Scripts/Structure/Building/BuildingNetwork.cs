@@ -4,8 +4,8 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using Const.Structure;
-using S2C = Packet.S2C;
-using C2S = Packet.C2S;
+using S2C = Communication.S2C;
+using C2S = Communication.C2S;
 using Architecture;
 using System.Collections;
 
@@ -35,7 +35,7 @@ namespace Architecture
             if (m_fallingBuildings.Count > 0)
             {
                 S2C.BuildingFall pck = new S2C.BuildingFall(m_fallingBuildings);
-                networkView.RPC("RecvFall", RPCMode.Others, pck.SerializeToBytes());
+                GetComponent<NetworkView>().RPC("RecvFall", RPCMode.Others, pck.SerializeToBytes());
                 m_fallingBuildings.Clear();
             }
         }
@@ -43,7 +43,7 @@ namespace Architecture
         public void BroadcastBuild(Building building)
         {
             S2C.BuildingStatus pck = new S2C.BuildingStatus(building);
-            networkView.RPC("RecvBuild", RPCMode.Others, pck.SerializeToBytes());
+            GetComponent<NetworkView>().RPC("RecvBuild", RPCMode.Others, pck.SerializeToBytes());
         }
 
         [RPC]
@@ -59,7 +59,7 @@ namespace Architecture
         public void BroadcastHealth(int ID, int health, DestroyReason reason)
         {
             S2C.SetStructureHealth pck = new S2C.SetStructureHealth(ID, health, reason);
-            networkView.RPC("RecvHealth", RPCMode.Others, pck.SerializeToBytes());
+            GetComponent<NetworkView>().RPC("RecvHealth", RPCMode.Others, pck.SerializeToBytes());
         }
 
         [RPC]

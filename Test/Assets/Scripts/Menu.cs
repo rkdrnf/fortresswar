@@ -4,13 +4,10 @@ using System.Text;
 using System;
 using Const;
 using Util;
+using UnityEngine.Networking.Match;
+using System.Linq;
 
 public class Menu : MonoBehaviour {
-
-	public GameObject netManagerObj;
-
-
-	NetworkManager netManager;
 
     MenuState state;
 
@@ -23,35 +20,30 @@ public class Menu : MonoBehaviour {
     {
         Util.StateUtil.SetState(ref this.state, state);
 
-        Camera menuCamera = GameObject.Find("MenuCamera").camera;
+        Camera menuCamera = GameObject.Find("MenuCamera").GetComponent<Camera>();
 
         switch (state)
         {
             case MenuState.OFF:
                 menuCamera.enabled = false;
-                netManager.ClearServerList();
+                GameNetworkManager.Inst.ClearServerList();
                 break;
 
             case MenuState.ON:
                 menuCamera.enabled = true;
-                netManager.ClearServerList();
+                GameNetworkManager.Inst.ClearServerList();
                 break;
         }
 
         return;
     }
 
-	void Awake()
-	{
-		netManager = netManagerObj.GetComponent<NetworkManager> ();
-	}
-
 	public void RefreshServerList()
 	{
         if (IsInState(MenuState.OFF))
             return;
 
-		netManager.RefreshHostList ();
+        GameNetworkManager.Inst.RefreshHostList();
 	}
 
 	public void StartServer()
@@ -60,7 +52,7 @@ public class Menu : MonoBehaviour {
             return;
 
         SetState(MenuState.OFF);
-		netManager.StartServer ();
+		GameNetworkManager.Inst.Host();
 	}
 
 	void OnGUI()
@@ -68,17 +60,21 @@ public class Menu : MonoBehaviour {
         if (IsInState(MenuState.OFF))
             return;
 
-		HostData[] hostList = netManager.GetServerList ();
+        MatchDesc[] hostList = GameNetworkManager.Inst.GetRooms();
 
 		if (hostList.Length > 0)
 		{
 			for (int i = 0; i < hostList.Length; i++) 
 			{
-				if (GUI.Button(new Rect(20, 70 * (i + 1) + 20, 450, 50), string.Format("Name: {0}, IP: {1}:{2}, Players: {3}, Nat:{4}", hostList[i].gameName, String.Join(".", hostList[i].ip), hostList[i].port, hostList[i].connectedPlayers, hostList[i].useNat)))
+				if (GUI.Button(new Rect(20, 70 * (i + 1) + 20, 450, 50)
+                    , string.Format("Name: {0}, IP: {1}, Players: {2}"
+                    , hostList[i].name
+                    , String.Join(".", hostList[i].directConnectInfos.Select(info => info.publicAddress).ToArray())
+                    , hostList[i].currentSize
+                    )))
 				{
                     SetState(MenuState.OFF);
-					var cError = netManager.Connect(hostList[i]);
-					Debug.Log(cError);
+                    GameNetworkManager.Inst.Connect(hostList[i]);
 				}
 			}
 		}

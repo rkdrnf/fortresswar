@@ -4,8 +4,8 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using Const.Structure;
-using S2C = Packet.S2C;
-using C2S = Packet.C2S;
+using S2C = Communication.S2C;
+using C2S = Communication.C2S;
 using Architecture;
 
 namespace Maps
@@ -28,7 +28,7 @@ namespace Maps
         public void BroadcastHealth(int ID, int health, DestroyReason reason)
         {
             S2C.SetStructureHealth pck = new S2C.SetStructureHealth(ID, health, reason);
-            networkView.RPC("RecvHealth", RPCMode.Others, pck.SerializeToBytes());
+            GetComponent<NetworkView>().RPC("RecvHealth", RPCMode.Others, pck.SerializeToBytes());
         }
 
         [RPC]

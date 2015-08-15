@@ -5,8 +5,9 @@ using System.Text;
 using UnityEngine;
 using System.Threading;
 using Const;
-using S2C = Packet.S2C;
-using C2S = Packet.C2S;
+using S2C = Communication.S2C;
+using C2S = Communication.C2S;
+using UnityEngine.Networking;
 
 public class PlayerManager : MonoBehaviour
 {
@@ -14,7 +15,7 @@ public class PlayerManager : MonoBehaviour
 
     private Dictionary<int, PlayerSetting> settingDic;
 
-    private Dictionary<int, NetworkPlayer> playerIDDic;
+    private Dictionary<int, NetworkConnection> playerConDic;
 
     int idCount;
 
@@ -42,7 +43,7 @@ public class PlayerManager : MonoBehaviour
         instance = this;
         playerObjManager = new PlayerObjManager();
         settingDic = new Dictionary<int, PlayerSetting>();
-        playerIDDic = new Dictionary<int, NetworkPlayer>();
+        playerConDic = new Dictionary<int, NetworkConnection>();
         playerLoadDic = new Dictionary<ServerPlayer, bool>();
     }
 
@@ -65,9 +66,9 @@ public class PlayerManager : MonoBehaviour
         playerObjManager.Remove(player);
     }
 
-    public bool Exists(NetworkPlayer player)
+    public bool Exists(NetworkConnection player)
     {
-        foreach (var data in playerIDDic)
+        foreach (var data in playerConDic)
         {
             if (data.Value == player)
                 return true;
@@ -93,25 +94,25 @@ public class PlayerManager : MonoBehaviour
         settingDic.Remove(playerID);
     }
 
-    public void UpdatePlayer(C2S.UpdatePlayerName update)
+    public void UpdatePlayerName(int playerID, string name)
     {
-        if (settingDic.ContainsKey(update.playerID) == false)
+        if (settingDic.ContainsKey(playerID) == false)
         {
-            PlayerSetting setting = new PlayerSetting(update.playerID);
-            settingDic[update.playerID] = setting;
+            PlayerSetting setting = new PlayerSetting(playerID);
+            settingDic[playerID] = setting;
         }
 
-        settingDic[update.playerID].name = update.name;
+        settingDic[playerID].name = name;
     }
 
-    public void UpdatePlayer(C2S.UpdatePlayerTeam update)
+    public void UpdatePlayerTeam(int playerID, Team team)
     {
-        if (settingDic.ContainsKey(update.playerID) == false)
+        if (settingDic.ContainsKey(playerID) == false)
         {
-            PlayerSetting setting = new PlayerSetting(update.playerID);
-            settingDic[update.playerID] = setting;
+            PlayerSetting setting = new PlayerSetting(playerID);
+            settingDic[playerID] = setting;
         }
-        settingDic[update.playerID].team = update.team;
+        settingDic[playerID].team = team;
     }
 
     public void UpdatePlayer(C2S.UpdatePlayerStatus update)
@@ -140,31 +141,31 @@ public class PlayerManager : MonoBehaviour
         return Interlocked.Increment(ref idCount);
     }
 
-    public int SetID(int ID, NetworkPlayer player)
+    public int SetID(int ID, NetworkConnection conn)
     {
-        playerIDDic[ID] = player;
+        playerConDic[ID] = conn;
         return ID;
     }
 
-    public int GetID(NetworkPlayer player)
+    public int GetID(NetworkConnection conn)
     {
-        foreach (var data in playerIDDic)
+        foreach (var data in playerConDic)
         {
-            if (data.Value == player)
+            if (data.Value == conn)
                 return data.Key;
         }
 
         return -1;
     }
 
-    public bool IsValidPlayer(int ID, NetworkPlayer player)
+    public bool IsValidPlayer(int ID, NetworkConnection conn)
     {
-        return playerIDDic[ID] == player;
+        return playerConDic[ID] == conn;
     }
 
-    public NetworkPlayer GetPlayer(int ID)
+    public NetworkConnection GetConnection(int ID)
     {
-        return playerIDDic[ID];
+        return playerConDic[ID];
     }
 
     public void StartLoadUser(ServerPlayer player)
