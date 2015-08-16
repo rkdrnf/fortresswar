@@ -114,18 +114,6 @@ public class Map : NetworkBehaviour {
         ServerGame.Inst.OnMapLoadCompleted(this);
     }
 
-
-    public void Load(S2C.MapInfo mapInfo)
-    {
-        MapData mapData = (MapData)Resources.Load("Maps/" + mapInfo.m_mapName);
-        Load(mapData);
-
-        LoadTiles(mapInfo.m_tiles);
-        LoadBuildings(mapInfo.m_buildings);
-
-        CompleteLoadMap();
-    }
-
     public bool Load(MapData mapData)
     {
         m_mapData = mapData;
@@ -149,29 +137,18 @@ public class Map : NetworkBehaviour {
 
         CompleteLoadMap();
 
-
-
-        NetworkWriter writer = new NetworkWriter() ;
-        writer.StartMessage((short)PacketType.SendMapInfo);
-
-        S2C.MapInfo pck = new S2C.MapInfo();
-
-        pck.m_mapName = m_mapData.name;
-        pck.m_tiles = new List<S2C.TileStatus>();
-        pck.m_buildings = new List<S2C.BuildingStatus>();
-
-        foreach (Tile tile in m_tileManager.GetTiles())
-        {
-            pck.m_tiles.Add(new S2C.TileStatus(tile));
-        }
-        foreach (Building building in m_buildingManager.GetBuildings())
-        {
-            pck.m_buildings.Add(new S2C.BuildingStatus(building));
-        }
-
-        pck.Serialize(writer);
-        writer.FinishMessage();
         return true;
+    }
+
+    public void Load(S2C.MapInfo mapInfo)
+    {
+        MapData mapData = (MapData)Resources.Load("Maps/" + mapInfo.m_mapName);
+        Load(mapData);
+
+        LoadTiles(mapInfo.m_tiles);
+        LoadBuildings(mapInfo.m_buildings);
+
+        CompleteLoadMap();
     }
     
     public void LoadBackground(Sprite image)

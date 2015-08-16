@@ -7,23 +7,55 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
 
+
 namespace Communication
 {
     [ProtoContract]
     public abstract class Packet<T> : MessageBase where T : Packet<T>
     {
+        int chunkSize = 512;
+
         public override void Serialize(NetworkWriter writer)
         {
             Debug.Log("Serialized");
-            byte[] bytes = SerializeToBytes();
-            writer.WriteBytesFull(bytes);
+            byte[] source = SerializeToBytes();
+            int index = 0;
+            byte[] buffer = new byte[chunkSize];
+
+            if (chunkSize >= source.Length)
+            {
+                writer.WriteBytesFull(source);
+                return;
+            }
+
+            while (index + chunkSize < source.Length)
+            {
+                Array.Copy(source, index, buffer, 0, chunkSize);
+                writer.WriteBytesAndSize(buffer, chunkSize);
+                index += chunkSize;
+            }
+
+            Array.Copy(source, index, buffer, 0, source.Length - index);
+            writer.WriteBytesAndSize(buffer, source.Length - index);
         }
-        
+
         public override void Deserialize(NetworkReader reader)
         {
             Debug.Log("Deserialized");
-            byte[] bytes = reader.ReadBytesAndSize();
-            FillPacket(DeserializeFromBytes(bytes));
+
+            IEnumerable<byte> result = new byte[0];
+
+            do
+            {
+                byte[] bytes = reader.ReadBytesAndSize();
+                result = result.Concat(bytes);
+
+                if (bytes.Length < chunkSize)
+                    break;
+            }
+            while (true);
+
+            FillPacket(DeserializeFromBytes(result.ToArray()));
         }
 
         public byte[] SerializeToBytes()
