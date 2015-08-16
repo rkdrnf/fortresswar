@@ -168,19 +168,18 @@ using UnityEngine.Networking;
 
         public void BroadcastState()
         {
-            if (!Network.isServer) return;
+            if (!isServer) return;
 
             S2C.CharacterChangeState pck = new S2C.CharacterChangeState(m_stateManager.GetState());
-
-            GetComponent<NetworkView>().RPC("RecvState", RPCMode.Others, pck.SerializeToBytes());
+            RpcBroadcastState(pck.SerializeToBytes());
         }
 
-        [RPC]
-        void RecvState(byte[] pckData, NetworkMessageInfo info)
+        [ClientRpc]
+        void RpcBroadcastState(byte[] data)
         {
-            //ServerCheck
-            S2C.CharacterChangeState pck = S2C.CharacterChangeState.DeserializeFromBytes(pckData);
+            if (isServer) return;
 
+            S2C.CharacterChangeState pck = S2C.CharacterChangeState.DeserializeFromBytes(data);
             m_stateManager.SetState(pck.state);
         }
 
@@ -243,8 +242,6 @@ using UnityEngine.Networking;
         
         public void Init(PlayerSetting setting)
         {
-            if (!isServer) return;
-
             LoadSetting(setting);
             LoadJob(m_job);
             OnSetOwner(m_owner);
@@ -271,6 +268,7 @@ using UnityEngine.Networking;
 
         public override bool OnSerialize(NetworkWriter writer, bool initialState)
         {
+            Debug.Log("OnSerialize Called");
             if (initialState)
             {
                 PlayerSetting setting = PlayerManager.Inst.GetSetting(m_owner);
@@ -278,6 +276,8 @@ using UnityEngine.Networking;
                 S2C.CharacterStatus status = new S2C.CharacterStatus(m_owner, setting, info);
                 byte[] buffer = status.SerializeToBytes();
                 writer.WriteBytesAndSize(buffer, buffer.Length);
+
+                return true;
             }
 
             return false;
@@ -285,6 +285,7 @@ using UnityEngine.Networking;
 
         public override void OnDeserialize(NetworkReader reader, bool initialState)
         {
+            Debug.Log("OnDeserialize Called");
             if (initialState)
             {
                 byte[] data = reader.ReadBytesAndSize();
@@ -333,6 +334,7 @@ using UnityEngine.Networking;
                 m_weaponUI = weaponUIObj.AddComponent<UI.WeaponUI>();
             }
 
+            /*
             if (isLocalPlayer && !isServer) // Allocating controller ID. When Network is server, ID is already allocated.
             {
                 Network.RemoveRPCs(controllerView.viewID);
@@ -340,6 +342,7 @@ using UnityEngine.Networking;
                 controllerView.RPC("SetControllerNetworkView", RPCMode.Server, controllerID);
                 controllerView.viewID = controllerID;
             }
+             * */
         }
 
         /* Unity 4 code. request server latest character status
@@ -358,11 +361,11 @@ using UnityEngine.Networking;
         {
             C2S.ChangeJob pck = new C2S.ChangeJob(newJob);
 
-            if (Network.isServer) //own server player
+            if (isServer) //own server player
             {
                 ChangeJob(pck.SerializeToBytes(), new NetworkMessageInfo());
             }
-            else if (Network.isClient)
+            else if (!isServer)
             {
 
                 GetComponent<NetworkView>().RPC("ChangeJob", RPCMode.Server, pck.SerializeToBytes());
@@ -399,7 +402,7 @@ using UnityEngine.Networking;
             m_job = job;
             m_jobStat = newJobStat;
 
-            if (Network.isServer)
+            if (isServer)
             {
                 SetHealth(Mathf.Min(m_health, newJobStat.MaxHealth), DamageReason.MANUAL);
             }
@@ -434,7 +437,7 @@ using UnityEngine.Networking;
 
         void FixedUpdate()
         {
-            if (!Network.isServer) return;
+            if (!isServer) return;
 
             if (IsDead())
             {
@@ -495,22 +498,6 @@ using UnityEngine.Networking;
             SetHealth(m_health - damage, DamageReason.DAMAGE);
         }
 
-        void BroadcastHealth(int health, int delta, DamageReason reason)
-        {
-            S2C.SetCharacterHealth pck = new S2C.SetCharacterHealth(health, delta, reason);
-
-            GetComponent<NetworkView>().RPC("RecvHealth", RPCMode.Others, pck.SerializeToBytes());
-        }
-        
-        [RPC]
-        void RecvHealth(byte[] pckData, NetworkMessageInfo info)
-        {
-            //ServerCheck
-            S2C.SetCharacterHealth pck = S2C.SetCharacterHealth.DeserializeFromBytes(pckData);
-
-            SetHealth(pck.m_health, pck.m_reason);
-        }
-
         void SetHealth(int health, DamageReason reason)
         {
             int original = m_health;
@@ -521,13 +508,13 @@ using UnityEngine.Networking;
                 m_health = 0;
             }
 
-            if (Network.isServer)
+            if (isServer)
                 BroadcastHealth(m_health, m_health - original, reason);
 
             if (m_health == 0)
                 Die(reason);
 
-            if (Network.isClient || !ServerGame.Inst.isDedicatedServer) //rendering
+            if (!isServer || !ServerGame.Inst.isDedicatedServer) //rendering
             {
                 switch(reason)
                 {
@@ -539,6 +526,21 @@ using UnityEngine.Networking;
                         break;
                 }
             }
+        }
+
+        void BroadcastHealth(int health, int delta, DamageReason reason)
+        {
+            S2C.SetCharacterHealth pck = new S2C.SetCharacterHealth(health, delta, reason);
+
+            RpcBroadcastHealth(pck.SerializeToBytes());
+            GetComponent<NetworkView>().RPC("RecvHealth", RPCMode.Others, pck.SerializeToBytes());
+        }
+
+        [ClientRpc]
+        void RpcBroadcastHealth(byte[] data)
+        {
+            S2C.SetCharacterHealth setHealth = S2C.SetCharacterHealth.DeserializeFromBytes(data);
+            SetHealth(setHealth.m_health, setHealth.m_reason);
         }
 
         void Die(DamageReason reason)
@@ -569,16 +571,13 @@ using UnityEngine.Networking;
 
         void BroadcastRevive()
         {
-            if (!ServerGame.Inst.isDedicatedServer)
-                GetComponent<NetworkView>().RPC("RecvRevive", RPCMode.All);
-            else
-                GetComponent<NetworkView>().RPC("RecvRevive", RPCMode.Others);
+            RpcBroadcastRevive();
         }
 
-        [RPC]
-        void RecvRevive(NetworkMessageInfo info)
+        [ClientRpc]
+        void RpcBroadcastRevive()
         {
-            //ServerCheck
+            if (isServer) return;
 
             m_stateManager.SetState(CharacterState.FALLING);
 
@@ -588,7 +587,7 @@ using UnityEngine.Networking;
 
         void Revive()
         {
-            if (!Network.isServer) return;
+            if (!isServer) return;
 
             transform.position = server.RevivalLocation;
             GetComponent<Rigidbody2D>().velocity = Vector2.zero;

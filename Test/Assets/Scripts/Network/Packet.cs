@@ -35,6 +35,15 @@ namespace Communication
                 this.m_buildings = packet.m_buildings;
             }
 
+            public override void Serialize(UnityEngine.Networking.NetworkWriter writer)
+            {
+                base.Serialize(writer);
+            }
+
+            public override void Deserialize(UnityEngine.Networking.NetworkReader reader)
+            {
+                base.Deserialize(reader);
+            }
         }
 
         [ProtoContract]
@@ -463,6 +472,46 @@ namespace Communication
 
     namespace C2S
     {
+        [ProtoContract]
+        public class AddNewPlayer : Packet<AddNewPlayer>
+        {
+            public AddNewPlayer() { }
+
+            public override void FillPacket(AddNewPlayer packet)
+            {
+            }
+
+            public override void Serialize(UnityEngine.Networking.NetworkWriter writer)
+            {
+                base.Serialize(writer);
+            }
+
+            public override void Deserialize(UnityEngine.Networking.NetworkReader reader)
+            {
+                base.Deserialize(reader);
+            }
+        }
+
+        [ProtoContract]
+        public class RequestMapInfo : Packet<RequestMapInfo>
+        {
+            public RequestMapInfo() { }
+
+            public override void FillPacket(RequestMapInfo packet)
+            {
+            }
+
+            public override void Serialize(UnityEngine.Networking.NetworkWriter writer)
+            {
+                base.Serialize(writer);
+            }
+
+            public override void Deserialize(UnityEngine.Networking.NetworkReader reader)
+            {
+                base.Deserialize(reader);
+            }
+        }
+
         [ProtoContract]
         public class Fire : Packet<Fire>
         {

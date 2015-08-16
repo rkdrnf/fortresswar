@@ -8,7 +8,9 @@ namespace Communication
     enum PacketType
     {
         UserPacketStart = 100,
+        AddNewPlayer,
         SetPlayerID,
+        RequestMapInfo,
         SendMapInfo,
         UpdatePlayerName,
         BroadcastPlayerName,

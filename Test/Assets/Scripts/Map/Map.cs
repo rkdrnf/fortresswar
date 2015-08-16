@@ -23,6 +23,7 @@ public class Map : NetworkBehaviour {
     int m_chunkSize;
 
     double m_mapLoadTime;
+    bool m_loadCompleted;
 
     Parallax m_backgroundPar;
 
@@ -47,11 +48,7 @@ public class Map : NetworkBehaviour {
         instance = this;
 
         m_mapLoadTime = 0f;
-    }
-
-    void Start()
-    {
-        Debug.Log("[Map] Start");
+        ServerGame.Inst.CurrentMap = this;
     }
 
     public void SetMap(string mapName)
@@ -59,22 +56,32 @@ public class Map : NetworkBehaviour {
         m_name = mapName;
     }
 
+    public override void OnStartServer()
+    {
+        Debug.LogError("[Map] StartServer");
+        base.OnStartServer();
+    }
+
     public override void OnStartClient()
     {
         base.OnStartClient();
-        Debug.Log("[Map] OnStartClient");
+        Debug.LogError("[Map] OnStartClient");
     }
 
-    public void OnNewPlayerJoin(NetworkConnection conn)
+    void Start()
     {
-        Debug.Log("[Map] PlayerConnect");
+        Debug.LogError("[Map] Start");
 
-        SendCurrentMapData(conn);
+        if (!isServer)
+        {
+            C2S.RequestMapInfo req = new C2S.RequestMapInfo();
+            GameNetworkManager.Inst.client.Send((short)PacketType.RequestMapInfo, req);
+        }
     }
 
-    void SendCurrentMapData(NetworkConnection conn)
+    public void SendCurrentMapData(NetworkConnection conn)
     {
-        S2C.MapInfo pck = new S2C.MapInfo(); 
+        S2C.MapInfo pck = new S2C.MapInfo();
 
         pck.m_mapName = m_mapData.name;
         pck.m_tiles = new List<S2C.TileStatus>();
@@ -89,7 +96,7 @@ public class Map : NetworkBehaviour {
             pck.m_buildings.Add(new S2C.BuildingStatus(building));
         }
 
-        NetworkServer.SendToClient(conn.connectionId, (int)PacketType.SendMapInfo, pck);
+        NetworkServer.SendToClient(conn.connectionId, (short)PacketType.SendMapInfo, pck); 
     }
 
     public void ReceiveMapInfo(S2C.MapInfo mapInfo)
@@ -97,9 +104,16 @@ public class Map : NetworkBehaviour {
         Debug.Log("[Client] map instantiated");
 
         Load(mapInfo);
+    }
+
+    void CompleteLoadMap()
+    {
+        m_mapLoadTime = Network.time;
+        m_loadCompleted = true;
 
         ServerGame.Inst.OnMapLoadCompleted(this);
     }
+
 
     public void Load(S2C.MapInfo mapInfo)
     {
@@ -108,6 +122,8 @@ public class Map : NetworkBehaviour {
 
         LoadTiles(mapInfo.m_tiles);
         LoadBuildings(mapInfo.m_buildings);
+
+        CompleteLoadMap();
     }
 
     public bool Load(MapData mapData)
@@ -130,9 +146,31 @@ public class Map : NetworkBehaviour {
 
         LoadTiles(mapData.tiles);
         LoadBuildings(new List<Building>());
-        
-        m_mapLoadTime = Network.time;
 
+        CompleteLoadMap();
+
+
+
+        NetworkWriter writer = new NetworkWriter() ;
+        writer.StartMessage((short)PacketType.SendMapInfo);
+
+        S2C.MapInfo pck = new S2C.MapInfo();
+
+        pck.m_mapName = m_mapData.name;
+        pck.m_tiles = new List<S2C.TileStatus>();
+        pck.m_buildings = new List<S2C.BuildingStatus>();
+
+        foreach (Tile tile in m_tileManager.GetTiles())
+        {
+            pck.m_tiles.Add(new S2C.TileStatus(tile));
+        }
+        foreach (Building building in m_buildingManager.GetBuildings())
+        {
+            pck.m_buildings.Add(new S2C.BuildingStatus(building));
+        }
+
+        pck.Serialize(writer);
+        writer.FinishMessage();
         return true;
     }
     
@@ -188,6 +226,8 @@ public class Map : NetworkBehaviour {
 
     public bool CheckInBorder(ServerPlayer player)
     {
+        if (!m_loadCompleted) return true;
+
         return CheckInBorder(player.transform);
     }
 

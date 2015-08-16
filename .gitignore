@@ -20,3 +20,7 @@ Test/obj/Debug/DesignTimeResolveAssemblyReferencesInput.cache
 Test/*.orig
 *.userprefs
 *.suo
+*.mdb
+Test/test32_Data/*
+Test/*.exe
+*.pdb

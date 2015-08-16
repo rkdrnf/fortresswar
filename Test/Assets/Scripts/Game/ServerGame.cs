@@ -27,7 +27,7 @@ using Communication;
         }
 
         public Vector3 spawnPosition;
-        public GameObject playerPrefab;
+        public ServerPlayer playerPrefab;
 
         public Vector2 RevivalLocation;
 
@@ -43,6 +43,7 @@ using Communication;
         public Map CurrentMap
         {
             get { return m_currentMap; }
+            set { m_currentMap = value;  }
         }
         
         public TeamSelector teamSelector;
@@ -60,9 +61,10 @@ using Communication;
 
         void Awake()
         {
-            Debug.Log("[ServerGame] Awake");
+            Debug.LogError("[ServerGame] Awake");
             instance = this;
             m_teams = new CTeam[2] { new CTeam(), new CTeam() };
+            RevivalLocation = new Vector2(0f, 3f);
 
             keyFocusManager = new KeyFocusManager(InputKeyFocus.PLAYER);
             mouseFocusManager = new MouseFocusManager(InputMouseFocus.PLAYER);
@@ -72,19 +74,44 @@ using Communication;
             Physics2D.IgnoreLayerCollision(projectileLayer, LayerMask.NameToLayer("Particle"));
         }
 
-        void Start()
+        public override void OnStartServer()
         {
-            Debug.Log("[ServerGame] Start");
-            RevivalLocation = new Vector2(0f, 3f);
-
-
-            RecvClearGame();
-
+            base.OnStartServer();
             CreateMap();
 
-            // if not dedicated server.
-            OnNewPlayerJoin(NetworkServer.localConnections.First());
+            Debug.LogError("OnSTartServer");
         }
+
+        public override void OnStartClient()
+        {
+            base.OnStartClient();
+            Debug.LogError("[ServerGame] Client Instantiated");
+        }
+
+        void Start()
+        {
+            Debug.LogError("[ServerGame] Start");
+
+            if (isClient)
+            { 
+                C2S.AddNewPlayer addPlayer = new C2S.AddNewPlayer();
+                GameNetworkManager.Inst.client.Send((short)PacketType.AddNewPlayer, addPlayer);
+            }
+        }
+
+        public void OnNewPlayerJoin(NetworkConnection conn)
+        {
+            if (PlayerManager.Inst.Exists(conn))
+            {
+                //Clear previous connection;
+                return;
+            }
+
+            int ID = PlayerManager.Inst.SetID(PlayerManager.Inst.GetUniqueID(), conn);
+
+            NetworkServer.SendToClient(conn.connectionId, (short)PacketType.SetPlayerID, new IntegerMessage(ID));
+        }
+        
 
         public void Run()
         {
@@ -100,29 +127,14 @@ using Communication;
 
             NetworkServer.Spawn(newMap.gameObject);
 
-            if (newMap.Load(mapData))
+            if (!newMap.Load(mapData))
             {
-                m_currentMap = newMap;
+                Debug.LogError("Failed to Load Map data");
             }
+
         }
 
-        public void OnNewPlayerJoin(NetworkConnection conn)
-        {
-            if (PlayerManager.Inst.Exists(conn))
-            {
-                //Clear previous connection;
-                return;
-            }
-
-            int ID = PlayerManager.Inst.SetID(PlayerManager.Inst.GetUniqueID(), conn);
-
-            NetworkServer.SendToClient(conn.connectionId, (short)PacketType.SetPlayerID, new IntegerMessage(ID));
-
-            if (m_currentMap != null && !isServer)
-            {
-                m_currentMap.OnNewPlayerJoin(conn);
-            }
-        }
+        
 
         public void UpdatePlayerTeamRequest(C2S.UpdatePlayerTeam pck)
         {
@@ -256,10 +268,10 @@ using Communication;
 
             ServerPlayer newPlayer = (ServerPlayer)Instantiate(playerPrefab, spawnPosition, Quaternion.identity);
 
-            NetworkServer.AddPlayerForConnection(conn, newPlayer.gameObject, playerControllerID);
-
             PlayerManager.Inst.Set(setting.playerID, newPlayer);
             newPlayer.Init(setting);
+
+            NetworkServer.AddPlayerForConnection(conn, newPlayer.gameObject, playerControllerID);
         }
 
         /// <summary>
@@ -278,11 +290,11 @@ using Communication;
             if (character != null)
                 character.RemoveCharacterFromNetwork();
 
-            GetComponent<NetworkView>().RPC("RecvPlayerRemove", RPCMode.Others, playerID);
+            RpcRecvPlayerRemove(playerID);
         }
 
-        [RPC]
-        void RecvPlayerRemove(int player)
+        [ClientRpc]
+        void RpcRecvPlayerRemove(int player)
         {
             PlayerManager.Inst.Remove(player);
             PlayerManager.Inst.RemoveSetting(player);

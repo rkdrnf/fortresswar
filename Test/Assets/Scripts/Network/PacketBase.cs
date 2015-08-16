@@ -14,12 +14,14 @@ namespace Communication
     {
         public override void Serialize(NetworkWriter writer)
         {
+            Debug.Log("Serialized");
             byte[] bytes = SerializeToBytes();
-            writer.Write(bytes, 0, bytes.Length);
+            writer.WriteBytesFull(bytes);
         }
-
+        
         public override void Deserialize(NetworkReader reader)
         {
+            Debug.Log("Deserialized");
             byte[] bytes = reader.ReadBytesAndSize();
             FillPacket(DeserializeFromBytes(bytes));
         }

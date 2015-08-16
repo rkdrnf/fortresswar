@@ -87,7 +87,7 @@ public class GameNetworkManager : NetworkManager {
     public override void OnServerConnect(NetworkConnection conn)
     {
         Debug.Log("New Player Joined!");
-        ServerGame.Inst.OnNewPlayerJoin(conn);
+        //ServerGame.Inst.OnNewPlayerJoin(conn);
     }
 
     public override void OnServerDisconnect(NetworkConnection conn)

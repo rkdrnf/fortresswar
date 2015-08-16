@@ -27,8 +27,10 @@ namespace Communication
 
         public static void RegisterServerPacketHandlers()
         {
+            NetworkServer.RegisterHandler((short)PacketType.AddNewPlayer, PHAddNewPlayer);
             NetworkServer.RegisterHandler((short)PacketType.UpdatePlayerName, PHUpdatePlayerName);
             NetworkServer.RegisterHandler((short)PacketType.UpdatePlayerTeam, PHUpdatePlayerTeam);
+            NetworkServer.RegisterHandler((short)PacketType.RequestMapInfo, PHRequestMapInfo);
 
             Debug.Log("Server Packet Handlers registered");
         }
@@ -73,6 +75,12 @@ namespace Communication
         }
 
         //Server Packet Handler
+        public static void PHAddNewPlayer(NetworkMessage msg)
+        {
+            var packet = msg.ReadMessage<C2S.AddNewPlayer>();
+            ServerGame.Inst.OnNewPlayerJoin(msg.conn);
+        }
+        
         public static void PHUpdatePlayerName(NetworkMessage msg)
         {
             var packet = msg.ReadMessage<C2S.UpdatePlayerName>();
@@ -83,6 +91,12 @@ namespace Communication
         {
             var packet = msg.ReadMessage<C2S.UpdatePlayerTeam>();
             ServerGame.Inst.UpdatePlayerTeamRequest(packet);
+        }
+
+        public static void PHRequestMapInfo(NetworkMessage msg)
+        {
+            var packet = msg.ReadMessage<C2S.RequestMapInfo>();
+            ServerGame.Inst.CurrentMap.SendCurrentMapData(msg.conn);
         }
 
         
