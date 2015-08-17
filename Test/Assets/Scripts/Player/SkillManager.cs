@@ -62,7 +62,8 @@ namespace Server
         {
             //ServerCheck
 
-            C2S.CastSkill pck = C2S.CastSkill.DeserializeFromBytes(pckData);
+            C2S.CastSkill pck = new C2S.CastSkill();
+            pck.DeserializeFromBytes(pckData);
 
             if (CanCast(pck.skillName))
                 return;
@@ -95,7 +96,8 @@ namespace Server
         {
             //ServerCheck
 
-            S2C.SkillCastInfo castInfo = S2C.SkillCastInfo.DeserializeFromBytes(pckData);
+            S2C.SkillCastInfo castInfo = new S2C.SkillCastInfo();
+            castInfo.DeserializeFromBytes(pckData);
 
             return;
         }

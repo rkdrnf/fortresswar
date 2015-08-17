@@ -11,11 +11,11 @@ using ProtoBuf;
 public struct GridCoord
 {
     [ProtoMember(1)]
-    public int x;
+    public short x;
     [ProtoMember(2)]
-    public int y;
+    public short y;
 
-    public GridCoord(int x, int y)
+    public GridCoord(short x, short y)
     {
         this.x = x;
         this.y = y;
@@ -23,22 +23,22 @@ public struct GridCoord
 
     public static GridCoord operator - (GridCoord a, GridCoord b)
     {
-        return new GridCoord(a.x - b.x, a.y - b.y);
+        return new GridCoord((short)(a.x - b.x), (short)(a.y - b.y));
     }
 
-    public int ToIndex(int mapWidth)
+    public int ToIndex(ushort mapWidth)
     {
         return x + y * mapWidth;
     }
 
     public static GridCoord ToCoord(Vector2 position)
     {
-        return new GridCoord(Mathf.FloorToInt(position.x + 0.5f), Mathf.FloorToInt(position.y + 0.5f));
+        return new GridCoord((short)Mathf.FloorToInt(position.x + 0.5f), (short)Mathf.FloorToInt(position.y + 0.5f));
     }
 
     public static GridCoord ToCoordDown(Vector2 position)
     {
-        return new GridCoord(Mathf.FloorToInt(position.x - 0.5f), Mathf.FloorToInt(position.y - 0.5f));
+        return new GridCoord((short)Mathf.FloorToInt(position.x - 0.5f), (short)Mathf.FloorToInt(position.y - 0.5f));
     }
 
     public Vector2 ToVector2()
@@ -48,22 +48,22 @@ public struct GridCoord
 
     public GridCoord Up()
     {
-        return new GridCoord(x, y + 1);
+        return new GridCoord(x, (short)(y + 1));
     }
 
     public GridCoord Down()
     {
-        return new GridCoord(x, y - 1);
+        return new GridCoord(x, (short)(y - 1));
     }
 
     public GridCoord Left()
     {
-        return new GridCoord(x - 1, y);
+        return new GridCoord((short)(x - 1), y);
     }
 
     public GridCoord Right()
     {
-        return new GridCoord(x + 1, y);
+        return new GridCoord((short)(x + 1), y);
     }
 
     public override string ToString()

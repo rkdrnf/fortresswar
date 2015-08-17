@@ -19,12 +19,12 @@ public class Tile : Structure<Tile, TileData>, ISuspension
         get { return TileNetwork.Inst; }
     }
     
-    public Tile(int ID)
+    public Tile(ushort ID)
     {
         m_ID = ID;
     }
 
-    public Tile(int ID, Tile tile)
+    public Tile(ushort ID, Tile tile)
     {
         m_data = tile.m_data;
         SetID(ID);
@@ -38,7 +38,7 @@ public class Tile : Structure<Tile, TileData>, ISuspension
 
     public Tile(S2C.TileStatus status)
     {
-        m_data = TileManager.Inst.GetTileData(status.m_type);
+        m_data = TileManager.Inst.GetTileData((TileType)status.m_type);
         SetID(status.m_ID);
         m_coord = status.m_coord;
         m_direction = Const.GridDirection.UP;
@@ -51,7 +51,7 @@ public class Tile : Structure<Tile, TileData>, ISuspension
     {
         m_data = tData;
         m_coord = coord;
-        m_health = tData.maxHealth;
+        m_health = (short)tData.maxHealth;
         m_collidable = tData.collidable;
 
         RefreshSprite();
@@ -62,7 +62,7 @@ public class Tile : Structure<Tile, TileData>, ISuspension
         m_chunk.RemoveBlock(this);
     }
 
-    protected override void BroadcastHealth(int health, DestroyReason reason)
+    protected override void BroadcastHealth(short health, DestroyReason reason)
     {
         network.BroadcastHealth(m_ID, health, reason);
     }

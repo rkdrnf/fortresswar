@@ -18,7 +18,7 @@ namespace Communication
         [ProtoContract]
         public class MapInfo : Packet<MapInfo>
         {
-            public MapInfo() { }
+            public MapInfo() { m_compress = true;  }
             
             [ProtoMember(1)]
             public string m_mapName;
@@ -333,7 +333,7 @@ namespace Communication
         public class SetStructureHealth: Packet<SetStructureHealth>
         {
             public SetStructureHealth() { }
-            public SetStructureHealth(int ID, int health, Const.Structure.DestroyReason reason)
+            public SetStructureHealth(ushort ID, short health, Const.Structure.DestroyReason reason)
             {
                 m_health = health;
                 m_reason = reason;
@@ -341,11 +341,11 @@ namespace Communication
             }
 
             [ProtoMember(1)]
-            public int m_health;
+            public short m_health;
             [ProtoMember(2)]
             public Const.Structure.DestroyReason m_reason;
             [ProtoMember(3)]
-            public int m_ID;
+            public ushort m_ID;
         }
 
         [ProtoContract]
@@ -355,7 +355,7 @@ namespace Communication
             public TileStatus(Tile tile)
             {
                 m_ID = tile.GetID();
-                m_type = tile.m_data.type;
+                m_type = (byte)tile.m_data.type;
                 m_coord = tile.m_coord;
                 m_health = tile.m_health;
             }
@@ -363,11 +363,11 @@ namespace Communication
             [ProtoMember(1)]
             public GridCoord m_coord;
             [ProtoMember(2)]
-            public int m_health;
+            public short m_health;
             [ProtoMember(3)]
-            public TileType m_type;
+            public byte m_type;
             [ProtoMember(4)]
-            public int m_ID;
+            public ushort m_ID;
 
         }
 
@@ -381,22 +381,22 @@ namespace Communication
                 m_coord = building.m_coord;
                 m_health = building.m_health;
                 m_falling = building.m_isFalling;
-                m_direction = building.m_direction;
-                m_type = building.m_data.type;
+                m_direction = (byte)building.m_direction;
+                m_type = (byte)building.m_data.type;
             }
 
             [ProtoMember(1)]
             public GridCoord m_coord;
             [ProtoMember(2)]
-            public int m_health;
+            public short m_health;
             [ProtoMember(3)]
             public bool m_falling;
             [ProtoMember(4)]
-            public GridDirection m_direction;
+            public byte m_direction;
             [ProtoMember(5)]
-            public int m_ID;
+            public ushort m_ID;
             [ProtoMember(6)]
-            public BuildingType m_type;
+            public byte m_type;
         }
 
         [ProtoContract]

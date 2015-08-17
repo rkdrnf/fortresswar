@@ -27,7 +27,7 @@ namespace Architecture
         Dictionary<GridCoord, Tile> m_tileMap;
         Dictionary<int, Tile> m_tileIDMap;
 
-        int m_tileIndex;
+        ushort m_tileIndex;
 
         public TileSet m_tileSet = null; // scene init
         private Dictionary<TileType, TileData> m_tileDataDic;

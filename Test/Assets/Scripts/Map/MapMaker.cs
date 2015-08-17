@@ -32,7 +32,7 @@ public class MapMaker : MonoBehaviour {
 
     bool m_showGrid = false;
 
-    public int tileID;
+    public ushort tileID;
 
     void OnEnable()
     {
@@ -117,7 +117,7 @@ public class MapMaker : MonoBehaviour {
 
     public GridCoord ToChunkCoord(GridCoord coord)
     {
-        return new GridCoord(coord.x - Calc.mod(coord.x, m_chunkSize), coord.y - Calc.mod(coord.y, m_chunkSize));
+        return new GridCoord((short)(coord.x - Calc.mod(coord.x, m_chunkSize)), (short)(coord.y - Calc.mod(coord.y, m_chunkSize)));
     }
 
     
@@ -232,8 +232,8 @@ public class MapMaker : MonoBehaviour {
 
             for (int py = 0; py <= m_height; py++)
             {
-                int x = px - (m_width / 2);
-                int y = py - (m_height / 2);
+                short x = (short)(px - (m_width / 2));
+                short y = (short)(py - (m_height / 2));
 
                 do
                 {

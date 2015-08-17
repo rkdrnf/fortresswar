@@ -29,7 +29,7 @@ namespace Architecture
         Dictionary<GridCoord, Building> m_buildingMap;
         Dictionary<int, Building> m_buildingIDMap;
 
-        int m_buildingIndex;
+        ushort m_buildingIndex;
 
         public BuildingDataSet m_buildingSet = null; // scene init
         Dictionary<BuildingType, BuildingData> m_buildingDataDic;

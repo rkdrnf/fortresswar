@@ -40,7 +40,8 @@ public class Rope : Projectile {
     [RPC]
     protected override void SetStatus(byte[] pckData, NetworkMessageInfo info)
     {
-        S2C.RopeStatus pck = S2C.RopeStatus.DeserializeFromBytes(pckData);
+        S2C.RopeStatus pck = new S2C.RopeStatus();
+        pck.DeserializeFromBytes(pckData);
 
         owner = pck.owner;
         transform.position = pck.position;
@@ -192,8 +193,9 @@ public class Rope : Projectile {
     void SetRopeStuck(byte[] pckData, NetworkMessageInfo info)
     {
         //ServerCheck
-
-        OnSetRopeStuck(S2C.RopeStickInfo.DeserializeFromBytes(pckData));
+        S2C.RopeStickInfo stickInfo = new S2C.RopeStickInfo();
+        stickInfo.DeserializeFromBytes(pckData);
+        OnSetRopeStuck(stickInfo);
     }
 
     void OnSetRopeStuck(S2C.RopeStickInfo info)

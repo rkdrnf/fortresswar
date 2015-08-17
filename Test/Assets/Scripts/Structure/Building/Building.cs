@@ -25,13 +25,13 @@ public class Building : Structure<Building, BuildingData>, ISuspension
     public Building()
     { }
 
-    public Building(int ID, BuildingData bData, GridCoord coord)
+    public Building(ushort ID, BuildingData bData, GridCoord coord)
     {
         Init(bData, coord);
         SetID(ID);
     }
 
-    public Building(int ID, Building building)
+    public Building(ushort ID, Building building)
     {
         m_data = building.m_data;
         SetID(ID);
@@ -45,10 +45,10 @@ public class Building : Structure<Building, BuildingData>, ISuspension
 
     public Building(S2C.BuildingStatus status)
     {
-        m_data = BuildingManager.Inst.GetBuildingData(status.m_type);
+        m_data = BuildingManager.Inst.GetBuildingData((BuildingType)status.m_type);
         SetID(status.m_ID);
         m_coord = status.m_coord;
-        m_direction = status.m_direction;
+        m_direction = (GridDirection)status.m_direction;
         m_collidable = true;
         m_isFalling = status.m_falling;
         SetHealth(status.m_health, DestroyReason.MANUAL);
@@ -65,7 +65,7 @@ public class Building : Structure<Building, BuildingData>, ISuspension
 
         m_data = bData;
         m_coord = coord;
-        m_health = m_data.maxHealth;
+        m_health = (short)m_data.maxHealth;
         m_collidable = bData.collidable;
         
         FillSuspension();
@@ -77,7 +77,7 @@ public class Building : Structure<Building, BuildingData>, ISuspension
         
     }
 
-    protected override void BroadcastHealth(int health, DestroyReason reason)
+    protected override void BroadcastHealth(short health, DestroyReason reason)
     {
         network.BroadcastHealth(m_ID, health, reason);
     }

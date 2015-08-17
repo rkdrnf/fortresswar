@@ -199,7 +199,7 @@ namespace Util
                 for (int x = xLeft; x <= xRight; x++)
                 {
                     float length = Mathf.Sqrt((center.x - x) * (center.x - x) + (yLength * yLength));
-                    points.Add(new GridCoordDist(new GridCoord(x, y), length));
+                    points.Add(new GridCoordDist(new GridCoord((short)x, (short)y), length));
                 }
             }
 

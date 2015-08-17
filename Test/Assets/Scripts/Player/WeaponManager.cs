@@ -213,7 +213,8 @@ using UnityEngine;
             if (!Network.isServer) return;
             //if (!PlayerManager.Inst.IsValidPlayer(player.GetOwner(), msgInfo.sender)) return;
 
-            C2S.Fire fire = C2S.Fire.DeserializeFromBytes(fireData);
+            C2S.Fire fire = new C2S.Fire();
+            fire.DeserializeFromBytes(fireData);
 
             if (!CanFire(fire.weaponType)) return;
 
@@ -235,7 +236,8 @@ using UnityEngine;
             if (!Network.isServer) return;
             //if (!PlayerManager.Inst.IsValidPlayer(player.GetOwner(), info.sender)) return;
 
-            C2S.ChargeWeapon charge = C2S.ChargeWeapon.DeserializeFromBytes(pckData);
+            C2S.ChargeWeapon charge = new C2S.ChargeWeapon();
+            charge.DeserializeFromBytes(pckData);
 
             Charge(charge);
         }

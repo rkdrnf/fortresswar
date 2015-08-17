@@ -33,7 +33,7 @@ namespace Architecture
 
         public GridCoord ToChunkCoord(GridCoord coord)
         {
-            return new GridCoord(coord.x - Calc.mod(coord.x, m_chunkSize), coord.y - Calc.mod(coord.y, m_chunkSize));
+            return new GridCoord((short)(coord.x - Calc.mod(coord.x, m_chunkSize)), (short)(coord.y - Calc.mod(coord.y, m_chunkSize)));
         }
 
         public void AddBlock(T block)

@@ -25,7 +25,7 @@ namespace Maps
             instance = this;
         }
 
-        public void BroadcastHealth(int ID, int health, DestroyReason reason)
+        public void BroadcastHealth(ushort ID, short health, DestroyReason reason)
         {
             S2C.SetStructureHealth pck = new S2C.SetStructureHealth(ID, health, reason);
             GetComponent<NetworkView>().RPC("RecvHealth", RPCMode.Others, pck.SerializeToBytes());
@@ -35,7 +35,8 @@ namespace Maps
         public void RecvHealth(byte[] pckData, NetworkMessageInfo info)
         {
             //ServerCheck
-            S2C.SetStructureHealth pck = S2C.SetStructureHealth.DeserializeFromBytes(pckData);
+            S2C.SetStructureHealth pck = new S2C.SetStructureHealth();
+            pck.DeserializeFromBytes(pckData);
             TileManager.Inst.Get(pck.m_ID).RecvHealth(pck);
         }
     }

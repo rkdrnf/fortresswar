@@ -108,7 +108,8 @@ public abstract class Projectile : Weapon
     [RPC]
     protected virtual void SetStatus(byte[] pckData, NetworkMessageInfo info)
     {
-        S2C.ProjectileStatus pck = S2C.ProjectileStatus.DeserializeFromBytes(pckData);
+        S2C.ProjectileStatus pck = new S2C.ProjectileStatus();
+        pck.DeserializeFromBytes(pckData);
 
         owner = pck.owner;
         transform.position = pck.position;

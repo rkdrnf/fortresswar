@@ -6,6 +6,7 @@ using ProtoBuf;
 using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
+using System.IO.Compression;
 
 
 namespace Communication
@@ -14,6 +15,8 @@ namespace Communication
     public abstract class Packet<T> : MessageBase where T : Packet<T>
     {
         int chunkSize = 512;
+
+        protected bool m_compress = false;
 
         public override void Serialize(NetworkWriter writer)
         {
@@ -55,7 +58,7 @@ namespace Communication
             }
             while (true);
 
-            FillPacket(DeserializeFromBytes(result.ToArray()));
+            DeserializeFromBytes(result.ToArray());
         }
 
         public byte[] SerializeToBytes()
@@ -66,14 +69,29 @@ namespace Communication
             byte[] padding = new byte[1] { 0 };
             byte[] pck = ms.ToArray();
 
-            return pck.Concat(padding).ToArray<byte>();
+            pck = pck.Concat(padding).ToArray<byte>();
+
+            if (m_compress)
+            {
+                pck = LZMAtools.CompressByteArrayToLZMAByteArray(pck);
+            }
+
+            return pck;
         }
 
-        public static T DeserializeFromBytes(byte[] arrBytes)
+        public void DeserializeFromBytes(byte[] arrBytes)
         {
-            byte[] pck = arrBytes.Take(arrBytes.Length - 1).ToArray<byte>();
+            byte[] pck;
+
+            if (m_compress)
+            {
+                pck = LZMAtools.DecompressLZMAByteArrayToByteArray(arrBytes);
+            }
+
+            pck = arrBytes.Take(arrBytes.Length - 1).ToArray<byte>();
             MemoryStream ms = new MemoryStream(pck);
-            return Serializer.Deserialize<T>(ms);
+
+            FillPacket(Serializer.Deserialize<T>(ms));
         }
 
         public virtual void FillPacket(T packet)

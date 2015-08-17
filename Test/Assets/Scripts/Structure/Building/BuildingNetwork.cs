@@ -51,12 +51,13 @@ namespace Architecture
         {
             //ServerCheck
 
-            S2C.BuildingStatus pck = S2C.BuildingStatus.DeserializeFromBytes(pckData);
+            S2C.BuildingStatus pck = new S2C.BuildingStatus();
+            pck.DeserializeFromBytes(pckData);
             Building building = new Building(pck);
             BuildingManager.Inst.Add(building);
         }
 
-        public void BroadcastHealth(int ID, int health, DestroyReason reason)
+        public void BroadcastHealth(ushort ID, short health, DestroyReason reason)
         {
             S2C.SetStructureHealth pck = new S2C.SetStructureHealth(ID, health, reason);
             GetComponent<NetworkView>().RPC("RecvHealth", RPCMode.Others, pck.SerializeToBytes());
@@ -66,7 +67,8 @@ namespace Architecture
         void RecvHealth(byte[] pckData, NetworkMessageInfo info)
         {
             //ServerCheck
-            S2C.SetStructureHealth pck = S2C.SetStructureHealth.DeserializeFromBytes(pckData);
+            S2C.SetStructureHealth pck = new S2C.SetStructureHealth();
+            pck.DeserializeFromBytes(pckData);
             BuildingManager.Inst.Get(pck.m_ID).RecvHealth(pck);
 
             if (pck.m_health == 0)
@@ -85,7 +87,8 @@ namespace Architecture
             //CheckServer
             Debug.Log(" Recv Frame: " + Time.frameCount);
 
-            S2C.BuildingFall pck = S2C.BuildingFall.DeserializeFromBytes(pckData);
+            S2C.BuildingFall pck = new S2C.BuildingFall();
+            pck.DeserializeFromBytes(pckData);
 
             StartCoroutine(Fall(pck));
         }

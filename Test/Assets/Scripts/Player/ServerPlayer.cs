@@ -179,7 +179,8 @@ using UnityEngine.Networking;
         {
             if (isServer) return;
 
-            S2C.CharacterChangeState pck = S2C.CharacterChangeState.DeserializeFromBytes(data);
+            S2C.CharacterChangeState pck = new S2C.CharacterChangeState();
+            pck.DeserializeFromBytes(data);
             m_stateManager.SetState(pck.state);
         }
 
@@ -289,7 +290,8 @@ using UnityEngine.Networking;
             if (initialState)
             {
                 byte[] data = reader.ReadBytesAndSize();
-                S2C.CharacterStatus status = S2C.CharacterStatus.DeserializeFromBytes(data);
+                S2C.CharacterStatus status = new S2C.CharacterStatus();
+                status.DeserializeFromBytes(data);
                 NetworkInitializeStatus(status);
             }
         }
@@ -379,8 +381,9 @@ using UnityEngine.Networking;
             //if (!PlayerManager.Inst.IsValidPlayer(m_owner, info.sender)) return;
 
             //TODO::JobChangeValidation
-
-            LoadJob(C2S.ChangeJob.DeserializeFromBytes(pckData).job);
+            C2S.ChangeJob pck = new C2S.ChangeJob();
+            pck.DeserializeFromBytes(pckData);
+            LoadJob(pck.job);
 
             GetComponent<NetworkView>().RPC("RecvChangeJob", RPCMode.Others, pckData);
         }
@@ -390,8 +393,9 @@ using UnityEngine.Networking;
         {
             if (!Network.isClient) return;
             //ServerCheck
-
-            LoadJob(C2S.ChangeJob.DeserializeFromBytes(pckData).job);
+            C2S.ChangeJob pck = new C2S.ChangeJob();
+            pck.DeserializeFromBytes(pckData);
+            LoadJob(pck.job);
         }
 
         void LoadJob(Job job)
@@ -539,7 +543,8 @@ using UnityEngine.Networking;
         [ClientRpc]
         void RpcBroadcastHealth(byte[] data)
         {
-            S2C.SetCharacterHealth setHealth = S2C.SetCharacterHealth.DeserializeFromBytes(data);
+            S2C.SetCharacterHealth setHealth = new S2C.SetCharacterHealth();
+            setHealth.DeserializeFromBytes(data);
             SetHealth(setHealth.m_health, setHealth.m_reason);
         }
 
@@ -663,7 +668,8 @@ using UnityEngine.Networking;
         {
             if (!Network.isServer) return;
 
-            C2S.Build pck = C2S.Build.DeserializeFromBytes(pckData);
+            C2S.Build pck = new C2S.Build();
+            pck.DeserializeFromBytes(pckData);
 
             m_buildController.Build(pck);
         }

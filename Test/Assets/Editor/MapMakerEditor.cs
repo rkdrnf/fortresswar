@@ -98,7 +98,7 @@ public class MapMakerEditor : Editor {
 
     void DeleteTile(Vector2 point)
     {
-        GridCoord coord = new GridCoord(Mathf.FloorToInt((point.x + 0.5f) / maker.m_tileSize) * maker.m_tileSize, Mathf.FloorToInt((point.y + 0.5f) / maker.m_tileSize) * maker.m_tileSize);
+        GridCoord coord = new GridCoord((short)(Mathf.FloorToInt((point.x + 0.5f) / maker.m_tileSize) * maker.m_tileSize), (short)(Mathf.FloorToInt((point.y + 0.5f) / maker.m_tileSize) * maker.m_tileSize));
         
         maker.Remove(coord);
     }

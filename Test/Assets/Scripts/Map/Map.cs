@@ -137,6 +137,25 @@ public class Map : NetworkBehaviour {
 
         CompleteLoadMap();
 
+        S2C.MapInfo pck = new S2C.MapInfo();
+
+        pck.m_mapName = m_mapData.name;
+        pck.m_tiles = new List<S2C.TileStatus>();
+        pck.m_buildings = new List<S2C.BuildingStatus>();
+
+        foreach (Tile tile in m_tileManager.GetTiles())
+        {
+            pck.m_tiles.Add(new S2C.TileStatus(tile));
+        }
+        foreach (Building building in m_buildingManager.GetBuildings())
+        {
+            pck.m_buildings.Add(new S2C.BuildingStatus(building));
+        }
+
+        byte[] data = pck.SerializeToBytes();
+
+        Debug.Log(data.Length);
+
         return true;
     }
 

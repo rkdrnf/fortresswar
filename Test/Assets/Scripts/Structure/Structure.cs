@@ -29,7 +29,7 @@ namespace Architecture
         where T : Structure<T, DT>
         where DT : StructureData
     {
-        protected int m_ID;
+        protected ushort m_ID;
 
         public DT m_data;
 
@@ -37,7 +37,7 @@ namespace Architecture
         public GridDirection m_direction;
         public PolygonGenerator<T, DT> m_chunk;
 
-        public int m_health;
+        public short m_health;
 
         public int m_spriteIndex;
 
@@ -48,12 +48,12 @@ namespace Architecture
             m_spriteIndex = -1;
         }
 
-        public int GetID()
+        public ushort GetID()
         {
             return m_ID;
         }
 
-        public void SetID(int ID)
+        public void SetID(ushort ID)
         {
             m_ID = ID;
             m_ropableController = new RopableController(this, new RopableID(m_data.objectType, m_ID));
@@ -65,7 +65,7 @@ namespace Architecture
             m_chunk = chunk;
         }
 
-        public void SetHealth(int health, DestroyReason reason)
+        public void SetHealth(short health, DestroyReason reason)
         {
             m_health = health;
 
@@ -77,7 +77,7 @@ namespace Architecture
             AfterSetHealth(m_health, reason);
         }
 
-        abstract protected void BroadcastHealth(int health, DestroyReason reason);
+        abstract protected void BroadcastHealth(short health, DestroyReason reason);
 
         public void RecvHealth(S2C.SetStructureHealth pck)
         {
@@ -126,7 +126,7 @@ namespace Architecture
 
             if (m_data.destroyable)
             {
-                SetHealth(m_health - damage, DestroyReason.DAMAGE);
+                SetHealth((short)(m_health - damage), DestroyReason.DAMAGE);
             }
         }
 
