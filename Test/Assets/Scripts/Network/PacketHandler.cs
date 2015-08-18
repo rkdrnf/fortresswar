@@ -35,6 +35,13 @@ namespace Communication
             Debug.Log("Server Packet Handlers registered");
         }
 
+        public static bool ProcessMessage(MessageBase msg)
+        {
+            bool result = (bool)typeof(PacketHandler).GetMethod("Process", new Type[] { msg.GetType() }).Invoke(null, new object[] { 42, "Hello" });
+// call without arguments)
+
+            return result;
+        }
 
         //Client Packet Handler
 

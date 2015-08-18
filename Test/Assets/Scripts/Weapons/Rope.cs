@@ -209,11 +209,11 @@ public class Rope : Projectile {
         switch(info.m_RID.m_type)
         {
             case ObjectType.TILE:
-                ropable = TileManager.Inst.Get((int)info.m_RID.m_ID);
+                ropable = TileManager.Inst.Get((ushort)info.m_RID.m_ID);
                 break;
 
             case ObjectType.BUILDING:
-                ropable = BuildingManager.Inst.Get((int)info.m_RID.m_ID);
+                ropable = BuildingManager.Inst.Get((ushort)info.m_RID.m_ID);
                 break;
 
             case ObjectType.PLAYER:

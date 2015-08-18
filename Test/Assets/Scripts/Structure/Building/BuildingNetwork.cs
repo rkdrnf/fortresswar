@@ -51,7 +51,7 @@ namespace Architecture
         {
             //ServerCheck
 
-            S2C.BuildingStatus pck = new S2C.BuildingStatus();
+            S2C.NewBuilding pck = new S2C.NewBuilding();
             pck.DeserializeFromBytes(pckData);
             Building building = new Building(pck);
             BuildingManager.Inst.Add(building);
@@ -100,7 +100,7 @@ namespace Architecture
             Debug.Log("Fall Frame: " + Time.frameCount);
             for (int i = 0; i < pck.m_IDs.Length; i++)
             {
-                BuildingManager.Inst.Get(pck.m_IDs[i]).Fall();
+                BuildingManager.Inst.Get((ushort)pck.m_IDs[i]).Fall();
             }
 
         }

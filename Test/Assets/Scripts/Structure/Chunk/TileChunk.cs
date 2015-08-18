@@ -8,11 +8,11 @@ using Data;
 namespace Architecture
 {
     [ExecuteInEditMode]
-    public class TileChunk : PolygonGenerator<Tile, TileData>
+    public class TileChunk : PolygonGenerator<Tile>
     {
         protected override UnityEngine.Vector2 GetTexture(Tile structure)
         {
-            return new Vector2(structure.m_spriteIndex, structure.m_data.spriteRowIndex);
+            return new Vector2(structure.m_spriteIndex, structure.SData.spriteRowIndex);
         }
 
         public override void AddBlock(GridCoord coord, Tile block)

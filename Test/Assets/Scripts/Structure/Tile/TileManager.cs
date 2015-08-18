@@ -8,7 +8,7 @@ using Const.Structure;
 using Lights;
 namespace Architecture
 {
-    public class TileManager : MonoBehaviour
+    public class TileManager : StructureManager<Tile, TileType, TileData>
     {
         private static TileManager instance;
 
@@ -24,13 +24,11 @@ namespace Architecture
             }
         }
 
-        Dictionary<GridCoord, Tile> m_tileMap;
-        Dictionary<int, Tile> m_tileIDMap;
+        
 
         ushort m_tileIndex;
 
         public TileSet m_tileSet = null; // scene init
-        private Dictionary<TileType, TileData> m_tileDataDic;
         public LayerMask m_tileLayer;
 
         public TileChunkManager m_tileChunkManager = null; // scene init
@@ -39,79 +37,51 @@ namespace Architecture
         {
             instance = this;
             m_tileIndex = 0;
-            m_tileMap = new Dictionary<GridCoord, Tile>();
-            m_tileIDMap = new Dictionary<int, Tile>();
-            m_tileDataDic = new Dictionary<TileType, TileData>();
+            m_structureMap = new Dictionary<GridCoord, Tile>();
+            m_structureIDMap = new Dictionary<ushort, Tile>();
+            m_structureDataDic = new Dictionary<TileType, TileData>();
 
             foreach(TileData tData in m_tileSet.tiles)
             {
-                m_tileDataDic.Add(tData.type, tData);
+                m_structureDataDic.Add(tData.type, tData);
             }
             
             m_tileLayer = LayerMask.GetMask("Tile");
         }
 
-        public void Clear()
+        public override void Clear()
         {
             m_tileIndex = 0;
-            m_tileMap.Clear();
-            m_tileIDMap.Clear();
+            m_structureMap.Clear();
+            m_structureIDMap.Clear();
             m_tileChunkManager.Clear();
         }
 
-        public void New(Tile tile)
+        public override void New(Tile tile)
         {
             Tile newTile = new Tile(m_tileIndex, tile);
-
             Add(newTile);
-
             m_tileIndex++;
         }
 
-        public void Add(Tile tile)
+        public override void Add(Tile tile)
         {
-            m_tileMap.Add(tile.m_coord, tile);
-            m_tileIDMap.Add(tile.GetID(), tile);
+            m_structureMap.Add(tile.m_coord, tile);
+            m_structureIDMap.Add(tile.GetID(), tile);
 
             m_tileChunkManager.AddBlock(tile);
 
             ShadowPane.Inst.UpdateLight(tile.m_coord, 1f);
         }
 
-        public void Remove(Tile tile)
+        public override void Remove(Tile tile)
         {
-            if (m_tileMap.ContainsKey(tile.m_coord) && m_tileMap[tile.m_coord] == tile)
-                m_tileMap.Remove(tile.m_coord);
+            if (m_structureMap.ContainsKey(tile.m_coord) && m_structureMap[tile.m_coord] == tile)
+                m_structureMap.Remove(tile.m_coord);
 
-            m_tileIDMap.Remove(tile.GetID());
+            m_structureIDMap.Remove(tile.GetID());
 
             m_tileChunkManager.RemoveBlock(tile);
-        }
-
-        public Tile Get(GridCoord coord)
-        {
-            if (m_tileMap.ContainsKey(coord))
-                return m_tileMap[coord];
-            else
-                return null;
-        }
-
-        public Tile Get(int ID)
-        {
-            if (m_tileIDMap.ContainsKey(ID))
-                return m_tileIDMap[ID];
-            else
-                return null;
-        }
-
-        public TileData GetTileData(TileType type)
-        {
-            return m_tileDataDic[type];
-        }
-
-        public List<Tile> GetTiles()
-        {
-            return m_tileMap.Values.ToList();
         }
     }
 }

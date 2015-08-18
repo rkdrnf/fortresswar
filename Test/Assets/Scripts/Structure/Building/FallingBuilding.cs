@@ -18,13 +18,13 @@ namespace Architecture
             //Debug.Log("Init Frame : " + Time.frameCount);
             m_building = building;
             transform.position = building.m_coord.ToVector2();
-            int tTop = m_building.m_data.spriteRowIndex * 8;
+            int tTop = m_building.SData.spriteRowIndex * 8;
             int tLeft = m_building.m_spriteIndex * 8;
-            float tWidth = m_building.m_data.size.x * 8;
-            float tHeight = m_building.m_data.size.y * 8;
+            float tWidth = m_building.SData.size.x * 8;
+            float tHeight = m_building.SData.size.y * 8;
 
             GetComponent<SpriteRenderer>().sprite = Sprite.Create(m_buildingTexture, new Rect(tLeft, tTop, tWidth, tHeight), new Vector2(0.5f, 0.5f), 8);
-            GetComponent<BoxCollider2D>().size = m_building.m_data.size;
+            GetComponent<BoxCollider2D>().size = m_building.SData.size;
         }
 
         void OnCollisionEnter2D(Collision2D coll)

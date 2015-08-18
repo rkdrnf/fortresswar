@@ -8,7 +8,6 @@ using Server;
 using Const;
 using Architecture;
 using UnityEngine.Networking;
-
 using S2C = Communication.S2C;
 using C2S = Communication.C2S;
 
@@ -84,16 +83,16 @@ public class Map : NetworkBehaviour {
         S2C.MapInfo pck = new S2C.MapInfo();
 
         pck.m_mapName = m_mapData.name;
-        pck.m_tiles = new List<S2C.TileStatus>();
-        pck.m_buildings = new List<S2C.BuildingStatus>();
+        pck.m_dirtyTiles = new List<S2C.TileStatus>();
+        pck.m_dirtyBuildings = new List<S2C.BuildingStatus>();
 
-        foreach (Tile tile in m_tileManager.GetTiles())
+        foreach (Tile tile in m_tileManager.GetDirtyStructures())
         {
-            pck.m_tiles.Add(new S2C.TileStatus(tile));
+            pck.m_dirtyTiles.Add(new S2C.TileStatus(tile));
         }
-        foreach (Building building in m_buildingManager.GetBuildings())
+        foreach (Building building in m_buildingManager.GetDirtyStructures())
         {
-            pck.m_buildings.Add(new S2C.BuildingStatus(building));
+            pck.m_dirtyBuildings.Add(new S2C.BuildingStatus(building));
         }
 
         NetworkServer.SendToClient(conn.connectionId, (short)PacketType.SendMapInfo, pck); 
@@ -101,7 +100,7 @@ public class Map : NetworkBehaviour {
 
     public void ReceiveMapInfo(S2C.MapInfo mapInfo)
     {
-        Debug.Log("[Client] map instantiated");
+        Debug.Log("[Client] received map info");
 
         Load(mapInfo);
     }
@@ -116,8 +115,10 @@ public class Map : NetworkBehaviour {
 
     public bool Load(MapData mapData)
     {
-        m_mapData = mapData;
+        System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+        sw.Start();
 
+        m_mapData = mapData;
         m_width = mapData.mapWidth;
         m_height = mapData.mapHeight;
         m_name = mapData.mapName;
@@ -126,35 +127,19 @@ public class Map : NetworkBehaviour {
         Lights.ShadowPane.Inst.Init(m_width, m_height);
         LoadBackground(mapData.backgroundImage);
 
-        if (!isServer)
-        {
-            Debug.Log("Not server. Remote Client will receive map data from server.");
-            return true;
-        }
-
         LoadTiles(mapData.tiles);
         LoadBuildings(new List<Building>());
 
+        if (!isServer)
+        {
+            Debug.Log("Remote Client will receive dirtied map data from server.");
+            return true;
+        }
+
         CompleteLoadMap();
 
-        S2C.MapInfo pck = new S2C.MapInfo();
-
-        pck.m_mapName = m_mapData.name;
-        pck.m_tiles = new List<S2C.TileStatus>();
-        pck.m_buildings = new List<S2C.BuildingStatus>();
-
-        foreach (Tile tile in m_tileManager.GetTiles())
-        {
-            pck.m_tiles.Add(new S2C.TileStatus(tile));
-        }
-        foreach (Building building in m_buildingManager.GetBuildings())
-        {
-            pck.m_buildings.Add(new S2C.BuildingStatus(building));
-        }
-
-        byte[] data = pck.SerializeToBytes();
-
-        Debug.Log(data.Length);
+        sw.Stop();
+        Debug.Log(string.Format("Server Map Loading Time : {0} secs", sw.Elapsed.TotalSeconds));
 
         return true;
     }
@@ -164,8 +149,8 @@ public class Map : NetworkBehaviour {
         MapData mapData = (MapData)Resources.Load("Maps/" + mapInfo.m_mapName);
         Load(mapData);
 
-        LoadTiles(mapInfo.m_tiles);
-        LoadBuildings(mapInfo.m_buildings);
+        LoadDirtyTiles(mapInfo.m_dirtyTiles);
+        LoadDirtyBuildings(mapInfo.m_dirtyBuildings);
 
         CompleteLoadMap();
     }
@@ -191,23 +176,23 @@ public class Map : NetworkBehaviour {
         if (!isServer) return; //서버만 데이터에서 로딩, 클라는 network로 초기화
     }
 
-    public void LoadTiles(IEnumerable<S2C.TileStatus> tiles)
+    public void LoadDirtyTiles(IEnumerable<S2C.TileStatus> tiles)
     {
         if (tiles == null) return;
-        foreach (S2C.TileStatus tile in tiles)
+        foreach (S2C.TileStatus dirtyTile in tiles)
         {
-            Tile newTile = new Tile(tile);
-            m_tileManager.Add(newTile);
+            Tile tile = m_tileManager.Get(dirtyTile.m_ID);
+            tile.SetDirtyStatus(dirtyTile);
         }
     }
 
-    public void LoadBuildings(IEnumerable<S2C.BuildingStatus> buildings)
+    public void LoadDirtyBuildings(IEnumerable<S2C.BuildingStatus> buildings)
     {
         if (buildings == null) return;
-        foreach (S2C.BuildingStatus building in buildings)
+        foreach (S2C.BuildingStatus dirtyBuilding in buildings)
         {
-            Building newBuilding = new Building(building);
-            m_buildingManager.Add(newBuilding);
+            Building building = m_buildingManager.Get(dirtyBuilding.m_ID);
+            building.SetDirtyStatus(dirtyBuilding);
         }
     }
 

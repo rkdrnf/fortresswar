@@ -12,7 +12,7 @@ using Maps;
 using Const;
 
 [Serializable]
-public class Tile : Structure<Tile, TileData>, ISuspension
+public class Tile : Structure<Tile, TileType, TileData>, ISuspension
 {
     private TileNetwork network
     {
@@ -26,7 +26,7 @@ public class Tile : Structure<Tile, TileData>, ISuspension
 
     public Tile(ushort ID, Tile tile)
     {
-        m_data = tile.m_data;
+        m_type = tile.m_type;
         SetID(ID);
         m_coord = tile.m_coord;
         
@@ -36,20 +36,14 @@ public class Tile : Structure<Tile, TileData>, ISuspension
         m_collidable = tile.m_collidable;
     }
 
-    public Tile(S2C.TileStatus status)
+    public void SetDirtyStatus(S2C.TileStatus status)
     {
-        m_data = TileManager.Inst.GetTileData((TileType)status.m_type);
-        SetID(status.m_ID);
-        m_coord = status.m_coord;
-        m_direction = Const.GridDirection.UP;
-        m_collidable = m_data.collidable;
-
         SetHealth(status.m_health, DestroyReason.MANUAL);
     }
 
     public void InitForMaker(TileData tData, GridCoord coord)
     {
-        m_data = tData;
+        m_type = tData.type;
         m_coord = coord;
         m_health = (short)tData.maxHealth;
         m_collidable = tData.collidable;
@@ -70,7 +64,7 @@ public class Tile : Structure<Tile, TileData>, ISuspension
     public override string ToString()
     {
 
-        return string.Format("coord: {0}, type:{2}, health: {3}", m_coord, m_data.type, m_health);
+        return string.Format("coord: {0}, type:{2}, health: {3}", m_coord, SData.type, m_health);
     }
 
     protected override void OnBreak(DestroyReason reason)

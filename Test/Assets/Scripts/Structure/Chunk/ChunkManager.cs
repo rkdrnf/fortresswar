@@ -8,21 +8,20 @@ using UnityEngine;
 
 namespace Architecture
 {
-    public class ChunkManager<CT, T, DT> : MonoBehaviour
-        where CT : PolygonGenerator<T, DT>
-        where T : Structure<T, DT>
-        where DT : StructureData
+    public class ChunkManager<PG, T> : MonoBehaviour
+        where PG : PolygonGenerator<T>
+        where T : StructureBase
     {
-        public Dictionary<GridCoord, CT> m_chunks;
+        public Dictionary<GridCoord, PG> m_chunks;
         public int m_chunkSize;
-        public CT m_chunkPrefab;
+        public PG m_chunkPrefab;
 
         void Awake()
         {
-            m_chunks = new Dictionary<GridCoord, CT>();
+            m_chunks = new Dictionary<GridCoord, PG>();
         }
 
-        public CT FindChunk(GridCoord coord)
+        public PG FindChunk(GridCoord coord)
         {
             GridCoord chunkCoord = ToChunkCoord(coord);
             if (m_chunks.ContainsKey(chunkCoord))
@@ -38,7 +37,7 @@ namespace Architecture
 
         public void AddBlock(T block)
         {
-            CT chunk = FindChunk(block.m_coord);
+            PG chunk = FindChunk(block.m_coord);
 
 
             if (chunk == null)
@@ -51,14 +50,14 @@ namespace Architecture
 
         public void RemoveBlock(T block)
         {
-            CT chunk = FindChunk(block.m_coord);
+            PG chunk = FindChunk(block.m_coord);
 
             chunk.RemoveBlock(block);
         }
 
-        public CT AddChunk(GridCoord coord)
+        public PG AddChunk(GridCoord coord)
         {
-            CT chunk = (CT)MonoBehaviour.Instantiate(m_chunkPrefab, new Vector3(coord.x, coord.y, 3), Quaternion.identity);
+            PG chunk = (PG)MonoBehaviour.Instantiate(m_chunkPrefab, new Vector3(coord.x, coord.y, 3), Quaternion.identity);
             chunk.Init(coord, m_chunkSize);
 
             m_chunks[coord] = chunk;

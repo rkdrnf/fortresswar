@@ -61,7 +61,7 @@ namespace Character
 
         public void Build(C2S.Build pck)
         {
-            BuildingData bData = BuildingManager.Inst.GetBuildingData(pck.m_type);
+            BuildingData bData = BuildingManager.Inst.GetData(pck.m_type);
 
             if (!CanBuild(bData)) return;
 

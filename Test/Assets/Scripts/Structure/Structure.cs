@@ -25,23 +25,25 @@ namespace Architecture
 {
     [System.Serializable]
     [RequireComponent(typeof(SpriteRenderer), typeof(NetworkView))]
-    public abstract class Structure<T, DT> : IRopable
-        where T : Structure<T, DT>
-        where DT : StructureData
+    public abstract class Structure<T, CT, CDT> : StructureBase, IRopable
+        where T : Structure<T, CT, CDT>
+        where CDT : StructureData
     {
-        protected ushort m_ID;
-
-        public DT m_data;
-
-        public GridCoord m_coord;
+        public CT m_type;
         public GridDirection m_direction;
-        public PolygonGenerator<T, DT> m_chunk;
+        public PolygonGenerator<T> m_chunk;
+        public StructureManager<T, CT, CDT> m_manager;
 
         public short m_health;
 
         public int m_spriteIndex;
 
         public bool m_collidable;
+
+        public CDT SData
+        {
+            get { return (CDT)m_manager.GetData(m_type); }
+        }
 
         public Structure()
         {
@@ -56,17 +58,21 @@ namespace Architecture
         public void SetID(ushort ID)
         {
             m_ID = ID;
-            m_ropableController = new RopableController(this, new RopableID(m_data.objectType, m_ID));
+            m_ropableController = new RopableController(this, new RopableID(SData.objectType, m_ID));
         }
 
-
-        public void SetChunk(PolygonGenerator<T, DT> chunk)
+        public void SetChunk(PolygonGenerator<T> chunk)
         {
             m_chunk = chunk;
         }
 
         public void SetHealth(short health, DestroyReason reason)
         {
+            if (reason != DestroyReason.MANUAL)
+            {
+                m_manager.SetDirtyBit(m_ID, true);
+            }
+
             m_health = health;
 
             if (m_health < 0)
@@ -124,7 +130,7 @@ namespace Architecture
         {
             if (!Network.isServer) return;
 
-            if (m_data.destroyable)
+            if (SData.destroyable)
             {
                 SetHealth((short)(m_health - damage), DestroyReason.DAMAGE);
             }
@@ -159,7 +165,7 @@ namespace Architecture
         {
             int index = 0;
 
-            while (index + 1 < m_data.sprites.Length && health <= m_data.sprites[index].HealthValue)
+            while (index + 1 < SData.sprites.Length && health <= SData.sprites[index].HealthValue)
             {
                 index++;
             }
@@ -172,7 +178,7 @@ namespace Architecture
             ParticleSystem2D pSystem = ParticleManager.Inst.particleSystemPool.Borrow();
             if (pSystem == null) return;
 
-            ParticleSystem2DData pSysData = ParticleManager.Inst.particleSet.particles[(int)m_data.particleType];
+            ParticleSystem2DData pSysData = ParticleManager.Inst.particleSet.particles[(int)SData.particleType];
             pSystem.Init(pSysData);
             pSystem.transform.position = location;
             pSystem.ChangeAmount(amount);
@@ -181,13 +187,11 @@ namespace Architecture
 
         public void PlayDestructionAnimation(Vector2 location)
         {
-            AnimationEffectManager.Inst.PlayAnimationEffect(m_data.destructionAnimation, location);
+            AnimationEffectManager.Inst.PlayAnimationEffect(SData.destructionAnimation, location);
         }
 
         
-
-
-        public bool CanCollide()
+        public override bool CanCollide()
         {
             return m_collidable;
         }

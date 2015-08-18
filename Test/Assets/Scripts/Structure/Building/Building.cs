@@ -13,7 +13,7 @@ using Maps;
 using System.Collections;
 
 [Serializable]
-public class Building : Structure<Building, BuildingData>, ISuspension
+public class Building : Structure<Building, BuildingType, BuildingData>, ISuspension
 {
     private BuildingNetwork network
     {
@@ -33,7 +33,7 @@ public class Building : Structure<Building, BuildingData>, ISuspension
 
     public Building(ushort ID, Building building)
     {
-        m_data = building.m_data;
+        m_type = building.m_type;
         SetID(ID);
         m_coord = building.m_coord;
         
@@ -43,13 +43,24 @@ public class Building : Structure<Building, BuildingData>, ISuspension
         m_collidable = building.m_collidable;
     }
 
-    public Building(S2C.BuildingStatus status)
+    public Building(S2C.NewBuilding status)
     {
-        m_data = BuildingManager.Inst.GetBuildingData((BuildingType)status.m_type);
         SetID(status.m_ID);
+        m_type = status.m_type;
         m_coord = status.m_coord;
         m_direction = (GridDirection)status.m_direction;
-        m_collidable = true;
+        m_isFalling = status.m_falling;
+        SetHealth(status.m_health, DestroyReason.MANUAL);
+
+        if (m_isFalling)
+        {
+            Fall();
+        }
+    }
+
+    public void SetDirtyStatus(S2C.BuildingStatus status)
+    {
+        m_direction = (GridDirection)status.m_direction;
         m_isFalling = status.m_falling;
         SetHealth(status.m_health, DestroyReason.MANUAL);
 
@@ -63,9 +74,9 @@ public class Building : Structure<Building, BuildingData>, ISuspension
     {
         if (!Network.isServer) return;
 
-        m_data = bData;
+        m_type = bData.type;
         m_coord = coord;
-        m_health = (short)m_data.maxHealth;
+        m_health = (short)bData.maxHealth;
         m_collidable = bData.collidable;
         
         FillSuspension();
@@ -134,9 +145,9 @@ public class Building : Structure<Building, BuildingData>, ISuspension
         watch.Start();
 
         //int[] m_checkList = new int[]{ m_ID };
-        List<int> fallList = new List<int>();
-        List<int> noSuspensionList = new List<int>();
-        List<int> checkList = new List<int>();
+        List<ushort> fallList = new List<ushort>();
+        List<ushort> noSuspensionList = new List<ushort>();
+        List<ushort> checkList = new List<ushort>();
 
         PropagateDestructionInternal(ref checkList);
 
@@ -173,7 +184,7 @@ public class Building : Structure<Building, BuildingData>, ISuspension
         watch.Stop();
         Debug.Log("TotalDestructionTime : " + watch.Elapsed + "Frame : " + Time.frameCount);
     }
-    public void PropagateDestructionInternal(ref List<int> checkList)
+    public void PropagateDestructionInternal(ref List<ushort> checkList)
     {
         System.Diagnostics.Stopwatch watch = System.Diagnostics.Stopwatch.StartNew();
         watch.Start();
@@ -219,7 +230,7 @@ public class Building : Structure<Building, BuildingData>, ISuspension
         m_suspension.DestroySuspension(direction);
     }
 
-    public void Check(ref List<int> fallList, ref List<int> noSuspensionList)
+    public void Check(ref List<ushort> fallList, ref List<ushort> noSuspensionList)
     {
         if (m_suspension.Count == 0)
         {
@@ -235,7 +246,7 @@ public class Building : Structure<Building, BuildingData>, ISuspension
         }
     }
 
-    public void PropagateAsNoSuspension(ref List<int> checkList)
+    public void PropagateAsNoSuspension(ref List<ushort> checkList)
     {
         if (m_suspension.isPermanent || m_suspension.down != null)
         {

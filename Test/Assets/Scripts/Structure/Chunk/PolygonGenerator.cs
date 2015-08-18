@@ -11,9 +11,8 @@ using System.Linq;
 namespace Architecture
 {
     [ExecuteInEditMode]
-    public abstract class PolygonGenerator<T, DT> : MonoBehaviour
-        where T : Structure<T, DT>
-        where DT : StructureData
+    public abstract class PolygonGenerator<T> : MonoBehaviour
+        where T : StructureBase
     {
         public int chunkSize;
         public GridCoord m_coord;

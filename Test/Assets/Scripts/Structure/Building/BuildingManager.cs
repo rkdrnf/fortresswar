@@ -9,7 +9,7 @@ using System.Collections;
 
 namespace Architecture
 { 
-    public class BuildingManager : MonoBehaviour
+    public class BuildingManager : StructureManager<Building, BuildingType, BuildingData>
     {
         private static BuildingManager instance;
 
@@ -57,7 +57,7 @@ namespace Architecture
             Physics2D.IgnoreLayerCollision(fallingBuildingLayer, LayerMask.NameToLayer("Particle"));
         }
 
-        public void Clear()
+        public override void Clear()
         {
             m_buildingIndex = 0;
             m_buildingMap.Clear();
@@ -65,7 +65,7 @@ namespace Architecture
             m_buildingChunkManager.Clear();
         }
 
-        public void New(Building building)
+        public override void New(Building building)
         {
             Building newBuilding = new Building(m_buildingIndex, building);
 
@@ -74,7 +74,7 @@ namespace Architecture
             m_buildingIndex++;
         }
 
-        public void Add(Building building)
+        public override void Add(Building building)
         {
             m_buildingIDMap.Add(building.GetID(), building);
 
@@ -91,7 +91,7 @@ namespace Architecture
             }
         }
 
-        public void Remove(Building building)
+        public override void Remove(Building building)
         {
             if (m_buildingMap.ContainsKey(building.m_coord) && m_buildingMap[building.m_coord] == building)
                 m_buildingMap.Remove(building.m_coord);
@@ -146,32 +146,6 @@ namespace Architecture
                 if (falling != null)
                     falling.Init(building);
             //}
-        }
-
-        public Building Get(GridCoord coord)
-        {
-            if (m_buildingMap.ContainsKey(coord))
-                return m_buildingMap[coord];
-            else
-                return null;
-        }
-
-        public Building Get(int ID)
-        {
-            if (m_buildingIDMap.ContainsKey(ID))
-                return m_buildingIDMap[ID];
-            else
-                return null;
-        }
-
-        public BuildingData GetBuildingData(BuildingType type)
-        {
-            return m_buildingDataDic[type];
-        }
-
-        public List<Building> GetBuildings()
-        {
-            return m_buildingMap.Values.ToList();
         }
 
         public void Build(BuildingData bData, GridCoord coord)

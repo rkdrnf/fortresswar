@@ -23,16 +23,16 @@ namespace Communication
             [ProtoMember(1)]
             public string m_mapName;
             [ProtoMember(2)]
-            public List<TileStatus> m_tiles;
+            public List<TileStatus> m_dirtyTiles;
             [ProtoMember(3)]
-            public List<BuildingStatus> m_buildings;
+            public List<BuildingStatus> m_dirtyBuildings;
 
 
             public override void FillPacket(MapInfo packet)
             {
                 this.m_mapName = packet.m_mapName;
-                this.m_tiles = packet.m_tiles;
-                this.m_buildings = packet.m_buildings;
+                this.m_dirtyTiles = packet.m_dirtyTiles;
+                this.m_dirtyBuildings = packet.m_dirtyBuildings;
             }
 
             public override void Serialize(UnityEngine.Networking.NetworkWriter writer)
@@ -355,21 +355,44 @@ namespace Communication
             public TileStatus(Tile tile)
             {
                 m_ID = tile.GetID();
-                m_type = (byte)tile.m_data.type;
-                m_coord = tile.m_coord;
                 m_health = tile.m_health;
             }
 
             [ProtoMember(1)]
-            public GridCoord m_coord;
+            public ushort m_ID;
+            [ProtoMember(2)]
+            public short m_health;
+        }
+
+        [ProtoContract]
+        public class NewBuilding : Packet<NewBuilding>
+        {
+            public NewBuilding() { }
+            public NewBuilding(Building building)
+            {
+                m_ID = building.GetID();
+                
+                m_health = building.m_health;
+                m_falling = building.m_isFalling;
+                m_direction = (byte)building.m_direction;
+                m_coord = building.m_coord;
+                m_type = building.m_type;
+            }
+
+            [ProtoMember(1)]
+            public ushort m_ID;
             [ProtoMember(2)]
             public short m_health;
             [ProtoMember(3)]
-            public byte m_type;
+            public bool m_falling;
             [ProtoMember(4)]
-            public ushort m_ID;
-
+            public byte m_direction;
+            [ProtoMember(5)]
+            public GridCoord m_coord;
+            [ProtoMember(6)]
+            public BuildingType m_type;
         }
+
 
         [ProtoContract]
         public class BuildingStatus : Packet<BuildingStatus>
@@ -378,25 +401,20 @@ namespace Communication
             public BuildingStatus(Building building)
             {
                 m_ID = building.GetID();
-                m_coord = building.m_coord;
                 m_health = building.m_health;
                 m_falling = building.m_isFalling;
                 m_direction = (byte)building.m_direction;
-                m_type = (byte)building.m_data.type;
             }
 
             [ProtoMember(1)]
-            public GridCoord m_coord;
+            public ushort m_ID;
             [ProtoMember(2)]
             public short m_health;
             [ProtoMember(3)]
             public bool m_falling;
             [ProtoMember(4)]
             public byte m_direction;
-            [ProtoMember(5)]
-            public ushort m_ID;
-            [ProtoMember(6)]
-            public byte m_type;
+            
         }
 
         [ProtoContract]

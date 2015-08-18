@@ -7,11 +7,11 @@ using Data;
 
 namespace Architecture
 {
-    public class BuildingChunk : PolygonGenerator<Building, BuildingData>
+    public class BuildingChunk : PolygonGenerator<Building>
     {
         protected override Vector2 GetTexture(Building structure)
         {
-            return new Vector2(structure.m_spriteIndex, structure.m_data.spriteRowIndex);
+            return new Vector2(structure.m_spriteIndex, structure.SData.spriteRowIndex);
         }
 
         public override void AddBlock(GridCoord coord, Building block)
