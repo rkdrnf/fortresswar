@@ -19,13 +19,15 @@ public class Tile : Structure<Tile, TileType, TileData>, ISuspension
         get { return TileNetwork.Inst; }
     }
     
-    public Tile(ushort ID)
+    public Tile(ushort ID, TileManager manager)
     {
+        m_manager = manager;
         m_ID = ID;
     }
 
-    public Tile(ushort ID, Tile tile)
+    public Tile(ushort ID, Tile tile, TileManager manager)
     {
+        m_manager = manager;
         m_type = tile.m_type;
         SetID(ID);
         m_coord = tile.m_coord;

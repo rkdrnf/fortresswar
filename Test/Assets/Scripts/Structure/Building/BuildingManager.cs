@@ -7,8 +7,11 @@ using Const;
 using Const.Structure;
 using System.Collections;
 
+using S2C = Communication.S2C;
+
+
 namespace Architecture
-{ 
+{
     public class BuildingManager : StructureManager<Building, BuildingType, BuildingData>
     {
         private static BuildingManager instance;
@@ -67,7 +70,7 @@ namespace Architecture
 
         public override void New(Building building)
         {
-            Building newBuilding = new Building(m_buildingIndex, building);
+            Building newBuilding = new Building(m_buildingIndex, building, this);
 
             Add(newBuilding);
 
@@ -155,12 +158,18 @@ namespace Architecture
                 if (!CanBuild(bData, coord)) return;
             }
 
-            Building building = new Building(m_buildingIndex, bData, coord);
+            Building building = new Building(m_buildingIndex, bData, coord, this);
 
             Add(building);
             m_buildingIndex++;
 
             BuildingNetwork.Inst.BroadcastBuild(building);
+        }
+
+        public void Build(S2C.NewBuilding pck)
+        {
+            Building building = new Building(pck, this);
+            BuildingManager.Inst.Add(building);
         }
 
         public bool CanBuild(BuildingData bData, GridCoord coord)

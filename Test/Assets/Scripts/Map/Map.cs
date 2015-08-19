@@ -13,7 +13,7 @@ using C2S = Communication.C2S;
 
 namespace Maps
 { 
-public class Map : NetworkBehaviour {
+public class Map : NetworkBehaviourSync {
 
     string m_name;
 
@@ -42,12 +42,15 @@ public class Map : NetworkBehaviour {
         }
     }
 
-    void Awake()
-    {
-        instance = this;
+    protected override void Awake()
+    {  
+        base.Awake();
 
+        instance = this;
         m_mapLoadTime = 0f;
         ServerGame.Inst.CurrentMap = this;
+
+        RegisterMessageHandler<S2C.MapInfo>(ReceiveMapInfo);
     }
 
     public void SetMap(string mapName)
@@ -55,21 +58,9 @@ public class Map : NetworkBehaviour {
         m_name = mapName;
     }
 
-    public override void OnStartServer()
+    protected override void Start()
     {
-        Debug.LogError("[Map] StartServer");
-        base.OnStartServer();
-    }
-
-    public override void OnStartClient()
-    {
-        base.OnStartClient();
-        Debug.LogError("[Map] OnStartClient");
-    }
-
-    void Start()
-    {
-        Debug.LogError("[Map] Start");
+        base.Start();
 
         if (!isServer)
         {
@@ -98,11 +89,13 @@ public class Map : NetworkBehaviour {
         NetworkServer.SendToClient(conn.connectionId, (short)PacketType.SendMapInfo, pck); 
     }
 
-    public void ReceiveMapInfo(S2C.MapInfo mapInfo)
+    public bool ReceiveMapInfo(S2C.MapInfo mapInfo)
     {
         Debug.Log("[Client] received map info");
 
         Load(mapInfo);
+
+        return true;
     }
 
     void CompleteLoadMap()

@@ -25,14 +25,16 @@ public class Building : Structure<Building, BuildingType, BuildingData>, ISuspen
     public Building()
     { }
 
-    public Building(ushort ID, BuildingData bData, GridCoord coord)
+    public Building(ushort ID, BuildingData bData, GridCoord coord, BuildingManager manager)
     {
+        m_manager = manager;
         Init(bData, coord);
         SetID(ID);
     }
 
-    public Building(ushort ID, Building building)
+    public Building(ushort ID, Building building, BuildingManager manager)
     {
+        m_manager = manager;
         m_type = building.m_type;
         SetID(ID);
         m_coord = building.m_coord;
@@ -43,8 +45,9 @@ public class Building : Structure<Building, BuildingType, BuildingData>, ISuspen
         m_collidable = building.m_collidable;
     }
 
-    public Building(S2C.NewBuilding status)
+    public Building(S2C.NewBuilding status, BuildingManager manager)
     {
+        m_manager = manager;
         SetID(status.m_ID);
         m_type = status.m_type;
         m_coord = status.m_coord;

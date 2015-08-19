@@ -7,13 +7,17 @@ namespace UnityEngine.Networking
 {
     public abstract class NetworkBehaviourSync : NetworkBehaviour
     {
-        Queue<MessageBase> m_messageQueue;
-        bool m_readyForMessage;
+        NetworkBehaviourMessageQueue m_messageQueue;
 
-        virtual void Awake()
+        protected virtual void Awake()
         {
             Debug.Log(string.Format("[{0}] Awake", this.GetType().Name));
-            m_messageQueue = new List<MessageBase>();
+            m_messageQueue = new NetworkBehaviourMessageQueue(this);
+        }
+
+        protected virtual void Start()
+        {
+            Debug.Log(string.Format("[{0}] Start", this.GetType().Name));
         }
 
         public override bool OnSerialize(NetworkWriter writer, bool initialState)
@@ -30,32 +34,29 @@ namespace UnityEngine.Networking
             base.OnDeserialize(reader, initialState);
         }
 
-        public virtual void Ready()
+        public void AddOrProcessMessage<T>(T message) where T : MessageBase
         {
-            m_readyForMessage = true;
-            ProcessMessages(m_messageQueue);
+            m_messageQueue.AddOrProcessMessage<T>(message);
         }
 
-        void ProcessMessages()
+        public bool ProcessMessage<T>(T message) where T : MessageBase
         {
-            if (!m_readyForMessage) return;
-
-            while (m_messageQueue.Count > 0)
-            {
-                MessageBase message = m_messageQueue.First();
-
-                if (ProcessMessage(message))
-                {
-                    m_messageQueue.Dequeue();
-                }
-
-                return;
-            }
+            return m_messageQueue.ProcessMessage<T>(message);
         }
 
-        virtual void Start()
+        protected void RegisterMessageHandler<T>(Func<T, bool> handlerFunc) where T : MessageBase
         {
-            Debug.Log(string.Format("[{0}] Start", this.GetType().Name));
+            m_messageQueue.RegisterMessageHandler<T>(handlerFunc);
+        }
+
+        public override void OnStartServer()
+        {
+            Debug.Log(string.Format("[{0}] OnStartServer", this.GetType().Name));
+        }
+
+        public override void OnStartClient()
+        {
+            Debug.Log(string.Format("[{0}] OnStartClient", this.GetType().Name));
         }
     }
 }

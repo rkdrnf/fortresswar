@@ -35,6 +35,7 @@ namespace Architecture
 
         void Awake()
         {
+            Debug.Log("TileMAnager Awake");
             instance = this;
             m_tileIndex = 0;
             m_structureMap = new Dictionary<GridCoord, Tile>();
@@ -47,6 +48,8 @@ namespace Architecture
             }
             
             m_tileLayer = LayerMask.GetMask("Tile");
+
+            Debug.Log(m_structureDataDic.Count());
         }
 
         public override void Clear()
@@ -59,7 +62,7 @@ namespace Architecture
 
         public override void New(Tile tile)
         {
-            Tile newTile = new Tile(m_tileIndex, tile);
+            Tile newTile = new Tile(m_tileIndex, tile, this);
             Add(newTile);
             m_tileIndex++;
         }

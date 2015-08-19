@@ -35,14 +35,6 @@ namespace Communication
             Debug.Log("Server Packet Handlers registered");
         }
 
-        public static bool ProcessMessage(MessageBase msg)
-        {
-            bool result = (bool)typeof(PacketHandler).GetMethod("Process", new Type[] { msg.GetType() }).Invoke(null, new object[] { 42, "Hello" });
-// call without arguments)
-
-            return result;
-        }
-
         //Client Packet Handler
 
         public static void PHSetPlayerID(NetworkMessage msg)
@@ -54,7 +46,7 @@ namespace Communication
         public static void PHReceiveMap(NetworkMessage msg)
         {
             var packet = msg.ReadMessage<S2C.MapInfo>();
-            ServerGame.Inst.CurrentMap.ReceiveMapInfo(packet);
+            ServerGame.Inst.CurrentMap.ProcessMessage<S2C.MapInfo>(packet);
         }
 
         public static void PHPlayerNotReady(NetworkMessage msg)

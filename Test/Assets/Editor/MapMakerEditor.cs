@@ -129,6 +129,16 @@ public class MapMakerEditor : Editor {
         GUILayout.Label(" TileChunkPrefab ");
         maker.m_chunkPrefab = (TileChunk)EditorGUILayout.ObjectField(maker.m_chunkPrefab, typeof(TileChunk), false, GUILayout.Width(150f));
         GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label(" TileManager ");
+        maker.m_tileManager = (TileManager)EditorGUILayout.ObjectField(maker.m_tileManager, typeof(TileManager), false, GUILayout.Width(150f));
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label(" BuildingManager ");
+        maker.m_buildingManager = (BuildingManager)EditorGUILayout.ObjectField(maker.m_buildingManager, typeof(BuildingManager), false, GUILayout.Width(150f));
+        GUILayout.EndHorizontal();
         
 		GUILayout.BeginHorizontal();
 		GUILayout.Label(" TileSet ");

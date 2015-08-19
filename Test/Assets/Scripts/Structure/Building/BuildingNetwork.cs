@@ -53,8 +53,8 @@ namespace Architecture
 
             S2C.NewBuilding pck = new S2C.NewBuilding();
             pck.DeserializeFromBytes(pckData);
-            Building building = new Building(pck);
-            BuildingManager.Inst.Add(building);
+            BuildingManager.Inst.Build(pck);
+            
         }
 
         public void BroadcastHealth(ushort ID, short health, DestroyReason reason)
