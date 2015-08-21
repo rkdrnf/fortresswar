@@ -8,9 +8,14 @@ using Const.Effect;
 
 namespace Data
 { 
-    public class TileData : StructureData
+    public class TileData : StructureData<TileType>
     {
         public TileType type;
         public Sprite tileBack;
+
+        protected override TileType GetDataKey()
+        {
+            return type;
+        }
     }
 }

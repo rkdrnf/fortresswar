@@ -6,6 +6,7 @@ using UnityEngine;
 using Const;
 using C2S = Communication.C2S;
 using Architecture;
+using Data;
 
 namespace Character
 {
@@ -61,7 +62,7 @@ namespace Character
 
         public void Build(C2S.Build pck)
         {
-            BuildingData bData = BuildingManager.Inst.GetData(pck.m_type);
+            BuildingData bData = GDataManager.building.GetData(pck.m_type);
 
             if (!CanBuild(bData)) return;
 

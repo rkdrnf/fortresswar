@@ -4,7 +4,9 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-public class BuildingDataSet : ScriptableObject
+namespace Data
 {
-    public BuildingData[] buildings;
+    public class BuildingDataSet : KeyValueDataSet<BuildingData>
+    {
+    }
 }

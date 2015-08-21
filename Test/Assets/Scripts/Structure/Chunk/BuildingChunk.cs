@@ -11,7 +11,7 @@ namespace Architecture
     {
         protected override Vector2 GetTexture(Building structure)
         {
-            return new Vector2(structure.m_spriteIndex, structure.SData.spriteRowIndex);
+            return new Vector2(structure.m_spriteIndex, structure.GetData().spriteRowIndex);
         }
 
         public override void AddBlock(GridCoord coord, Building block)

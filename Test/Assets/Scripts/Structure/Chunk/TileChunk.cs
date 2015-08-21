@@ -12,7 +12,7 @@ namespace Architecture
     {
         protected override UnityEngine.Vector2 GetTexture(Tile structure)
         {
-            return new Vector2(structure.m_spriteIndex, structure.SData.spriteRowIndex);
+            return new Vector2(structure.m_spriteIndex, structure.GetData().spriteRowIndex);
         }
 
         public override void AddBlock(GridCoord coord, Tile block)

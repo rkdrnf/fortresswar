@@ -5,12 +5,20 @@ using System.Text;
 using UnityEngine;
 using Const;
 
-public class SkillData : ScriptableObject
+namespace Data
 {
-    public SkillName skillName;
-    public KeyCode code;
-    public Job[] jobs;
-    public float coolTime;
-    public bool channeling;
-    public GameObject skill;
+    public class SkillData : KeyValueData<SkillName>
+    {
+        public SkillName skillName;
+        public KeyCode code;
+        public Job[] jobs;
+        public float coolTime;
+        public bool channeling;
+        public GameObject skill;
+
+        protected override SkillName GetDataKey()
+        {
+            return skillName;
+        }
+    }
 }

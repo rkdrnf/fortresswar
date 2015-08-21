@@ -10,7 +10,7 @@ using Const;
 namespace Data
 {
     [Serializable]
-    public class StructureData : ScriptableObject
+    public abstract class StructureData<K> : KeyValueData<K>
     {
         public ObjectType objectType;
         public int maxHealth;

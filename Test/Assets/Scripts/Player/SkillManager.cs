@@ -6,6 +6,7 @@ using UnityEngine;
 using S2C = Communication.S2C;
 using C2S = Communication.C2S;
 using Const;
+using Data;
 
 namespace Server
 {

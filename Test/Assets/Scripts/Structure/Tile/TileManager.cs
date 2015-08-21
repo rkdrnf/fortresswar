@@ -40,16 +40,8 @@ namespace Architecture
             m_tileIndex = 0;
             m_structureMap = new Dictionary<GridCoord, Tile>();
             m_structureIDMap = new Dictionary<ushort, Tile>();
-            m_structureDataDic = new Dictionary<TileType, TileData>();
 
-            foreach(TileData tData in m_tileSet.tiles)
-            {
-                m_structureDataDic.Add(tData.type, tData);
-            }
-            
             m_tileLayer = LayerMask.GetMask("Tile");
-
-            Debug.Log(m_structureDataDic.Count());
         }
 
         public override void Clear()
@@ -69,8 +61,16 @@ namespace Architecture
 
         public override void Add(Tile tile)
         {
-            m_structureMap.Add(tile.m_coord, tile);
-            m_structureIDMap.Add(tile.GetID(), tile);
+            try
+            {
+                m_structureMap.Add(tile.m_coord, tile);
+                m_structureIDMap.Add(tile.GetID(), tile);
+            }
+            catch (Exception e)
+            {
+                Debug.Log(string.Format("Duplicated coord : {0}, ID: {1}", tile.m_coord, tile.GetID()));
+                throw e;
+            }
 
             m_tileChunkManager.AddBlock(tile);
 

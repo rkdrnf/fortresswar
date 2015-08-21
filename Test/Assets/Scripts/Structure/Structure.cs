@@ -27,23 +27,21 @@ namespace Architecture
     [RequireComponent(typeof(SpriteRenderer), typeof(NetworkView))]
     public abstract class Structure<T, CT, CDT> : StructureBase, IRopable
         where T : Structure<T, CT, CDT>
-        where CDT : StructureData
+        where CDT : StructureData<CT>
     {
-        public CT m_type;
-        public GridDirection m_direction;
-        public PolygonGenerator<T> m_chunk;
-        public StructureManager<T, CT, CDT> m_manager;
+        [SerializeField]
+        protected CT m_type;
+        [SerializeField]
+        protected GridDirection m_direction;
+        protected PolygonGenerator<T> m_chunk;
+        protected StructureManager<T, CT, CDT> m_manager;
 
+        [SerializeField]
         public short m_health;
-
+        [SerializeField]
         public int m_spriteIndex;
-
+        [SerializeField]
         public bool m_collidable;
-
-        public CDT SData
-        {
-            get { return (CDT)m_manager.GetData(m_type); }
-        }
 
         public Structure()
         {
@@ -58,7 +56,19 @@ namespace Architecture
         public void SetID(ushort ID)
         {
             m_ID = ID;
-            m_ropableController = new RopableController(this, new RopableID(SData.objectType, m_ID));
+            m_ropableController = new RopableController(this, new RopableID(GetData().objectType, m_ID));
+        }
+
+        public abstract CDT GetData();
+
+        public CT GetStructureType()
+        {
+            return m_type;
+        }
+
+        public GridDirection GetDirection()
+        {
+            return m_direction;
         }
 
         public void SetChunk(PolygonGenerator<T> chunk)
@@ -130,7 +140,7 @@ namespace Architecture
         {
             if (!Network.isServer) return;
 
-            if (SData.destroyable)
+            if (GetData().destroyable)
             {
                 SetHealth((short)(m_health - damage), DestroyReason.DAMAGE);
             }
@@ -165,7 +175,7 @@ namespace Architecture
         {
             int index = 0;
 
-            while (index + 1 < SData.sprites.Length && health <= SData.sprites[index].HealthValue)
+            while (index + 1 < GetData().sprites.Length && health <= GetData().sprites[index].HealthValue)
             {
                 index++;
             }
@@ -178,8 +188,8 @@ namespace Architecture
             ParticleSystem2D pSystem = ParticleManager.Inst.particleSystemPool.Borrow();
             if (pSystem == null) return;
 
-            ParticleSystem2DData pSysData = ParticleManager.Inst.particleSet.particles[(int)SData.particleType];
-            pSystem.Init(pSysData);
+            ParticleSystem2DData pSystemData = ParticleManager.Inst.particleSet.particles[(int)GetData().particleType];
+            pSystem.Init(pSystemData);
             pSystem.transform.position = location;
             pSystem.ChangeAmount(amount);
             pSystem.Play();
@@ -187,7 +197,7 @@ namespace Architecture
 
         public void PlayDestructionAnimation(Vector2 location)
         {
-            AnimationEffectManager.Inst.PlayAnimationEffect(SData.destructionAnimation, location);
+            AnimationEffectManager.Inst.PlayAnimationEffect(GetData().destructionAnimation, location);
         }
 
         

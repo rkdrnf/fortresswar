@@ -4,7 +4,9 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-public class SkillDataSet : ScriptableObject
-{
-    public SkillData[] skills;
+namespace Data
+{ 
+    public class SkillDataSet : KeyValueDataSet<SkillData>
+    {
+    }
 }

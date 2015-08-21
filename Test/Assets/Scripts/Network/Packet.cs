@@ -374,9 +374,9 @@ namespace Communication
                 
                 m_health = building.m_health;
                 m_falling = building.m_isFalling;
-                m_direction = (byte)building.m_direction;
+                m_direction = (byte)building.GetDirection();
                 m_coord = building.m_coord;
-                m_type = building.m_type;
+                m_type = building.GetStructureType();
             }
 
             [ProtoMember(1)]
@@ -403,7 +403,7 @@ namespace Communication
                 m_ID = building.GetID();
                 m_health = building.m_health;
                 m_falling = building.m_isFalling;
-                m_direction = (byte)building.m_direction;
+                m_direction = (byte)building.GetDirection();
             }
 
             [ProtoMember(1)]

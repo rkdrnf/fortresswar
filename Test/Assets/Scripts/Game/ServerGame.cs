@@ -412,7 +412,7 @@ using Communication;
 
         public void OnMapLoadCompleted(Map map)
         {
-            if (!Network.isClient) return;
+            if (isServer) return;
 
             mapLoaded = true;
 

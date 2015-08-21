@@ -8,7 +8,7 @@ using Const.Structure;
 using System.Collections;
 
 using S2C = Communication.S2C;
-
+using Data;
 
 namespace Architecture
 {
@@ -34,8 +34,6 @@ namespace Architecture
 
         ushort m_buildingIndex;
 
-        public BuildingDataSet m_buildingSet = null; // scene init
-        Dictionary<BuildingType, BuildingData> m_buildingDataDic;
         public LayerMask m_buildingLayer;
 
         public FallingBuildingPool m_fallingBuildingPool;
@@ -48,12 +46,6 @@ namespace Architecture
             m_buildingIndex = 0;
             m_buildingMap = new Dictionary<GridCoord, Building>();
             m_buildingIDMap = new Dictionary<int, Building>();
-            m_buildingDataDic = new Dictionary<BuildingType, BuildingData>();
-
-            foreach(BuildingData bData in m_buildingSet.buildings)
-            {
-                m_buildingDataDic.Add(bData.type, bData);
-            }
 
             int fallingBuildingLayer = LayerMask.NameToLayer("FallingBuilding");
             Physics2D.IgnoreLayerCollision(fallingBuildingLayer, fallingBuildingLayer);

@@ -25,9 +25,6 @@ public class MapMaker : MonoBehaviour {
 
     public TileChunk m_chunkPrefab;
 
-    public TileManager m_tileManager;
-    public BuildingManager m_buildingManager;
-
     public TileData m_brushTile;
     public float m_brushSize;
 
@@ -64,7 +61,7 @@ public class MapMaker : MonoBehaviour {
         m_chunks.Clear();
         GetComponent<SpriteRenderer>().sprite = null;
 
-        foreach (TileData tData in m_tileSet.tiles)
+        foreach (TileData tData in m_tileSet.GetDatas())
         {
             m_tileTypeDic.Add(tData.type, tData);
         }
@@ -269,17 +266,15 @@ public class MapMaker : MonoBehaviour {
     
     public Tile GenTile(TileType type, GridCoord coord)
     {
-        Tile tile = new Tile(tileID, m_tileManager);
+        Tile tile = new Tile(tileID, m_tileTypeDic[type], coord, null);
         tileID++;
-        tile.InitForMaker(m_tileTypeDic[type], coord);
         return tile;
     }
 
     public Tile GenBrushTile(GridCoord coord)
     {
-        Tile tile = new Tile(tileID, m_tileManager);
+        Tile tile = new Tile(tileID, m_brushTile, coord, null);
         tileID++;
-        tile.InitForMaker(m_brushTile, coord);
         return tile;
     }
 

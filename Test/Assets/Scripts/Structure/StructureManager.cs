@@ -9,14 +9,12 @@ namespace Architecture
 {
     public abstract class StructureManager<T, ST, DT> : MonoBehaviour
         where T : StructureBase
-        where DT : StructureData
+        where DT : StructureData<ST>
     {
 
         protected Dictionary<GridCoord, T> m_structureMap;
         protected Dictionary<ushort, T> m_structureIDMap;
         protected Dictionary<ushort, bool> m_dirtyBitMap;
-        protected Dictionary<ST, DT> m_structureDataDic;
-        
         
         public abstract void Clear();
 
@@ -40,11 +38,6 @@ namespace Architecture
                 return m_structureIDMap[ID];
             else
                 return null;
-        }
-
-        public virtual DT GetData(ST type)
-        {
-            return m_structureDataDic[type];
         }
 
         public virtual List<T> GetStructures()

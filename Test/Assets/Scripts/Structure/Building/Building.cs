@@ -21,7 +21,7 @@ public class Building : Structure<Building, BuildingType, BuildingData>, ISuspen
     }
 
     public bool m_isFalling;
-
+    
     public Building()
     { }
 
@@ -59,6 +59,11 @@ public class Building : Structure<Building, BuildingType, BuildingData>, ISuspen
         {
             Fall();
         }
+    }
+
+    public override BuildingData GetData()
+    {
+        throw new NotImplementedException();
     }
 
     public void SetDirtyStatus(S2C.BuildingStatus status)

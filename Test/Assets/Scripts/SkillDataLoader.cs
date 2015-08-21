@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using Const;
+using Data;
     
 public class SkillDataLoader : MonoBehaviour
 {
@@ -35,7 +36,7 @@ public class SkillDataLoader : MonoBehaviour
     void FillJobSkillSet()
     {
         jobSkillSet = new Dictionary<Job, List<SkillData>>();
-        foreach (SkillData data in skillSet.skills)
+        foreach (SkillData data in skillSet.GetDatas())
         {
             foreach (Job job in data.jobs)
             {

@@ -19,13 +19,19 @@ public class Tile : Structure<Tile, TileType, TileData>, ISuspension
         get { return TileNetwork.Inst; }
     }
     
-    public Tile(ushort ID, TileManager manager)
+    public Tile(ushort ID, TileData data, GridCoord coord, TileManager manager) // MapMaker Scene
     {
         m_manager = manager;
         m_ID = ID;
+        m_type = data.type;
+        m_coord = coord;
+        m_health = (short)data.maxHealth;
+        m_collidable = data.collidable;
+
+        RefreshSprite();
     }
 
-    public Tile(ushort ID, Tile tile, TileManager manager)
+    public Tile(ushort ID, Tile tile, TileManager manager) //Game Scene
     {
         m_manager = manager;
         m_type = tile.m_type;
@@ -38,6 +44,11 @@ public class Tile : Structure<Tile, TileType, TileData>, ISuspension
         m_collidable = tile.m_collidable;
     }
 
+    public override TileData GetData()
+    {
+        return GDataManager.tile.GetData(m_type);
+    }
+
     public void SetDirtyStatus(S2C.TileStatus status)
     {
         SetHealth(status.m_health, DestroyReason.MANUAL);
@@ -45,12 +56,7 @@ public class Tile : Structure<Tile, TileType, TileData>, ISuspension
 
     public void InitForMaker(TileData tData, GridCoord coord)
     {
-        m_type = tData.type;
-        m_coord = coord;
-        m_health = (short)tData.maxHealth;
-        m_collidable = tData.collidable;
-
-        RefreshSprite();
+        
     }
 
     public void RemoveForMaker()
@@ -66,7 +72,7 @@ public class Tile : Structure<Tile, TileType, TileData>, ISuspension
     public override string ToString()
     {
 
-        return string.Format("coord: {0}, type:{2}, health: {3}", m_coord, SData.type, m_health);
+        return string.Format("coord: {0}, type:{2}, health: {3}", m_coord, m_type, m_health);
     }
 
     protected override void OnBreak(DestroyReason reason)

@@ -3,14 +3,12 @@ using System.Collections;
 using Const;
 using Util;
 using Server;
+using Data;
 
 namespace InGameMenu
 {
     public class BuildMenu : MonoBehaviour
     {
-
-        public BuildingDataSet buildingSet;
-
         private BuildMenuSM stateManager;
 
         int rowCount = 4;
@@ -50,22 +48,22 @@ namespace InGameMenu
             int totalCount = 0;
             GUIStyle areaStyle = new GUIStyle(GUI.skin.box);
             GUILayout.BeginArea(new Rect(Screen.width / 2 + 50, Screen.height / 2 - 30, 100, 100), areaStyle);
-            for (int i = 0; i <= buildingSet.buildings.Length / rowCount; i++)
+            for (int i = 0; i <= GDataManager.building.Count() / rowCount; i++)
             {
                 GUILayout.BeginVertical();
 
                 for (int j = 0; j < rowCount; j++)
                 {
-                    if (totalCount == buildingSet.buildings.Length)
+                    if (totalCount == GDataManager.building.Count())
                         break;
 
                     GUILayout.BeginHorizontal();
 
-                    if (GUILayout.Button(buildingSet.buildings[i * rowCount + j].image, GUILayout.Width(20), GUILayout.Height(20)))
+                    if (GUILayout.Button(GDataManager.building.GetDatas()[i * rowCount + j].image, GUILayout.Width(20), GUILayout.Height(20)))
                     {
                         ServerPlayer player = PlayerManager.Inst.Get(ServerGame.Inst.GetID());
                         if (player != null)
-                            player.SelectBuildTool(buildingSet.buildings[i * rowCount + j]);
+                            player.SelectBuildTool(GDataManager.building.GetDatas()[i * rowCount + j]);
 
                         Close();
                     }
